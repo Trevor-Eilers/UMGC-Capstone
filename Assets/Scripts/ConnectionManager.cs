@@ -8,13 +8,18 @@ using UnityEngine;
 
 public class ConnectionManager : MonoBehaviour
 {
-   private string _profileName;
-   private string _sessionName;
-   private int _maxPlayers = 4;
+   public string ProfileName { get; private set; }
+    
+   public string SessionName { get; private set; }
+   
+   private readonly int _maxPlayers = 4;
+   
    private ConnectionState _state = ConnectionState.Disconnected;
+   
    private ISession _session;
+   
    private NetworkManager _networkManager;
-
+   
    private enum ConnectionState
    {
        Disconnected,
@@ -22,12 +27,21 @@ public class ConnectionManager : MonoBehaviour
        Connected,
    }
 
+   
+   
     private async void Awake()
     {
-        _networkManager = GetComponent<NetworkManager>();
-        _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-        _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
-        await UnityServices.InitializeAsync();
+        try
+        {
+            _networkManager = GetComponent<NetworkManager>();
+            _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+            _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
+            await UnityServices.InitializeAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e.StackTrace); // TODO handle exception
+        }
     }
 
     private void OnSessionOwnerPromoted(ulong sessionOwnerPromoted)
@@ -46,54 +60,30 @@ public class ConnectionManager : MonoBehaviour
         }
     }
 
-   private void OnGUI()
-   {
-       if (_state == ConnectionState.Connected)
-           return;
-
-       GUI.enabled = _state != ConnectionState.Connecting;
-
-       using (new GUILayout.HorizontalScope(GUILayout.Width(250)))
-       {
-           GUILayout.Label("Profile Name", GUILayout.Width(100));
-           _profileName = GUILayout.TextField(_profileName);
-       }
-
-       using (new GUILayout.HorizontalScope(GUILayout.Width(250)))
-       {
-           GUILayout.Label("Session Name", GUILayout.Width(100));
-           _sessionName = GUILayout.TextField(_sessionName);
-       }
-
-       GUI.enabled = GUI.enabled && !string.IsNullOrEmpty(_profileName) && !string.IsNullOrEmpty(_sessionName);
-
-       if (GUILayout.Button("Create or Join Session"))
-       {
-           _ = CreateOrJoinSessionAsync();
-       }
-   }
-
    private void OnDestroy()
    {
        _session?.LeaveAsync();
    }
 
-   private async Task CreateOrJoinSessionAsync()
+   public async Task CreateOrJoinSessionAsync(string profileName, string sessionName)
    {
        _state = ConnectionState.Connecting;
-
+   
        try
        {
-           AuthenticationService.Instance.SwitchProfile(_profileName);
+           ProfileName = profileName;
+           SessionName = sessionName;
+           
+           AuthenticationService.Instance.SwitchProfile(profileName);
            await AuthenticationService.Instance.SignInAnonymouslyAsync();
-
+   
             var options = new SessionOptions() {
-                Name = _sessionName,
+                Name = sessionName,
                 MaxPlayers = _maxPlayers
             }.WithDistributedAuthorityNetwork();
-
-            _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(_sessionName, options);
-
+   
+            _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
+   
            _state = ConnectionState.Connected;
        }
        catch (Exception e)

@@ -1,0 +1,12 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement enabled="true" style="flex-grow: 1; background-color: rgb(173, 216, 230); justify-content: flex-start; visibility: visible;">
+        <ui:VisualElement name="TitleElement" style="flex-grow: 0; height: 40%; justify-content: center; align-items: center;">
+            <ui:Label text="CivicEngine" name="Label" style="-unity-text-align: upper-center; font-size: 18px; -unity-font-style: bold;"/>
+            <ui:Label text="City Economy Simulator"/>
+        </ui:VisualElement>
+        <ui:TextField label="Display Name" placeholder-text="Name" name="DisplayNameField" style="margin-left: 25%; margin-right: 25%;"/>
+        <ui:TextField label="Session Name" placeholder-text="ID" name="SessionNameField" style="width: auto; padding-left: 0%; margin-left: 25%; margin-right: 25%;"/>
+        <ui:Button text="Create or Join Game" triple-click-selects-line="false" double-click-selects-word="false" name="JoinButton" style="width: 20%; align-self: center; align-content: auto; justify-content: flex-start;"/>
+        <ui:Button text="How to Play" triple-click-selects-line="false" double-click-selects-word="false" style="width: 20%; align-self: center; align-content: auto; justify-content: flex-start;"/>
+    </ui:VisualElement>
+</ui:UXML>
