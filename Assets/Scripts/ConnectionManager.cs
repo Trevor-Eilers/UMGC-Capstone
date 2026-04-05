@@ -56,7 +56,7 @@ public class ConnectionManager : MonoBehaviour
     {
         if (_networkManager.LocalClientId == clientId)
         {
-            Debug.Log($"Client-{clientId} is connected and can spawn {nameof(NetworkObject)}s.");
+            Debug.Log($"Client-{clientId} is connected.");
         }
     }
 
@@ -65,6 +65,24 @@ public class ConnectionManager : MonoBehaviour
        _session?.LeaveAsync();
    }
 
+   public async Task<bool> Authenticate(string profileName)
+   {
+       try
+       {
+           ProfileName = profileName;
+           AuthenticationService.Instance.SwitchProfile(profileName);
+           await AuthenticationService.Instance.SignInAnonymouslyAsync();
+           Debug.Log("Authentication Succeeded");
+           return true;
+       }
+       catch (Exception e)
+       {
+           Debug.Log("Authentication failed");
+           Debug.LogException(e);
+           return false;
+       }
+   }
+   
    public async Task CreateOrJoinSessionAsync(string profileName, string sessionName)
    {
        _state = ConnectionState.Connecting;

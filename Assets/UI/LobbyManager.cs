@@ -1,107 +1,337 @@
+using System;
 using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Netcode;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UI;
+using Unity.Services.Authentication;
+using Unity.Services.Lobbies;
+using Unity.Services.Lobbies.Models;
 
-public class LobbyManager : NetworkBehaviour
+public class LobbyManager : MonoBehaviour
 {
-    private NetworkList<FixedString64Bytes> _playerNames;
-
     [SerializeField] private string gameSceneName = "MainScene";
-    [SerializeField] private LobbyUI lobbyUI;
+    public LobbyUI lobbyUI;
+    private const int MaxPlayers = 4;
+
+    private Lobby _lobby;
+    private bool _isHost;
+    private bool _gameStarting;
+
+    private float _heartbeatTimer;
+    private float _pollTimer;
+
+    private const float HeartbeatInterval = 15f;
+    private const float PollInterval = 2f;
 
     private void Awake()
     {
-        _playerNames = new NetworkList<FixedString64Bytes>(
-            default,
-            NetworkVariableReadPermission.Everyone,
-            NetworkVariableWritePermission.Owner
-        );
-        
         lobbyUI = GetComponent<LobbyUI>();
+        lobbyUI.SetVisible(false);
     }
 
-    public override void OnNetworkSpawn()
+    private void Update()
     {
-        _playerNames.OnListChanged += OnPlayerListChanged;
-        lobbyUI.SetStartButtonVisible(IsSessionOwner);
-        lobbyUI.OnStartClicked += OnStartButtonClicked;
-        
-        NetworkManager.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+        if (_lobby == null || _gameStarting) return;
 
-        lobbyUI.SetConnected(false);
-        
-        // Submit our own name now that the network is ready
-        var connectionManager = FindFirstObjectByType<ConnectionManager>();
-        string profileName = connectionManager != null
-            ? connectionManager.ProfileName
-            : $"Player {NetworkManager.LocalClientId}";
-        SubmitNameRpc(profileName);
+        if (_isHost)
+        {
+            _heartbeatTimer -= Time.deltaTime;
+            if (_heartbeatTimer <= 0f)
+            {
+                _heartbeatTimer = HeartbeatInterval;
+                SendHeartbeatAsync();
+            }
+        }
 
-        RefreshUI();
+        _pollTimer -= Time.deltaTime;
+        if (_pollTimer <= 0f)
+        {
+            _pollTimer = PollInterval;
+            PollLobbyAsync();
+        }
     }
 
-    public override void OnNetworkDespawn()
+    public async Task CreateLobby(string lobbyName, string playerName)
     {
-        _playerNames.OnListChanged -= OnPlayerListChanged;
-        lobbyUI.OnStartClicked -= OnStartButtonClicked;
-        NetworkManager.OnClientConnectedCallback -= OnClientConnected;
-        NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
+        try
+        {
+            lobbyUI.SetVisible(true);
+            _isHost = true;
+
+            var options = new CreateLobbyOptions
+            {
+                IsPrivate = false,
+                Player = MakePlayer(playerName)
+            };
+
+            _lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, MaxPlayers, options);
+            Debug.Log($"Lobby created: {_lobby.Id} - {_lobby.Name}");
+
+            lobbyUI.SetStartButtonVisible(true);
+            lobbyUI.SetLeaveButtonVisible(true);
+            lobbyUI.OnStartClicked += OnStartButtonClicked;
+            lobbyUI.OnLeaveClicked += OnLeaveButtonClicked;
+            lobbyUI.SetConnected(true);
+            RefreshUI();
+        }
+        catch (Exception e)
+        {
+            lobbyUI.SetVisible(false);
+            lobbyUI.SetStartButtonVisible(false);
+            lobbyUI.SetLeaveButtonVisible(false);
+            lobbyUI.SetConnected(false);
+            Debug.LogException(e);
+        }
     }
 
-    private void OnClientConnected(ulong clientId)
+    public async Task JoinLobby(string lobbyId, string playerName)
     {
-        // Each client submits their own name when they connect;
-        // nothing needed here from the session owner's side
+        try
+        {
+            lobbyUI.SetVisible(true);
+            _isHost = false;
+
+            var options = new JoinLobbyByIdOptions
+            {
+                Player = MakePlayer(playerName)
+            };
+
+            _lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, options);
+            Debug.Log($"Joined lobby: {_lobby.Id} - {_lobby.Name}");
+
+            lobbyUI.SetStartButtonVisible(false);
+            lobbyUI.SetLeaveButtonVisible(true);
+            lobbyUI.OnLeaveClicked += OnLeaveButtonClicked;
+            lobbyUI.SetConnected(true);
+            RefreshUI();
+        }
+        catch (Exception e)
+        {
+            lobbyUI.SetVisible(false);
+            lobbyUI.SetLeaveButtonVisible(false);
+            lobbyUI.SetConnected(false);
+            Debug.LogException(e);
+        }
     }
 
-    private void OnClientDisconnected(ulong clientId)
+    public async Task JoinLobbyByName(string lobbyName, string playerName)
     {
-        if (!IsSessionOwner) return;
-        // Find and remove by a placeholder — see note below
-        RemovePlayerRpc(clientId);
+        try
+        {
+            lobbyUI.SetVisible(true);
+            var query = await LobbyService.Instance.QueryLobbiesAsync(new QueryLobbiesOptions
+            {
+                Filters = new List<QueryFilter>
+                {
+                    new(QueryFilter.FieldOptions.Name, lobbyName, QueryFilter.OpOptions.EQ)
+                }
+            });
+
+            if (query.Results.Count == 0)
+            {
+                Debug.LogWarning($"No lobby found with name: {lobbyName}");
+                lobbyUI.SetVisible(false);
+                return;
+            }
+
+            await JoinLobby(query.Results[0].Id, playerName);
+        }
+        catch (Exception e)
+        {
+            lobbyUI.SetVisible(false);
+            Debug.LogException(e);
+        }
+    }
+    
+    private Player MakePlayer(string displayName)
+    {
+        return new Player(
+            id: AuthenticationService.Instance.PlayerId,
+            data: new Dictionary<string, PlayerDataObject>
+            {
+                {
+                    "DisplayName",
+                    new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, displayName)
+                }
+            }
+        );
     }
 
-    // Every client calls this on themselves — session owner appends to the list
-    [Rpc(SendTo.Authority)]
-    private void SubmitNameRpc(string displayName)
+    private async void SendHeartbeatAsync()
     {
-        _playerNames.Add(new FixedString64Bytes(displayName));
+        try
+        {
+            await LobbyService.Instance.SendHeartbeatPingAsync(_lobby.Id);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogWarning($"Heartbeat failed: {e.Message}");
+        }
     }
 
-    [Rpc(SendTo.Authority)]
-    private void RemovePlayerRpc(ulong clientId)
+    private async void PollLobbyAsync()
     {
-        // Without a clientId→index map this is still a stub.
-        // See note below about tracking identity.
-    }
+        try
+        {
+            _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
+            RefreshUI();
+            
+            bool wasHost = _isHost;
+            _isHost = _lobby.HostId == AuthenticationService.Instance.PlayerId;
 
-    private void OnPlayerListChanged(NetworkListEvent<FixedString64Bytes> changeEvent)
-    {
-        lobbyUI.SetConnected(_playerNames.Count > 0);
-        RefreshUI();
+            if (_isHost && !wasHost)
+            {
+                Debug.Log($"You are now the host.");
+                lobbyUI.SetStartButtonVisible(true);
+                lobbyUI.OnStartClicked += OnStartButtonClicked;
+            }
+
+            if (!_isHost) CheckForGameStart();
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogWarning($"Poll failed: {e.Message}");
+        }
     }
 
     private void RefreshUI()
     {
         var names = new List<string>();
-        foreach (var name in _playerNames)
-            names.Add(name.ToString());
+        foreach (var player in _lobby.Players)
+        {
+            if (player.Data != null &&
+                player.Data.TryGetValue("DisplayName", out var nameData))
+                names.Add(nameData.Value);
+            else
+                names.Add(player.Id);
+        }
         lobbyUI.SetPlayerList(names);
     }
 
-    private void OnStartButtonClicked()
+    private async void OnStartButtonClicked()
     {
-        if (!IsSessionOwner) return;
-        StartGameRpc();
+        if (!_isHost || _gameStarting) return;
+        _gameStarting = true;
+
+        try
+        {
+            var update = new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    {
+                        "GameStarted",
+                        new DataObject(DataObject.VisibilityOptions.Member, "true")
+                    }
+                }
+            };
+            _lobby = await LobbyService.Instance.UpdateLobbyAsync(_lobby.Id, update);
+            StartGame();
+        }
+        catch (Exception e)
+        {
+            _gameStarting = false;
+            Debug.LogException(e);
+        }
     }
 
-    [Rpc(SendTo.Everyone)]
-    private void StartGameRpc()
+    private async void OnLeaveButtonClicked()
     {
-        NetworkManager.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+        await LeaveLobby();
+    }
+    
+    public async Task LeaveLobby()
+    {
+        if (_lobby == null) return;
+
+        try
+        {
+            if (_isHost)
+            {
+                // Get current player list
+                _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
+
+                if (_lobby.Players.Count > 1)
+                {
+                    // Find the first player who isn't us
+                    string newHostId = null;
+                    foreach (var player in _lobby.Players)
+                    {
+                        if (player.Id != AuthenticationService.Instance.PlayerId)
+                        {
+                            newHostId = player.Id;
+                            break;
+                        }
+                    }
+
+                    // Transfer ownership, then remove ourselves
+                    await LobbyService.Instance.UpdateLobbyAsync(_lobby.Id, new UpdateLobbyOptions
+                    {
+                        HostId = newHostId
+                    });
+
+                    await LobbyService.Instance.RemovePlayerAsync(
+                        _lobby.Id, AuthenticationService.Instance.PlayerId);
+                }
+                else
+                {
+                    // If we are the last player, delete the lobby
+                    await LobbyService.Instance.DeleteLobbyAsync(_lobby.Id);
+                }
+            }
+            else
+            {
+                await LobbyService.Instance.RemovePlayerAsync(
+                    _lobby.Id, AuthenticationService.Instance.PlayerId);
+            }
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogWarning($"Leave lobby failed: {e.Message}");
+        }
+        finally
+        {
+            _lobby = null;
+            _isHost = false;
+            _gameStarting = false;
+
+            lobbyUI.SetVisible(false);
+            lobbyUI.SetConnected(false);
+            lobbyUI.SetStartButtonVisible(false);
+            lobbyUI.SetLeaveButtonVisible(false);
+            lobbyUI.SetPlayerList(new List<string>());
+        }
+    }
+
+    private void CheckForGameStart()
+    {
+        if (_lobby.Data != null &&
+            _lobby.Data.TryGetValue("GameStarted", out var started) &&
+            started.Value == "true")
+        {
+            _gameStarting = true;
+            StartGame();
+        }
+    }
+
+    private void StartGame()
+    {
+        // TODO: establish the Netcode session here or after scene load
+        SceneManager.LoadScene(gameSceneName);
+    }
+
+    private async void OnDestroy()
+    {
+        try
+        {
+            lobbyUI.OnStartClicked -= OnStartButtonClicked;
+            lobbyUI.OnLeaveClicked -= OnLeaveButtonClicked;
+            await LeaveLobby();
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
     }
 }

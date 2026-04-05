@@ -1,14 +1,12 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement name="Root" style="flex-grow: 1; align-items: center; justify-content: center; background-color: rgb(173, 216, 230)">
-        <ui:Label text="Lobby" style="font-size: 32px; margin-bottom: 24px;" />
-
-        <ui:Label text="Connected Players" style="font-size: 18px; margin-bottom: 8px;" />
-        <ui:ListView name="PlayerList"
-                     style="width: 300px; min-height: 160px; background-color: rgba(0,0,0,0.3); margin-bottom: 24px;" />
-
-        <ui:Button name="StartButton" text="Start Game"
-                   style="width: 200px; height: 48px; font-size: 18px; display: none;" />
-        <ui:Label name="WaitingLabel" text="Waiting for host to start..."
-                  style="font-size: 16px;" />
+    <ui:VisualElement name="Root" style="flex-grow: 1; align-items: center; justify-content: center; background-color: rgb(173, 216, 230); display: flex;">
+        <ui:Label text="Lobby" style="font-size: 32px; margin-bottom: 24px;"/>
+        <ui:Label text="Connected Players" style="font-size: 18px; margin-bottom: 8px;"/>
+        <ui:ListView name="PlayerList" style="width: 300px; min-height: 160px; background-color: rgba(0, 0, 0, 0.3); margin-bottom: 24px;"/>
+        <ui:VisualElement style="flex-grow: 0; flex-direction: row; align-content: center; justify-content: center;">
+            <ui:Button name="LeaveButton" text="Leave Lobby" style="width: 200px; height: 48px; font-size: 18px; display: none;"/>
+            <ui:Button name="StartButton" text="Start Game" style="width: 200px; height: 48px; font-size: 18px; display: none;"/>
+        </ui:VisualElement>
+        <ui:Label name="WaitingLabel" text="Waiting for host to start..." style="font-size: 16px;"/>
     </ui:VisualElement>
 </ui:UXML>
