@@ -12,6 +12,7 @@ public class BuildingGenerator : MonoBehaviour
     private const int BUILDINGS_PER_TICK = 10;
 
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly float[] ValidRotations = { 0f, 90f, 180f, 270f };
 
     private struct BuildingSlot
     {
@@ -26,6 +27,8 @@ public class BuildingGenerator : MonoBehaviour
     private Vector3 _mapCenter;
     private Bounds _mapBounds;
     private MaterialPropertyBlock _propBlock;
+    private List<Renderer>[] _districtRenderers;
+    private float[] _lastHealth;
 
     void Awake()
     {
@@ -33,8 +36,13 @@ public class BuildingGenerator : MonoBehaviour
         _districtSlots = new List<BuildingSlot>[4];
         _currentBuildingCount = new int[4];
 
+        _districtRenderers = new List<Renderer>[4];
+        _lastHealth = new float[] { -1f, -1f, -1f, -1f };
         for (int i = 0; i < 4; i++)
+        {
             _districtSlots[i] = new List<BuildingSlot>();
+            _districtRenderers[i] = new List<Renderer>();
+        }
 
         ComputeMapCenter();
         CreateGroundPlane();
@@ -104,45 +112,79 @@ public class BuildingGenerator : MonoBehaviour
         }
     }
 
-    private List<Vector3> _roadPositions = new();
+    private List<Bounds> _roadBounds = new();
+    private Bounds _cityGridBounds;
 
     private void CollectSlots()
     {
-        // First collect road positions for proximity filtering
-        CollectRoadPositions(transform);
-
-        // Collect Forest Tiles as available building slots
-        CollectForestTiles(transform);
-
-        // Collect existing pre-placed buildings as occupied slots
+        // First collect existing buildings to determine valid city grid area
         CollectExistingBuildings(transform);
+
+        // Compute city grid bounds from existing building positions
+        ComputeCityGridBounds();
+
+        // Collect road bounds for proximity filtering
+        CollectRoadBounds(transform);
+        Debug.Log($"BuildingGenerator: collected {_roadBounds.Count} road bounds, grid={_cityGridBounds}");
+
+        // Collect Forest Tiles as available building slots (filtered by grid + road proximity)
+        CollectForestTiles(transform);
     }
 
-    private void CollectRoadPositions(Transform parent)
+    private void ComputeCityGridBounds()
+    {
+        // Use existing hand-placed building positions to define valid city area
+        bool first = true;
+        for (int d = 0; d < 4; d++)
+        {
+            foreach (var slot in _districtSlots[d])
+            {
+                if (slot.hasBuilding)
+                {
+                    if (first)
+                    {
+                        _cityGridBounds = new Bounds(slot.position, Vector3.zero);
+                        first = false;
+                    }
+                    else
+                    {
+                        _cityGridBounds.Encapsulate(slot.position);
+                    }
+                }
+            }
+        }
+        // Expand slightly to include nearby Forest Tiles
+        _cityGridBounds.Expand(20f);
+    }
+
+    private void CollectRoadBounds(Transform parent)
     {
         for (int i = 0; i < parent.childCount; i++)
         {
             var child = parent.GetChild(i);
             string name = child.gameObject.name;
+
+            // Collect renderer bounds from road meshes
             if (name.StartsWith("MobileRoad") || name.Contains("Road"))
             {
-                _roadPositions.Add(child.position);
+                var renderers = child.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in renderers)
+                    _roadBounds.Add(r.bounds);
             }
+
             // Recurse into containers
-            if (name.StartsWith("District") || name.StartsWith("road stretch"))
-                CollectRoadPositions(child);
+            if (name.StartsWith("District") || name.StartsWith("road stretch") || name.StartsWith("road"))
+                CollectRoadBounds(child);
         }
     }
 
     private bool IsTooCloseToRoad(Vector3 pos)
     {
-        const float MIN_ROAD_DISTANCE = 3f;
-        foreach (var roadPos in _roadPositions)
+        const float MIN_ROAD_DISTANCE = 5f;
+        float sqrThreshold = MIN_ROAD_DISTANCE * MIN_ROAD_DISTANCE;
+        foreach (var roadBound in _roadBounds)
         {
-            float dist = Vector3.Distance(
-                new Vector3(pos.x, 0, pos.z),
-                new Vector3(roadPos.x, 0, roadPos.z));
-            if (dist < MIN_ROAD_DISTANCE)
+            if (roadBound.SqrDistance(pos) < sqrThreshold)
                 return true;
         }
         return false;
@@ -157,6 +199,9 @@ public class BuildingGenerator : MonoBehaviour
 
             if (name.StartsWith("Forest Tile"))
             {
+                // Skip tiles outside the city grid
+                if (!_cityGridBounds.Contains(child.position)) continue;
+
                 // Skip tiles that overlap with roads
                 if (IsTooCloseToRoad(child.position)) continue;
 
@@ -305,10 +350,13 @@ public class BuildingGenerator : MonoBehaviour
                 GameObject prefab = PickPrefab(gdp);
                 if (prefab == null) return;
 
-                slot.building = Instantiate(prefab, slot.position, Quaternion.identity, transform);
+                Quaternion rot = Quaternion.Euler(0, ValidRotations[Random.Range(0, ValidRotations.Length)], 0);
+                slot.building = Instantiate(prefab, slot.position, rot, transform);
                 slot.hasBuilding = true;
                 slots[i] = slot;
                 _currentBuildingCount[districtIndex]++;
+                _districtRenderers[districtIndex].AddRange(slot.building.GetComponentsInChildren<Renderer>());
+                _lastHealth[districtIndex] = -1f; // force tint update
                 return;
             }
         }
@@ -323,12 +371,18 @@ public class BuildingGenerator : MonoBehaviour
             var slot = slots[i];
             if (slot.hasBuilding && slot.forestTile != null && slot.building != null)
             {
+                // Remove cached renderers before destroying
+                var renderers = slot.building.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers)
+                    _districtRenderers[districtIndex].Remove(r);
+
                 Destroy(slot.building);
                 slot.building = null;
                 slot.hasBuilding = false;
                 slot.forestTile.SetActive(true);
                 slots[i] = slot;
                 _currentBuildingCount[districtIndex]--;
+                _lastHealth[districtIndex] = -1f; // force tint update
                 return;
             }
         }
@@ -371,16 +425,22 @@ public class BuildingGenerator : MonoBehaviour
     private void ApplyTinting(int districtIndex, DistrictState district)
     {
         float health = (district.happiness + district.sustainability + district.infrastructure) / 3f;
+        float roundedHealth = Mathf.Round(health);
+
+        // Skip if health hasn't changed materially
+        if (Mathf.Approximately(roundedHealth, _lastHealth[districtIndex])) return;
+        _lastHealth[districtIndex] = roundedHealth;
+
         Color tint = ComputeTintColor(health);
         _propBlock.SetColor(BaseColorId, tint);
 
-        foreach (var slot in _districtSlots[districtIndex])
+        var renderers = _districtRenderers[districtIndex];
+        for (int i = renderers.Count - 1; i >= 0; i--)
         {
-            if (slot.hasBuilding && slot.building != null)
-            {
-                foreach (var r in slot.building.GetComponentsInChildren<Renderer>())
-                    r.SetPropertyBlock(_propBlock);
-            }
+            if (renderers[i] == null)
+                renderers.RemoveAt(i); // clean up destroyed renderers
+            else
+                renderers[i].SetPropertyBlock(_propBlock);
         }
     }
 

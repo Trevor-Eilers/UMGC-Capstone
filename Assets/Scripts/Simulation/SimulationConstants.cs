@@ -7,7 +7,7 @@ public static class SimulationConstants
     public static float K_REV = 1.0f;
     public static float K_SPEND = 3.0f;
     public static float K_CITY_WEIGHT = 1.0f;
-    public static float K_DEBT_ACCRUAL = 0.08f;
+    public static float K_DEBT_ACCRUAL = 0.02f;
     public static float K_DEBT_RECOVERY = K_DEBT_ACCRUAL / 3.0f;
     public static float K_RESERVE_DECAY = 0.005f;
     public static float DEBT_CAP = 60f;
@@ -53,7 +53,7 @@ public static class SimulationConstants
 
     // ── Spillover: Gentrification ──
 
-    public static float GENTRIFY_THRESHOLD = 8f;
+    public static float GENTRIFY_THRESHOLD = 12f;
     public static float K_GENTRIFY_HAPPY = 0.3f;
     public static float K_GENTRIFY_POP = 0.1f;
     public static float K_GENTRIFY_GDP_GAIN = 0.1f;
@@ -82,8 +82,8 @@ public static class SimulationConstants
     // ── City Metrics Constants ──
 
     public static float K_VARIANCE_PENALTY = 0.5f;
-    public static float K_POP_INFLOW_HIGH = 0.5f;
-    public static float K_POP_INFLOW_NORMAL = 0.2f;
+    public static float K_POP_INFLOW_HIGH = 1.5f;
+    public static float K_POP_INFLOW_NORMAL = 0.5f;
     public static float K_POP_OUTFLOW = 0.3f;
     public static float K_SHARED_INFRA_GROWTH = 0.005f;
     public static float K_SHARED_INFRA_DECAY = 0.005f;
@@ -94,7 +94,7 @@ public static class SimulationConstants
     public static float GRANT_BASE_TRANSIT = 50.0f;
     public static float GRANT_BASE_LIFE = 50.0f;
     public static float GRANT_BASE_DEV = 50.0f;
-    public static float K_STABILIZATION_RATE = 0.5f;
+    public static float K_STABILIZATION_RATE = 1.5f;
 
     // ── Scoring Constants ──
 
