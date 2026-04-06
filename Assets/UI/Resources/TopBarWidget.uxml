@@ -1,0 +1,77 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="GameHUD.uss"/>
+    <ui:VisualElement name="TopBar" style="height: 40px; background-color: rgba(13, 13, 20, 0.92); flex-direction: row; align-items: center; padding-left: 10px; padding-right: 8px; flex-shrink: 0; justify-content: space-between;">
+
+        <!-- Title -->
+        <ui:Label text="CIVIC ENGINE" style="color: rgb(102, 204, 102); font-size: 11px; -unity-font-style: bold; margin-right: 12px;"/>
+
+        <!-- City Rep -->
+        <ui:VisualElement style="margin-right: 12px; flex-direction: row; align-items: center;">
+            <ui:Label text="Rep" style="color: rgb(115,115,115); font-size: 8px; margin-right: 4px;"/>
+            <ui:Label text="--" name="CityRepValue" style="color: rgb(232, 217, 64); font-size: 10px; -unity-font-style: bold; margin-right: 4px;"/>
+            <ui:VisualElement style="width: 40px;">
+                <ui:VisualElement class="mini-bar-track" style="width: 40px;">
+                    <ui:VisualElement name="CityRepBar" class="mini-bar-fill mini-bar-fill-rep" style="width: 50%;"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Shared Infra -->
+        <ui:VisualElement style="margin-right: 12px; flex-direction: row; align-items: center;">
+            <ui:Label text="Infra" style="color: rgb(115,115,115); font-size: 8px; margin-right: 4px;"/>
+            <ui:Label text="--" name="SharedInfraValue" style="color: rgb(97, 128, 224); font-size: 10px; -unity-font-style: bold; margin-right: 4px;"/>
+            <ui:VisualElement style="width: 40px;">
+                <ui:VisualElement class="mini-bar-track" style="width: 40px;">
+                    <ui:VisualElement name="SharedInfraBar" class="mini-bar-fill mini-bar-fill-shared" style="width: 50%;"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Metro Inflow -->
+        <ui:VisualElement style="margin-right: 12px; flex-direction: row; align-items: center;">
+            <ui:Label text="Metro" style="color: rgb(115,115,115); font-size: 8px; margin-right: 4px;"/>
+            <ui:Label text="--" name="MetroInflowValue" style="color: rgb(96, 200, 96); font-size: 10px; -unity-font-style: bold;"/>
+        </ui:VisualElement>
+
+        <!-- Separator -->
+        <ui:VisualElement style="width: 1px; height: 24px; background-color: rgb(64,64,77); margin-right: 10px;"/>
+
+        <!-- Budget (moved from bottom bar) -->
+        <ui:VisualElement style="flex-direction: row; align-items: center; margin-right: 12px;">
+            <ui:VisualElement style="margin-right: 10px;">
+                <ui:Label text="Rev" style="color: rgb(115,115,115); font-size: 7px;"/>
+                <ui:Label text="--" name="RevenueValue" style="color: rgb(96,200,96); font-size: 10px; -unity-font-style: bold;"/>
+            </ui:VisualElement>
+            <ui:VisualElement style="margin-right: 10px;">
+                <ui:Label text="Spend" style="color: rgb(115,115,115); font-size: 7px;"/>
+                <ui:Label text="--" name="SpendingValue" style="color: rgb(232,128,64); font-size: 10px; -unity-font-style: bold;"/>
+            </ui:VisualElement>
+            <ui:VisualElement style="margin-right: 10px;">
+                <ui:Label text="Surplus" style="color: rgb(115,115,115); font-size: 7px;"/>
+                <ui:Label text="--" name="SurplusValue" style="color: rgb(96,200,96); font-size: 10px; -unity-font-style: bold;"/>
+            </ui:VisualElement>
+            <ui:VisualElement>
+                <ui:Label text="Eff" style="color: rgb(115,115,115); font-size: 7px;"/>
+                <ui:Label text="100%" name="EfficiencyValue" style="color: rgb(96,200,96); font-size: 10px; -unity-font-style: bold;"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Label text="" name="ReserveValue" style="display: none;"/>
+
+        <!-- Separator -->
+        <ui:VisualElement style="width: 1px; height: 24px; background-color: rgb(64,64,77); margin-right: 10px;"/>
+
+        <!-- Month/Tick -->
+        <ui:VisualElement style="margin-right: 12px;">
+            <ui:Label text="Month 0 / 48" name="MonthLabel" style="color: rgb(230,230,230); font-size: 10px; -unity-font-style: bold;"/>
+            <ui:Label text="Tick 0 / 576" name="TickLabel" style="color: rgb(115,115,115); font-size: 8px;"/>
+        </ui:VisualElement>
+
+        <!-- Speed -->
+        <ui:VisualElement style="flex-direction: row; align-items: center;">
+            <ui:Button text="1x" name="Speed1Btn" class="speed-btn speed-btn-active" style="width: 26px; height: 18px; font-size: 9px;"/>
+            <ui:Button text="2x" name="Speed2Btn" class="speed-btn" style="width: 26px; height: 18px; font-size: 9px;"/>
+            <ui:Button text="3x" name="Speed3Btn" class="speed-btn" style="width: 26px; height: 18px; font-size: 9px;"/>
+            <ui:Button text="||" name="PauseBtn" class="speed-btn" style="width: 26px; height: 18px; font-size: 9px;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
