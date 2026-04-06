@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -5,9 +6,12 @@ namespace UI
 {
     public class PolicySliders : MonoBehaviour
     {
+        public event Action<PolicyValues> OnPolicyChanged;
+
         private UIDocument _doc;
         private VisualElement _root;
-        
+        private bool _dirty;
+
         public float taxRate = SimulationConstants.TAX_RATE_DEFAULT;
         public float education = SimulationConstants.SLIDERS_DEFAULT;
         public float infrastructure = SimulationConstants.SLIDERS_DEFAULT;
@@ -27,7 +31,7 @@ namespace UI
             _root.Q<Slider>("EnvSlider").RegisterValueChangedCallback(OnSliderValueChanged);
             _root.Q<Slider>("CitySlider").RegisterValueChangedCallback(OnSliderValueChanged);
         }
-        
+
         private void OnSliderValueChanged(ChangeEvent<float> evt)
         {
             string slider = (evt.target as VisualElement)?.name;
@@ -42,6 +46,24 @@ namespace UI
                 case "CitySlider": cityContribution = evt.newValue; break;
                 default: Debug.LogWarning($"Unknown element: {slider}"); break;
             }
+
+            _dirty = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (!_dirty) return;
+            _dirty = false;
+
+            OnPolicyChanged?.Invoke(new PolicyValues
+            {
+                taxRate = taxRate,
+                education = education,
+                infrastructure = infrastructure,
+                housing = housing,
+                environment = environment,
+                cityContribution = cityContribution
+            });
         }
     }
 }

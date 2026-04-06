@@ -9,17 +9,21 @@ using UnityEngine;
 public class ConnectionManager : MonoBehaviour
 {
    public string ProfileName { get; private set; }
-    
+
    public string SessionName { get; private set; }
-   
+
+   public int PlayerCount { get; set; }
+
+   public bool IsConnected => _state == ConnectionState.Connected;
+
    private readonly int _maxPlayers = 4;
-   
+
    private ConnectionState _state = ConnectionState.Disconnected;
-   
+
    private ISession _session;
-   
+
    private NetworkManager _networkManager;
-   
+
    private enum ConnectionState
    {
        Disconnected,
@@ -86,22 +90,26 @@ public class ConnectionManager : MonoBehaviour
    public async Task CreateOrJoinSessionAsync(string profileName, string sessionName)
    {
        _state = ConnectionState.Connecting;
-   
+
        try
        {
            ProfileName = profileName;
            SessionName = sessionName;
-           
-           AuthenticationService.Instance.SwitchProfile(profileName);
-           await AuthenticationService.Instance.SignInAnonymouslyAsync();
-   
-            var options = new SessionOptions() {
-                Name = sessionName,
-                MaxPlayers = _maxPlayers
-            }.WithDistributedAuthorityNetwork();
-   
-            _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
-   
+
+           if (!AuthenticationService.Instance.IsSignedIn)
+           {
+               AuthenticationService.Instance.SwitchProfile(profileName);
+               await AuthenticationService.Instance.SignInAnonymouslyAsync();
+           }
+
+           var options = new SessionOptions()
+           {
+               Name = sessionName,
+               MaxPlayers = _maxPlayers
+           }.WithDistributedAuthorityNetwork();
+
+           _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
+
            _state = ConnectionState.Connected;
        }
        catch (Exception e)

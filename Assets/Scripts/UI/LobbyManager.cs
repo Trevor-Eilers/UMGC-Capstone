@@ -11,6 +11,7 @@ using Unity.Services.Lobbies.Models;
 public class LobbyManager : MonoBehaviour
 {
     [SerializeField] private string gameSceneName = "MainScene";
+    [SerializeField] private ConnectionManager connectionManager;
     public LobbyUI lobbyUI;
     private const int MaxPlayers = 4;
 
@@ -315,9 +316,23 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    private void StartGame()
+    private async void StartGame()
     {
-        // TODO: establish the Netcode session here or after scene load
+        if (connectionManager == null)
+            connectionManager = FindAnyObjectByType<ConnectionManager>();
+
+        connectionManager.PlayerCount = _lobby.Players.Count;
+
+        await connectionManager.CreateOrJoinSessionAsync(
+            connectionManager.ProfileName, _lobby.Id);
+
+        if (!connectionManager.IsConnected)
+        {
+            Debug.LogError("Failed to establish Netcode session.");
+            _gameStarting = false;
+            return;
+        }
+
         SceneManager.LoadScene(gameSceneName);
     }
 

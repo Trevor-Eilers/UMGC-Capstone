@@ -3,11 +3,17 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 using UI;
+using Unity.Netcode;
 
-public class GameManager : MonoBehaviour
+public class GameManager : NetworkBehaviour
 {
+    // ── Networked state ──
+    private NetworkVariable<GameState> _netGameState;
+    private NetworkList<ulong> _playerSlots;
+
+    // ── Local state ──
     private GameState _gameState;
-    private PolicyValues _policyValues;
+    private int _localDistrictIndex = -1;
     private float _tickTimer;
     private bool _gameOver;
 
@@ -84,22 +90,190 @@ public class GameManager : MonoBehaviour
     // Map visual controller
     private BuildingGenerator _mapVisuals;
 
-    void Start()
-    {
-        _gameState = GameState.NewGame(4);
-        _policyValues = FindAnyObjectByType<PolicyValues>();
-        _mapVisuals = FindAnyObjectByType<BuildingGenerator>();
+    // PolicySliders reference
+    private PolicySliders _policySliders;
 
-        var doc = _policyValues.GetComponent<UIDocument>();
-        _root = doc.rootVisualElement;
+    private void Awake()
+    {
+        _netGameState = new NetworkVariable<GameState>(
+            writePerm: NetworkVariableWritePermission.Owner);
+        _playerSlots = new NetworkList<ulong>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        _root = GetComponent<UIDocument>().rootVisualElement;
+        _mapVisuals = FindAnyObjectByType<BuildingGenerator>();
+        _policySliders = FindAnyObjectByType<PolicySliders>();
 
         CacheUIReferences();
-        RegisterSpeedButtons();
         RegisterDetailsButton();
         RegisterSliderValueLabels();
 
+        _netGameState.OnValueChanged += OnGameStateChanged;
+        _playerSlots.OnListChanged += OnPlayerSlotsChanged;
+
+        if (NetworkManager.Singleton.LocalClient.IsSessionOwner)
+        {
+            var connMgr = FindAnyObjectByType<ConnectionManager>();
+            int numPlayers = connMgr != null ? Mathf.Clamp(connMgr.PlayerCount, 2, 4) : 4;
+
+            _gameState = GameState.NewGame(numPlayers);
+            _netGameState.Value = _gameState;
+
+            _playerSlots.Add(NetworkManager.Singleton.LocalClientId);
+
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+
+            RegisterSpeedButtons();
+        }
+        else
+        {
+            _gameState = _netGameState.Value;
+            HideSpeedButtons();
+        }
+
+        FindLocalDistrictIndex();
+
+        if (_policySliders != null)
+            _policySliders.OnPolicyChanged += OnLocalPolicyChanged;
+
         UpdateAllUI();
     }
+
+    public override void OnNetworkDespawn()
+    {
+        _netGameState.OnValueChanged -= OnGameStateChanged;
+        _playerSlots.OnListChanged -= OnPlayerSlotsChanged;
+
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+
+        if (_policySliders != null)
+            _policySliders.OnPolicyChanged -= OnLocalPolicyChanged;
+
+        base.OnNetworkDespawn();
+    }
+
+    // ── Player Assignment ──
+
+    private void OnClientConnected(ulong clientId)
+    {
+        if (!NetworkManager.Singleton.LocalClient.IsSessionOwner) return;
+        if (_playerSlots.Count >= 4) return;
+
+        _playerSlots.Add(clientId);
+    }
+
+    private void OnPlayerSlotsChanged(NetworkListEvent<ulong> changeEvent)
+    {
+        FindLocalDistrictIndex();
+    }
+
+    private void FindLocalDistrictIndex()
+    {
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        for (int i = 0; i < _playerSlots.Count; i++)
+        {
+            if (_playerSlots[i] == localId)
+            {
+                _localDistrictIndex = i;
+                return;
+            }
+        }
+    }
+
+    // ── Policy Submission ──
+
+    private void OnLocalPolicyChanged(PolicyValues values)
+    {
+        if (_localDistrictIndex < 0) return;
+
+        if (NetworkManager.Singleton.LocalClient.IsSessionOwner)
+        {
+            _gameState.districts[_localDistrictIndex].values = values;
+        }
+        else
+        {
+            SubmitPolicyRpc(values, _localDistrictIndex);
+        }
+    }
+
+    [Rpc(SendTo.Authority)]
+    private void SubmitPolicyRpc(PolicyValues values, int districtIndex, RpcParams rpcParams = default)
+    {
+        if (districtIndex < 0 || districtIndex >= _gameState.numActivePlayers) return;
+
+        ulong senderId = rpcParams.Receive.SenderClientId;
+        if (districtIndex < _playerSlots.Count && _playerSlots[districtIndex] != senderId) return;
+
+        _gameState.districts[districtIndex].values = values;
+    }
+
+    // ── Tick Loop (host only) ──
+
+    void Update()
+    {
+        if (!IsSpawned) return;
+
+        var kb = Keyboard.current;
+        if (kb != null)
+        {
+            if (NetworkManager.Singleton.LocalClient.IsSessionOwner)
+            {
+                if (kb.digit1Key.wasPressedThisFrame) SetSpeed(1f);
+                if (kb.digit2Key.wasPressedThisFrame) SetSpeed(2f);
+                if (kb.digit3Key.wasPressedThisFrame) SetSpeed(3f);
+                if (kb.spaceKey.wasPressedThisFrame)
+                {
+                    _gameState.isPaused = !_gameState.isPaused;
+                    _netGameState.Value = _gameState;
+                    UpdateSpeedButtons();
+                }
+            }
+            if (kb.tabKey.wasPressedThisFrame) ToggleDetails();
+        }
+
+        if (!NetworkManager.Singleton.LocalClient.IsSessionOwner) return;
+        if (_gameState.isPaused || _gameOver) return;
+
+        float tickInterval = 3.125f / _gameState.gameSpeed;
+        _tickTimer += Time.deltaTime;
+
+        if (_tickTimer >= tickInterval)
+        {
+            _tickTimer -= tickInterval;
+            ResolveTick();
+        }
+    }
+
+    private void ResolveTick()
+    {
+        _gameState = TickProcessor.ResolveTick(_gameState);
+        _netGameState.Value = _gameState;
+        UpdateAllUI();
+
+        if (_gameState.currentTick >= 576)
+        {
+            _gameOver = true;
+            LogFinalScores();
+        }
+    }
+
+    // ── Client State Sync ──
+
+    private void OnGameStateChanged(GameState previousValue, GameState newValue)
+    {
+        _gameState = newValue;
+        UpdateAllUI();
+
+        if (_gameState.currentTick >= 576)
+            _gameOver = true;
+    }
+
+    // ── UI ──
 
     private void CacheUIReferences()
     {
@@ -170,8 +344,17 @@ public class GameManager : MonoBehaviour
         _speed3Btn?.RegisterCallback<ClickEvent>(_ => SetSpeed(3f));
         _pauseBtn?.RegisterCallback<ClickEvent>(_ => {
             _gameState.isPaused = !_gameState.isPaused;
+            _netGameState.Value = _gameState;
             UpdateSpeedButtons();
         });
+    }
+
+    private void HideSpeedButtons()
+    {
+        _speed1Btn?.SetEnabled(false);
+        _speed2Btn?.SetEnabled(false);
+        _speed3Btn?.SetEnabled(false);
+        _pauseBtn?.SetEnabled(false);
     }
 
     private void RegisterDetailsButton()
@@ -200,57 +383,10 @@ public class GameManager : MonoBehaviour
         slider.RegisterValueChangedCallback(evt => label.text = string.Format(format, evt.newValue));
     }
 
-    void Update()
-    {
-        var kb = Keyboard.current;
-        if (kb == null) return;
-
-        if (kb.digit1Key.wasPressedThisFrame) SetSpeed(1f);
-        if (kb.digit2Key.wasPressedThisFrame) SetSpeed(2f);
-        if (kb.digit3Key.wasPressedThisFrame) SetSpeed(3f);
-        if (kb.spaceKey.wasPressedThisFrame)
-        {
-            _gameState.isPaused = !_gameState.isPaused;
-            UpdateSpeedButtons();
-        }
-        if (kb.tabKey.wasPressedThisFrame) ToggleDetails();
-
-        if (_gameState.isPaused || _gameOver) return;
-
-        float tickInterval = 3.125f / _gameState.gameSpeed;
-        _tickTimer += Time.deltaTime;
-
-        if (_tickTimer >= tickInterval)
-        {
-            _tickTimer -= tickInterval;
-            ResolveTick();
-        }
-    }
-
-    private void ResolveTick()
-    {
-        _gameState.districts[0].sliders = new PolicySliders
-        {
-            taxRate = _policyValues.taxRate,
-            education = _policyValues.eduRate,
-            infrastructure = _policyValues.infraRate,
-            housing = _policyValues.housingRate,
-            environment = _policyValues.envRate,
-            cityContribution = _policyValues.cityRate
-        };
-
-        _gameState = TickProcessor.ResolveTick(_gameState);
-        UpdateAllUI();
-
-        if (_gameState.currentTick >= 576)
-        {
-            _gameOver = true;
-            LogFinalScores();
-        }
-    }
-
     private void UpdateAllUI()
     {
+        if (_localDistrictIndex < 0) return;
+
         UpdateIndicators();
         UpdateBudget();
         UpdateTopBar();
@@ -262,7 +398,7 @@ public class GameManager : MonoBehaviour
 
     private void UpdateIndicators()
     {
-        DistrictState d = _gameState.districts[0];
+        DistrictState d = _gameState.districts[_localDistrictIndex];
 
         SetIndicator(_gdpIndicator, d.gdp.ToString("F1"), d.gdp, 100f, ColGdp);
         SetIndicator(_happyIndicator, d.happiness.ToString("F1"), d.happiness, 100f, ColHappy);
@@ -281,7 +417,7 @@ public class GameManager : MonoBehaviour
 
     private void UpdateBudget()
     {
-        DistrictState d = _gameState.districts[0];
+        DistrictState d = _gameState.districts[_localDistrictIndex];
         float surplus = d.revenue - d.totalSpending;
 
         SetLabel(_revenueValue, $"${d.revenue:F0}");
@@ -310,11 +446,12 @@ public class GameManager : MonoBehaviour
         SetLabel(_metroInflowValue, $"{cm.metroPopulationPool:+0.0;-0.0}k");
         SetLabel(_monthLabel, $"Month {_gameState.currentMonth} / 48");
         SetLabel(_tickLabel, $"Tick {_gameState.currentTick} / 576");
+        UpdateSpeedButtons();
     }
 
     private void UpdateGrants()
     {
-        DistrictState d = _gameState.districts[0];
+        DistrictState d = _gameState.districts[_localDistrictIndex];
         SetGrantActive(_greenGrant, d.sustainability > 70f && d.grantsEligible);
         SetGrantActive(_transitGrant, d.population > 300f && d.grantsEligible);
         SetGrantActive(_lifeGrant, d.happiness > 75f && d.grantsEligible);
@@ -329,7 +466,7 @@ public class GameManager : MonoBehaviour
 
     private void UpdateDetails()
     {
-        DistrictState d = _gameState.districts[0];
+        DistrictState d = _gameState.districts[_localDistrictIndex];
 
         FinalScore score = ScoringSystem.ComputeFinalScore(
             d, _gameState.cityMetrics, _gameState.districts, _gameState.numActivePlayers);
@@ -385,14 +522,16 @@ public class GameManager : MonoBehaviour
 
     public void SetSpeed(float speed)
     {
+        if (!NetworkManager.Singleton.LocalClient.IsSessionOwner) return;
         _gameState.gameSpeed = speed;
         _gameState.isPaused = false;
+        _netGameState.Value = _gameState;
         UpdateSpeedButtons();
     }
 
     private void LogFinalScores()
     {
-        Debug.Log("=== GAME OVER — Final Scores ===");
+        Debug.Log("=== GAME OVER - Final Scores ===");
         for (int i = 0; i < _gameState.numActivePlayers; i++)
         {
             FinalScore score = ScoringSystem.ComputeFinalScore(
