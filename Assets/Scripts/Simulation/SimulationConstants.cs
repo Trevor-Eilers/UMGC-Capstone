@@ -7,7 +7,7 @@ public static class SimulationConstants
     public static float K_REV = 1.0f;
     public static float K_SPEND = 3.0f;
     public static float K_CITY_WEIGHT = 1.0f;
-    public static float K_DEBT_ACCRUAL = 1.0f;           // TBD
+    public static float K_DEBT_ACCRUAL = 0.08f;
     public static float K_DEBT_RECOVERY = K_DEBT_ACCRUAL / 3.0f;
     public static float K_RESERVE_DECAY = 0.005f;
     public static float DEBT_CAP = 60f;
@@ -15,13 +15,13 @@ public static class SimulationConstants
 
     // ── GDP Constants ──
 
-    public static float K_EDU_TO_GDP = 1.0f;             // TBD
-    public static float K_INFRA_TO_GDP = 1.0f;           // TBD
-    public static float K_POP_TO_GDP = 1.0f;             // TBD
-    public static float K_SUSTAIN_TO_GDP = 1.0f;         // TBD
-    public static float K_TAX_GDP_DRAG = 1.0f;           // TBD
-    public static float K_ENV_GDP_DRAG = 1.0f;           // TBD
-    public static float K_GDP_DECAY = 1.0f;              // TBD
+    public static float K_EDU_TO_GDP = 0.002f;
+    public static float K_INFRA_TO_GDP = 0.02f;
+    public static float K_POP_TO_GDP = 0.03f;
+    public static float K_SUSTAIN_TO_GDP = 0.02f;
+    public static float K_TAX_GDP_DRAG = 0.02f;
+    public static float K_ENV_GDP_DRAG = 0.0004f;
+    public static float K_GDP_DECAY = 0.01f;
 
     // ── Happiness Constants ──
 
@@ -30,76 +30,76 @@ public static class SimulationConstants
     public static float W_HAPPY_SUSTAIN = 0.25f;
     public static float W_HAPPY_DEBT = 0.20f;
     public static float K_BASELINE_WEIGHT = 0.60f;
-    public static float K_HOUSING_TO_HAPPY = 1.0f;       // TBD
-    public static float K_TAX_HAPPY_PENALTY = 1.0f;      // TBD
-    public static float K_DEBT_STRESS = 1.0f;            // TBD
+    public static float K_HOUSING_TO_HAPPY = 0.1f;
+    public static float K_TAX_HAPPY_PENALTY = 15.0f;
+    public static float K_DEBT_STRESS = 0.5f;
     public static float K_HAPPY_SMOOTHING = 1.0f;
 
     // ── Infrastructure Constants ──
 
-    public static float K_INFRA_TO_INFRA = 1.0f;         // TBD
-    public static float K_INFRA_DECAY = 1.0f;            // TBD
+    public static float K_INFRA_TO_INFRA = 0.005f;
+    public static float K_INFRA_DECAY = 0.01f;
 
     // ── Sustainability Constants ──
 
-    public static float K_INFRA_TO_SUSTAIN = 1.0f;       // TBD
-    public static float K_ENV_TO_SUSTAIN = 1.0f;         // TBD
-    public static float K_POP_SUSTAIN_DRAIN = 1.0f;      // TBD
-    public static float K_SUSTAIN_DECAY = 1.0f;          // TBD
+    public static float K_INFRA_TO_SUSTAIN = 0.01f;
+    public static float K_ENV_TO_SUSTAIN = 0.003f;
+    public static float K_POP_SUSTAIN_DRAIN = 0.002f;
+    public static float K_SUSTAIN_DECAY = 0.005f;
     public static float SUSTAIN_MIGRATION_THRESHOLD = 30f;
-    public static float K_MIGRATION_RATE = 1.0f;         // TBD
+    public static float K_MIGRATION_RATE = 0.5f;
     public static float MIN_POPULATION = 1.0f;
     public static float MAX_POPULATION = 1000.0f;
 
     // ── Spillover: Gentrification ──
 
     public static float GENTRIFY_THRESHOLD = 8f;
-    public static float K_GENTRIFY_HAPPY = 1.0f;         // TBD
-    public static float K_GENTRIFY_POP = 1.0f;           // TBD
-    public static float K_GENTRIFY_GDP_GAIN = 1.0f;      // TBD
-    public static float K_GENTRIFY_WEALTHY_HAPPY = 1.0f;  // TBD
+    public static float K_GENTRIFY_HAPPY = 0.3f;
+    public static float K_GENTRIFY_POP = 0.1f;
+    public static float K_GENTRIFY_GDP_GAIN = 0.1f;
+    public static float K_GENTRIFY_WEALTHY_HAPPY = 0.1f;
 
     // ── Spillover: Pollution ──
 
     public static float POLLUTE_ENV_THRESHOLD = 30f;
     public static float POLLUTE_GDP_THRESHOLD = 40f;
-    public static float K_POLLUTION_GENERATE = 1.0f;     // TBD
-    public static float K_POLLUTION_SUSTAIN = 1.0f;      // TBD
-    public static float K_POLLUTION_HAPPY = 1.0f;        // TBD
-    public static float K_POLLUTION_SELF_SUSTAIN = 1.0f;  // TBD
-    public static float K_POLLUTION_SELF_HAPPY = 1.0f;    // TBD
+    public static float K_POLLUTION_GENERATE = 0.05f;
+    public static float K_POLLUTION_SUSTAIN = 0.1f;
+    public static float K_POLLUTION_HAPPY = 0.05f;
+    public static float K_POLLUTION_SELF_SUSTAIN = 0.05f;
+    public static float K_POLLUTION_SELF_HAPPY = 0.025f;
 
     // ── Spillover: Commuting ──
 
     public static float COMMUTE_GDP_THRESHOLD = 5f;
     public static float COMMUTE_INFRA_THRESHOLD = 25f;
-    public static float K_COMMUTE_VOLUME = 1.0f;         // TBD
-    public static float K_COMMUTE_GDP_GAIN = 1.0f;       // TBD
-    public static float K_COMMUTE_CONGESTION = 1.0f;     // TBD
-    public static float K_COMMUTE_GDP_DRAIN = 1.0f;      // TBD
-    public static float K_COMMUTE_HOME_HAPPY = 1.0f;     // TBD
+    public static float K_COMMUTE_VOLUME = 0.1f;
+    public static float K_COMMUTE_GDP_GAIN = 0.1f;
+    public static float K_COMMUTE_CONGESTION = 0.05f;
+    public static float K_COMMUTE_GDP_DRAIN = 0.05f;
+    public static float K_COMMUTE_HOME_HAPPY = 0.03f;
 
     // ── City Metrics Constants ──
 
-    public static float K_VARIANCE_PENALTY = 1.0f;       // TBD
-    public static float K_POP_INFLOW_HIGH = 1.0f;        // TBD
-    public static float K_POP_INFLOW_NORMAL = 1.0f;      // TBD
-    public static float K_POP_OUTFLOW = 1.0f;            // TBD
-    public static float K_SHARED_INFRA_GROWTH = 1.0f;    // TBD
-    public static float K_SHARED_INFRA_DECAY = 1.0f;     // TBD
+    public static float K_VARIANCE_PENALTY = 0.5f;
+    public static float K_POP_INFLOW_HIGH = 0.5f;
+    public static float K_POP_INFLOW_NORMAL = 0.2f;
+    public static float K_POP_OUTFLOW = 0.3f;
+    public static float K_SHARED_INFRA_GROWTH = 0.005f;
+    public static float K_SHARED_INFRA_DECAY = 0.005f;
 
     // ── Federal Funding Constants ──
 
-    public static float GRANT_BASE_GREEN = 1.0f;         // TBD
-    public static float GRANT_BASE_TRANSIT = 1.0f;       // TBD
-    public static float GRANT_BASE_LIFE = 1.0f;          // TBD
-    public static float GRANT_BASE_DEV = 1.0f;           // TBD
-    public static float K_STABILIZATION_RATE = 1.0f;     // TBD
+    public static float GRANT_BASE_GREEN = 50.0f;
+    public static float GRANT_BASE_TRANSIT = 50.0f;
+    public static float GRANT_BASE_LIFE = 50.0f;
+    public static float GRANT_BASE_DEV = 50.0f;
+    public static float K_STABILIZATION_RATE = 0.5f;
 
     // ── Scoring Constants ──
 
-    public static float POP_MAX_SCORE = 1.0f;            // TBD
-    public static float K_CRISIS_PENALTY = 1.0f;         // TBD
+    public static float POP_MAX_SCORE = 400.0f;
+    public static float K_CRISIS_PENALTY = 0.5f;
 
     // ── Starting Values ──
 

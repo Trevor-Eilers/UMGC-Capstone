@@ -24,6 +24,14 @@ public class PolicyValues : MonoBehaviour
         _root.Q<Slider>("HousingSlider").RegisterValueChangedCallback(OnSliderValueChanged);
         _root.Q<Slider>("EnvSlider").RegisterValueChangedCallback(OnSliderValueChanged);
         _root.Q<Slider>("CitySlider").RegisterValueChangedCallback(OnSliderValueChanged);
+
+        // Initialize fields from UXML default values so they're populated at game start
+        taxRate = _root.Q<Slider>("TaxSlider").value;
+        eduRate = _root.Q<Slider>("EduSlider").value;
+        infraRate = _root.Q<Slider>("InfraSlider").value;
+        housingRate = _root.Q<Slider>("HousingSlider").value;
+        envRate = _root.Q<Slider>("EnvSlider").value;
+        cityRate = _root.Q<Slider>("CitySlider").value;
     }
 
     private void OnSliderValueChanged(ChangeEvent<float> evt)

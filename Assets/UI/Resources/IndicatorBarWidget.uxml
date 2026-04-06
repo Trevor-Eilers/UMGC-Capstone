@@ -1,18 +1,36 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement style="flex-grow: 0; flex-direction: row; justify-content: space-evenly; align-self: auto; align-items: center; background-color: rgb(53, 53, 53);">
-        <ui:VisualElement name="VisualElement" style="flex-grow: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(0, 0, 0, 0.5); border-right-color: rgba(0, 0, 0, 0.5); border-top-color: rgba(0, 0, 0, 0.5); border-bottom-color: rgba(0, 0, 0, 0.5); border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; padding-left: 4px; padding-right: 4px; padding-top: 4px; padding-bottom: 4px; justify-content: space-evenly; margin-right: 0;">
-            <UI.IndicatorWidget title="GDP"/>
-            <UI.IndicatorWidget title="Surp."/>
-            <UI.IndicatorWidget title="Rev."/>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="GameHUD.uss"/>
+    <ui:VisualElement name="BottomBar" style="height: 44px; background-color: rgba(13, 13, 20, 0.92); flex-direction: row; align-items: center; padding: 4px 8px; flex-shrink: 0;">
+
+        <!-- 6 Metric Chips -->
+        <UI.IndicatorWidget name="GdpIndicator" title="GDP" style="flex-grow: 1; margin-right: 4px;"/>
+        <UI.IndicatorWidget name="HappyIndicator" title="Happ." style="flex-grow: 1; margin-right: 4px;"/>
+        <UI.IndicatorWidget name="PopIndicator" title="Pop." style="flex-grow: 1; margin-right: 4px;"/>
+        <UI.IndicatorWidget name="InfraIndicator" title="Infra." style="flex-grow: 1; margin-right: 4px;"/>
+        <UI.IndicatorWidget name="SustainIndicator" title="Sust." style="flex-grow: 1; margin-right: 4px;"/>
+        <UI.IndicatorWidget name="DebtIndicator" title="Debt" style="flex-grow: 1; margin-right: 6px;"/>
+
+        <!-- Separator -->
+        <ui:VisualElement style="width: 1px; height: 32px; background-color: rgb(64,64,77); margin-right: 6px;"/>
+
+        <!-- Grants + Details -->
+        <ui:VisualElement style="flex-direction: column; align-items: center;">
+            <ui:VisualElement style="flex-direction: row; margin-bottom: 2px;">
+                <ui:VisualElement name="GreenGrant" class="grant-badge" style="width: 20px; height: 20px; margin-right: 2px;">
+                    <ui:Label text="🌱" style="font-size: 11px;"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="TransitGrant" class="grant-badge" style="width: 20px; height: 20px; margin-right: 2px;">
+                    <ui:Label text="🚌" style="font-size: 11px;"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="LifeGrant" class="grant-badge" style="width: 20px; height: 20px; margin-right: 2px;">
+                    <ui:Label text="😊" style="font-size: 11px;"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="DevGrant" class="grant-badge" style="width: 20px; height: 20px;">
+                    <ui:Label text="🏗" style="font-size: 11px;"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button text="Details ▸" name="DetailsButton" style="height: 14px; font-size: 7px; -unity-font-style: bold; background-color: rgb(40,40,56); border-color: rgb(77,77,97); border-width: 1px; border-radius: 3px; color: rgb(153,153,179); padding: 0 6px;"/>
         </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(0, 0, 0, 0.5); border-right-color: rgba(0, 0, 0, 0.5); border-top-color: rgba(0, 0, 0, 0.5); border-bottom-color: rgba(0, 0, 0, 0.5); border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; padding-left: 4px; padding-right: 4px; padding-top: 4px; padding-bottom: 4px; justify-content: space-evenly; margin-right: 0; margin-left: 0;">
-            <UI.IndicatorWidget title="Pop."/>
-            <UI.IndicatorWidget title="Happ."/>
-        </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(0, 0, 0, 0.5); border-right-color: rgba(0, 0, 0, 0.5); border-top-color: rgba(0, 0, 0, 0.5); border-bottom-color: rgba(0, 0, 0, 0.5); border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; padding-left: 4px; padding-right: 4px; padding-top: 4px; padding-bottom: 4px; justify-content: space-evenly; margin-right: 0; margin-left: 0;">
-            <UI.IndicatorWidget title="Infra."/>
-            <UI.IndicatorWidget title="Sust." name="IndicatorWidget"/>
-            <UI.IndicatorWidget title="Poll."/>
-        </ui:VisualElement>
+
     </ui:VisualElement>
 </ui:UXML>
