@@ -1,7 +1,7 @@
 // Author: Malcolm Bramble
 
 [System.Serializable]
-public struct PolicySliders
+public struct PolicyValues
 {
     public float taxRate;          // 5-30
     public float education;        // 0-100
@@ -10,9 +10,9 @@ public struct PolicySliders
     public float environment;      // 0-100
     public float cityContribution; // 0-50
 
-    public static PolicySliders Default()
+    public static PolicyValues Default()
     {
-        return new PolicySliders
+        return new PolicyValues
         {
             taxRate = SimulationConstants.TAX_RATE_DEFAULT,
             education = SimulationConstants.SLIDERS_DEFAULT,

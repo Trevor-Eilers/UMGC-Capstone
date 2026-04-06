@@ -98,8 +98,8 @@ public static class CityMetricsManager
         for (int i = 0; i < numActivePlayers; i++)
         {
             attractiveness[i] = districts[i].happiness * 0.40f
-                              + (districts[i].sliders.housing / 100.0f) * 0.40f
-                              + (1.0f - districts[i].sliders.taxRate / 30.0f) * 0.20f;
+                              + (districts[i].values.housing / 100.0f) * 0.40f
+                              + (1.0f - districts[i].values.taxRate / 30.0f) * 0.20f;
             totalAttractiveness += attractiveness[i];
         }
 

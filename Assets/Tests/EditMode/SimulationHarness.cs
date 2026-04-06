@@ -22,48 +22,48 @@ public class SimulationHarness
         switch (profile)
         {
             case "balanced":
-                d.sliders.taxRate = 15f;
-                d.sliders.education = 50f;
-                d.sliders.infrastructure = 50f;
-                d.sliders.housing = 50f;
-                d.sliders.environment = 50f;
-                d.sliders.cityContribution = 25f;
+                d.values.taxRate = 15f;
+                d.values.education = 50f;
+                d.values.infrastructure = 50f;
+                d.values.housing = 50f;
+                d.values.environment = 50f;
+                d.values.cityContribution = 25f;
                 break;
 
             case "education_heavy":
-                d.sliders.taxRate = 15f;
-                d.sliders.education = 80f;
-                d.sliders.infrastructure = 40f;
-                d.sliders.housing = 40f;
-                d.sliders.environment = 40f;
-                d.sliders.cityContribution = 25f;
+                d.values.taxRate = 15f;
+                d.values.education = 80f;
+                d.values.infrastructure = 40f;
+                d.values.housing = 40f;
+                d.values.environment = 40f;
+                d.values.cityContribution = 25f;
                 break;
 
             case "infra_neglect":
-                d.sliders.taxRate = 15f;
-                d.sliders.education = 70f;
-                d.sliders.infrastructure = 10f;
-                d.sliders.housing = 60f;
-                d.sliders.environment = 50f;
-                d.sliders.cityContribution = 25f;
+                d.values.taxRate = 15f;
+                d.values.education = 70f;
+                d.values.infrastructure = 10f;
+                d.values.housing = 60f;
+                d.values.environment = 50f;
+                d.values.cityContribution = 25f;
                 break;
 
             case "high_tax_saver":
-                d.sliders.taxRate = 25f;
-                d.sliders.education = 30f;
-                d.sliders.infrastructure = 30f;
-                d.sliders.housing = 30f;
-                d.sliders.environment = 30f;
-                d.sliders.cityContribution = 25f;
+                d.values.taxRate = 25f;
+                d.values.education = 30f;
+                d.values.infrastructure = 30f;
+                d.values.housing = 30f;
+                d.values.environment = 30f;
+                d.values.cityContribution = 25f;
                 break;
 
             case "free_rider":
-                d.sliders.taxRate = 15f;
-                d.sliders.education = 60f;
-                d.sliders.infrastructure = 60f;
-                d.sliders.housing = 60f;
-                d.sliders.environment = 60f;
-                d.sliders.cityContribution = 0f;
+                d.values.taxRate = 15f;
+                d.values.education = 60f;
+                d.values.infrastructure = 60f;
+                d.values.housing = 60f;
+                d.values.environment = 60f;
+                d.values.cityContribution = 0f;
                 break;
 
             default:

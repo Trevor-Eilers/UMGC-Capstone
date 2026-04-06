@@ -34,11 +34,11 @@ public static class TickProcessor
 
             // Step 1.1 — Revenue
             d.revenue = BudgetCalculator.ComputeRevenue(
-                d.sliders.taxRate, d.gdp, d.population);
+                d.values.taxRate, d.gdp, d.population);
 
             // Step 1.2 — Spending Demand
             SpendingBreakdown spending = BudgetCalculator.ComputeSpendingDemand(
-                d.sliders, d.population);
+                d.values, d.population);
 
             // Step 1.3 — Debt Cap Scaling
             scaledSpending[i] = BudgetCalculator.ComputeDebtCapScaling(

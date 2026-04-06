@@ -4,7 +4,7 @@
 public struct DistrictState
 {
     public int playerId;                // 0-3
-    public PolicySliders sliders;
+    public PolicyValues values;
 
     // ── Metrics ──
     public float gdp;                   // 0-100
@@ -37,7 +37,7 @@ public struct DistrictState
         return new DistrictState
         {
             playerId = playerId,
-            sliders = PolicySliders.Default(),
+            values = PolicyValues.Default(),
             gdp = SimulationConstants.GDP_START,
             happiness = SimulationConstants.HAPPINESS_START,
             population = SimulationConstants.POPULATION_START,

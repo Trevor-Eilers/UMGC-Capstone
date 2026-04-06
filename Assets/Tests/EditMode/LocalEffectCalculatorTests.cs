@@ -95,7 +95,7 @@ public class LocalEffectCalculatorTests
         d.infrastructure = infrastructure;
         d.sustainability = sustainability;
         d.debt = debt;
-        d.sliders.taxRate = taxRate;
+        d.values.taxRate = taxRate;
         return d;
     }
 
