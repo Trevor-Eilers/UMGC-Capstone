@@ -73,8 +73,8 @@ public class BudgetCalculatorTests
     [Test]
     public void ComputeSpendingDemand_AtStartingValues_Returns1125()
     {
-        PolicySliders sliders = PolicySliders.Default();
-        SpendingBreakdown spending = BudgetCalculator.ComputeSpendingDemand(sliders, 150f);
+        PolicyValues values = PolicyValues.Default();
+        SpendingBreakdown spending = BudgetCalculator.ComputeSpendingDemand(values, 150f);
         Assert.AreEqual(1125f, spending.totalSpending, 0.01f);
     }
 
@@ -82,20 +82,20 @@ public class BudgetCalculatorTests
     public void ComputeSpendingDemand_CityContributionNormalizesBy50()
     {
         // cityContribution at 50 (max) should cost the same as a domestic slider at 100
-        PolicySliders sliders = PolicySliders.Default();
-        sliders.education = 0f;
-        sliders.infrastructure = 0f;
-        sliders.housing = 0f;
-        sliders.environment = 0f;
+        PolicyValues values = PolicyValues.Default();
+        values.education = 0f;
+        values.infrastructure = 0f;
+        values.housing = 0f;
+        values.environment = 0f;
 
         // City at max (50) — normalized to 50/50 = 1.0
-        sliders.cityContribution = 50f;
-        SpendingBreakdown cityMax = BudgetCalculator.ComputeSpendingDemand(sliders, 150f);
+        values.cityContribution = 50f;
+        SpendingBreakdown cityMax = BudgetCalculator.ComputeSpendingDemand(values, 150f);
 
         // Compare: a single domestic slider at 100 — normalized to 100/100 = 1.0
-        sliders.cityContribution = 0f;
-        sliders.education = 100f;
-        SpendingBreakdown eduMax = BudgetCalculator.ComputeSpendingDemand(sliders, 150f);
+        values.cityContribution = 0f;
+        values.education = 100f;
+        SpendingBreakdown eduMax = BudgetCalculator.ComputeSpendingDemand(values, 150f);
 
         // Both should produce same cost (K_CITY_WEIGHT = 1.0)
         Assert.AreEqual(eduMax.totalSpending, cityMax.totalSpending, 0.01f);
@@ -114,7 +114,7 @@ public class BudgetCalculatorTests
             SimulationConstants.POPULATION_START);
 
         SpendingBreakdown spending = BudgetCalculator.ComputeSpendingDemand(
-            PolicySliders.Default(),
+            PolicyValues.Default(),
             SimulationConstants.POPULATION_START);
 
         Assert.AreEqual(revenue, spending.totalSpending, 0.01f,

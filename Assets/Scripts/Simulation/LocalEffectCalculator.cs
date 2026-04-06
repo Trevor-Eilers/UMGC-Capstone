@@ -19,7 +19,7 @@ public static class LocalEffectCalculator
         float gdpGrowth_sustain = (d.sustainability - 50f) * SimulationConstants.K_SUSTAIN_TO_GDP;
 
         // ── DRAGS ──
-        float gdpDrag_tax = -(d.sliders.taxRate / 100f) * d.gdp
+        float gdpDrag_tax = -(d.values.taxRate / 100f) * d.gdp
                             * SimulationConstants.K_TAX_GDP_DRAG;
         float gdpDrag_env = -s.actualEnvCost * SimulationConstants.K_ENV_GDP_DRAG;
 
@@ -59,7 +59,7 @@ public static class LocalEffectCalculator
 
         // ── DIRECT EFFECTS ──
         float happinessDelta_housing = s.actualHousingCost * SimulationConstants.K_HOUSING_TO_HAPPY;
-        float happinessDelta_tax = -(d.sliders.taxRate / 100.0f)
+        float happinessDelta_tax = -(d.values.taxRate / 100.0f)
                                    * SimulationConstants.K_TAX_HAPPY_PENALTY;
         float debtStress = Math.Max(0f, d.debt - 40f) * SimulationConstants.K_DEBT_STRESS;
 

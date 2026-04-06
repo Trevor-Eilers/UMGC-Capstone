@@ -86,14 +86,14 @@ public class SpilloverResolverTests
         districts[0].happiness = happyA;
         districts[0].population = popA;
         districts[0].sustainability = sustainA;
-        districts[0].sliders.environment = envSliderA;
+        districts[0].values.environment = envSliderA;
 
         districts[1] = DistrictState.Default(1);
         districts[1].gdp = gdpB;
         districts[1].happiness = happyB;
         districts[1].population = popB;
         districts[1].sustainability = sustainB;
-        districts[1].sliders.environment = envSliderB;
+        districts[1].values.environment = envSliderB;
 
         // Inactive districts (defaults, won't be processed with numActive=2)
         districts[2] = DistrictState.Default(2);

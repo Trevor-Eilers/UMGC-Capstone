@@ -45,13 +45,13 @@ public static class BudgetCalculator
     /// Population field is already in thousands — used directly (see ComputeRevenue).
     /// At defaults: (0.5+0.5+0.5+0.5)*150*3.0 + (25/50)*150*3.0*1.0 = 900+225 = 1125
     /// </summary>
-    public static SpendingBreakdown ComputeSpendingDemand(PolicySliders sliders, float population)
+    public static SpendingBreakdown ComputeSpendingDemand(PolicyValues values, float population)
     {
-        float eduCost = (sliders.education / 100f) * population * SimulationConstants.K_SPEND;
-        float infraCost = (sliders.infrastructure / 100f) * population * SimulationConstants.K_SPEND;
-        float housingCost = (sliders.housing / 100f) * population * SimulationConstants.K_SPEND;
-        float envCost = (sliders.environment / 100f) * population * SimulationConstants.K_SPEND;
-        float cityCost = (sliders.cityContribution / 50f) * population
+        float eduCost = (values.education / 100f) * population * SimulationConstants.K_SPEND;
+        float infraCost = (values.infrastructure / 100f) * population * SimulationConstants.K_SPEND;
+        float housingCost = (values.housing / 100f) * population * SimulationConstants.K_SPEND;
+        float envCost = (values.environment / 100f) * population * SimulationConstants.K_SPEND;
+        float cityCost = (values.cityContribution / 50f) * population
                          * SimulationConstants.K_SPEND * SimulationConstants.K_CITY_WEIGHT;
 
         return new SpendingBreakdown

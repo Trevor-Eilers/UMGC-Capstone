@@ -261,7 +261,7 @@ public class IntegrationTests
     }
 
     // ══════════════════════════════════════════════
-    // STEADY STATE — 576 ticks at default sliders
+    // STEADY STATE — 576 ticks at default values
     // ══════════════════════════════════════════════
 
     [Test]
@@ -277,7 +277,7 @@ public class IntegrationTests
         Assert.AreEqual(576, state.currentTick, "Should have completed all 576 ticks");
         Assert.AreEqual(48, state.currentMonth, "Should be month 48");
 
-        // All districts started identical and no one changed sliders.
+        // All districts started identical and no one changed values.
         // With calibrated constants, metrics should remain in a reasonable band
         // around starting values. We allow generous tolerance (±30) since the
         // TBD constants aren't perfectly calibrated yet — the point is no metric

@@ -72,8 +72,8 @@ public class CityMetricsManagerTests
             districts[i].sustainability = sustainability;
             districts[i].debt = debt;
             districts[i].population = population;
-            districts[i].sliders.housing = housing;
-            districts[i].sliders.taxRate = taxRate;
+            districts[i].values.housing = housing;
+            districts[i].values.taxRate = taxRate;
         }
         return districts;
     }
@@ -168,12 +168,12 @@ public class CityMetricsManagerTests
         var districts = MakeUniformDistricts(2);
         // District 0: high happiness, high housing → more attractive
         districts[0].happiness = 80f;
-        districts[0].sliders.housing = 80f;
-        districts[0].sliders.taxRate = 10f;
+        districts[0].values.housing = 80f;
+        districts[0].values.taxRate = 10f;
         // District 1: low happiness, low housing → less attractive
         districts[1].happiness = 20f;
-        districts[1].sliders.housing = 20f;
-        districts[1].sliders.taxRate = 25f;
+        districts[1].values.housing = 20f;
+        districts[1].values.taxRate = 25f;
 
         float pop0Before = districts[0].population;
         float pop1Before = districts[1].population;
