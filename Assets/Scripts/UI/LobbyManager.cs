@@ -16,7 +16,7 @@ public class LobbyManager : MonoBehaviour
     private const int MaxPlayers = 4;
 
     private Lobby _lobby;
-    private bool _isHost;
+    [SerializeField] private bool isHost;
     private bool _gameStarting;
 
     private float _heartbeatTimer;
@@ -28,14 +28,13 @@ public class LobbyManager : MonoBehaviour
     private void Awake()
     {
         lobbyUI = GetComponent<LobbyUI>();
-        lobbyUI.SetVisible(false);
     }
 
     private void Update()
     {
         if (_lobby == null || _gameStarting) return;
 
-        if (_isHost)
+        if (isHost)
         {
             _heartbeatTimer -= Time.deltaTime;
             if (_heartbeatTimer <= 0f)
@@ -58,7 +57,7 @@ public class LobbyManager : MonoBehaviour
         try
         {
             lobbyUI.SetVisible(true);
-            _isHost = true;
+            isHost = true;
 
             var options = new CreateLobbyOptions
             {
@@ -91,7 +90,7 @@ public class LobbyManager : MonoBehaviour
         try
         {
             lobbyUI.SetVisible(true);
-            _isHost = false;
+            isHost = false;
 
             var options = new JoinLobbyByIdOptions
             {
@@ -176,19 +175,20 @@ public class LobbyManager : MonoBehaviour
         try
         {
             _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
+            if (_gameStarting) return;
             RefreshUI();
             
-            bool wasHost = _isHost;
-            _isHost = _lobby.HostId == AuthenticationService.Instance.PlayerId;
+            bool wasHost = isHost;
+            isHost = _lobby.HostId == AuthenticationService.Instance.PlayerId;
 
-            if (_isHost && !wasHost)
+            if (isHost && !wasHost)
             {
                 Debug.Log($"You are now the host.");
                 lobbyUI.SetStartButtonVisible(true);
                 lobbyUI.OnStartClicked += OnStartButtonClicked;
             }
 
-            if (!_isHost) CheckForGameStart();
+            if (!isHost) CheckForGameStart();
         }
         catch (LobbyServiceException e)
         {
@@ -212,7 +212,7 @@ public class LobbyManager : MonoBehaviour
 
     private async void OnStartButtonClicked()
     {
-        if (!_isHost || _gameStarting) return;
+        if (!isHost || _gameStarting) return;
         _gameStarting = true;
 
         try
@@ -248,7 +248,7 @@ public class LobbyManager : MonoBehaviour
 
         try
         {
-            if (_isHost)
+            if (isHost)
             {
                 // Get current player list
                 _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
@@ -294,7 +294,7 @@ public class LobbyManager : MonoBehaviour
         finally
         {
             _lobby = null;
-            _isHost = false;
+            isHost = false;
             _gameStarting = false;
 
             lobbyUI.SetVisible(false);
@@ -342,7 +342,8 @@ public class LobbyManager : MonoBehaviour
         {
             lobbyUI.OnStartClicked -= OnStartButtonClicked;
             lobbyUI.OnLeaveClicked -= OnLeaveButtonClicked;
-            await LeaveLobby();
+            
+            if (!_gameStarting) await LeaveLobby();
         }
         catch (Exception e)
         {

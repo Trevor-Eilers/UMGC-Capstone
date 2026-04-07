@@ -109,7 +109,6 @@ public class ConnectionManager : MonoBehaviour
            }.WithDistributedAuthorityNetwork();
 
            _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
-
            _state = ConnectionState.Connected;
        }
        catch (Exception e)

@@ -239325,6 +239325,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1587228486}
   - component: {fileID: 1587228487}
+  - component: {fileID: 1587228488}
   m_Layer: 0
   m_Name: District
   m_TagString: Untagged
@@ -239372,6 +239373,18 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &1587228488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1587228485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c67b8653526394c9dc2e8886103244, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Building.BuildingRegistry
 --- !u!4 &1587488195 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2319044595528941238, guid: d9d4dce11aa583e4ca09e17348f3d837, type: 3}
@@ -286570,9 +286583,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1886310449}
-  - component: {fileID: 1886310448}
-  - component: {fileID: 1886310447}
   - component: {fileID: 1886310446}
+  - component: {fileID: 1886310448}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -286597,26 +286609,14 @@ MonoBehaviour:
   DeferredDespawnTick: 0
   Ownership: 8
   AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
+  SynchronizeTransform: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
-  DontDestroyWithOwner: 1
+  DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &1886310447
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1886310445}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56c67b8653526394c9dc2e8886103244, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Building.BuildingRegistry
 --- !u!114 &1886310448
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -506,8 +506,7 @@ PrefabInstance:
       propertyPath: m_Name
       value: Lobby
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 1332371337039873495, guid: 81009cdd216f7df479a04c1c8b18b8e2, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
