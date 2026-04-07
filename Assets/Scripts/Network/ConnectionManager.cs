@@ -6,108 +6,115 @@ using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 
-public class ConnectionManager : MonoBehaviour
+namespace Network
 {
-   public string ProfileName { get; private set; }
+    public enum ConnectionState
+    {
+        Disconnected,
+        Connecting,
+        Connected,
+    }
+
+    public class ConnectionManager : MonoBehaviour
+    {
+        public string ProfileName { get; private set; }
     
-   public string SessionName { get; private set; }
+        public string SessionName { get; private set; }
    
-   private readonly int _maxPlayers = 4;
+        private readonly int _maxPlayers = 4;
+
+        public int playerCount = 0;
    
-   private ConnectionState _state = ConnectionState.Disconnected;
+        public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
    
-   private ISession _session;
+        private ISession _session;
    
-   private NetworkManager _networkManager;
+        private NetworkManager _networkManager;
    
-   private enum ConnectionState
-   {
-       Disconnected,
-       Connecting,
-       Connected,
-   }
+
 
    
    
-    private async void Awake()
-    {
-        try
+        private async void Awake()
         {
-            _networkManager = GetComponent<NetworkManager>();
-            _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-            _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
-            await UnityServices.InitializeAsync();
+            try
+            {
+                _networkManager = GetComponent<NetworkManager>();
+                _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+                _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
+                await UnityServices.InitializeAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.StackTrace); // TODO handle exception
+            }
         }
-        catch (Exception e)
+
+        private void OnSessionOwnerPromoted(ulong sessionOwnerPromoted)
         {
-            Debug.Log(e.StackTrace); // TODO handle exception
+            if (_networkManager.LocalClient.IsSessionOwner)
+            {
+                Debug.Log($"Client-{_networkManager.LocalClientId} is the session owner!");
+            }
         }
-    }
 
-    private void OnSessionOwnerPromoted(ulong sessionOwnerPromoted)
-    {
-        if (_networkManager.LocalClient.IsSessionOwner)
+        private void OnClientConnectedCallback(ulong clientId)
         {
-            Debug.Log($"Client-{_networkManager.LocalClientId} is the session owner!");
+            if (_networkManager.LocalClientId == clientId)
+            {
+                Debug.Log($"Client-{clientId} is connected.");
+            }
         }
-    }
 
-    private void OnClientConnectedCallback(ulong clientId)
-    {
-        if (_networkManager.LocalClientId == clientId)
+        private void OnDestroy()
         {
-            Debug.Log($"Client-{clientId} is connected.");
+            _session?.LeaveAsync();
         }
-    }
 
-   private void OnDestroy()
-   {
-       _session?.LeaveAsync();
-   }
-
-   public async Task<bool> Authenticate(string profileName)
-   {
-       try
-       {
-           ProfileName = profileName;
-           AuthenticationService.Instance.SwitchProfile(profileName);
-           await AuthenticationService.Instance.SignInAnonymouslyAsync();
-           Debug.Log("Authentication Succeeded");
-           return true;
-       }
-       catch (Exception e)
-       {
-           Debug.Log("Authentication failed");
-           Debug.LogException(e);
-           return false;
-       }
-   }
+        public async Task<bool> Authenticate(string profileName)
+        {
+            try
+            {
+                ProfileName = profileName;
+                AuthenticationService.Instance.SwitchProfile(profileName);
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                Debug.Log("Authentication Succeeded");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.Log("Authentication failed");
+                Debug.LogException(e);
+                return false;
+            }
+        }
    
-   public async Task CreateOrJoinSessionAsync(string profileName, string sessionName)
-   {
-       _state = ConnectionState.Connecting;
+        public async Task CreateOrJoinSessionAsync(string profileName, string sessionName)
+        {
+            State = ConnectionState.Connecting;
    
-       try
-       {
-           ProfileName = profileName;
-           SessionName = sessionName;
+            try
+            {
+                ProfileName = profileName;
+                SessionName = sessionName;
            
-           AuthenticationService.Instance.SwitchProfile(profileName);
-           await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                AuthenticationService.Instance.SwitchProfile(profileName);
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
    
-            var options = new SessionOptions() {
-                Name = sessionName,
-                MaxPlayers = _maxPlayers
-            }.WithDistributedAuthorityNetwork();
+                var options = new SessionOptions() {
+                    Name = sessionName,
+                    MaxPlayers = _maxPlayers
+                }.WithDistributedAuthorityNetwork();
    
-            _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
+                _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
    
-           _state = ConnectionState.Connected;
-       }
-       catch (Exception e)
-       {
-           _state = ConnectionState.Disconnected;
-           Debug.LogException(e);
-       }
-   }
+                State = ConnectionState.Connected;
+            }
+            catch (Exception e)
+            {
+                State = ConnectionState.Disconnected;
+                Debug.LogException(e);
+            }
+        }
+    }
 }

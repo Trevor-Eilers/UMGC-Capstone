@@ -87,11 +87,10 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         _gameState = GameState.NewGame(4);
-        _policyValues = FindAnyObjectByType<PolicyValues>();
+        // _policyValues = FindAnyObjectByType<PolicyValues>();
         _mapVisuals = FindAnyObjectByType<BuildingGenerator>();
 
-        var doc = _policyValues.GetComponent<UIDocument>();
-        _root = doc.rootVisualElement;
+
 
         CacheUIReferences();
         RegisterSpeedButtons();
@@ -229,14 +228,14 @@ public class GameManager : MonoBehaviour
 
     private void ResolveTick()
     {
-        _gameState.districts[0].sliders = new PolicySliders
+        _gameState.districts[0].values = new PolicyValues
         {
             taxRate = _policyValues.taxRate,
-            education = _policyValues.eduRate,
-            infrastructure = _policyValues.infraRate,
-            housing = _policyValues.housingRate,
-            environment = _policyValues.envRate,
-            cityContribution = _policyValues.cityRate
+            education = _policyValues.education,
+            infrastructure = _policyValues.infrastructure,
+            housing = _policyValues.housing,
+            environment = _policyValues.environment,
+            cityContribution = _policyValues.cityContribution
         };
 
         _gameState = TickProcessor.ResolveTick(_gameState);
