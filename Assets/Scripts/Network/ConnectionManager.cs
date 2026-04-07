@@ -4,6 +4,7 @@ using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
+using Unity.Services.Relay;
 using UnityEngine;
 
 public class ConnectionManager : MonoBehaviour
@@ -107,7 +108,7 @@ public class ConnectionManager : MonoBehaviour
                Name = sessionName,
                MaxPlayers = _maxPlayers
            }.WithDistributedAuthorityNetwork();
-
+           
            _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
            _state = ConnectionState.Connected;
        }

@@ -103,8 +103,7 @@ public class GameManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-
-        _root = GetComponent<UIDocument>().rootVisualElement;
+        
         _mapVisuals = FindAnyObjectByType<BuildingGenerator>();
         _policySliders = FindAnyObjectByType<PolicySliders>();
 
@@ -291,14 +290,6 @@ public class GameManager : NetworkBehaviour
         _surplusValue = _root.Q<Label>("SurplusValue");
         _reserveValue = _root.Q<Label>("ReserveValue");
         _efficiencyValue = _root.Q<Label>("EfficiencyValue");
-
-        // Slider values
-        _taxValue = _root.Q<Label>("TaxValue");
-        _eduValue = _root.Q<Label>("EduValue");
-        _infraValue = _root.Q<Label>("InfraValue");
-        _housingValue = _root.Q<Label>("HousingValue");
-        _envValue = _root.Q<Label>("EnvValue");
-        _cityValue = _root.Q<Label>("CityValue");
 
         // Top bar
         _cityRepValue = _root.Q<Label>("CityRepValue");

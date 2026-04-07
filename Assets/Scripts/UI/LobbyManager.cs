@@ -4,9 +4,11 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UI;
+using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+
 
 public class LobbyManager : MonoBehaviour
 {
@@ -33,7 +35,7 @@ public class LobbyManager : MonoBehaviour
     private void Update()
     {
         if (_lobby == null || _gameStarting) return;
-
+        
         if (isHost)
         {
             _heartbeatTimer -= Time.deltaTime;
@@ -323,8 +325,9 @@ public class LobbyManager : MonoBehaviour
 
         connectionManager.PlayerCount = _lobby.Players.Count;
 
+        var sessionId = Guid.NewGuid().ToString(); // TODO: Add check that != _lobby.id. Buy lottery ticket if this throws
         await connectionManager.CreateOrJoinSessionAsync(
-            connectionManager.ProfileName, _lobby.Id);
+            connectionManager.ProfileName, sessionId);
 
         if (!connectionManager.IsConnected)
         {
@@ -333,7 +336,7 @@ public class LobbyManager : MonoBehaviour
             return;
         }
 
-        SceneManager.LoadScene(gameSceneName);
+        NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
     }
 
     private async void OnDestroy()

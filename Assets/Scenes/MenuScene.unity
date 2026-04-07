@@ -454,6 +454,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1109081984695789570, guid: 81009cdd216f7df479a04c1c8b18b8e2, type: 3}
+      propertyPath: gameSceneName
+      value: MainScene
+      objectReference: {fileID: 0}
     - target: {fileID: 1332371337039873495, guid: 81009cdd216f7df479a04c1c8b18b8e2, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 721263738
