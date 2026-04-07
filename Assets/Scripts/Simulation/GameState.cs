@@ -1,34 +1,32 @@
 // Author: Malcolm Bramble
+// Edited by: Trevor Eilers
 
-[System.Serializable]
-public struct GameState
+namespace Simulation
 {
-    public DistrictState[] districts;  // one per player (4 max)
-    public CityMetrics cityMetrics;
-    public int currentTick;            // 0-575
-    public int currentMonth;           // 0-47 (currentTick / 12)
-    public float gameSpeed;            // 0 (paused), 1, 2, or 3
-    public bool isPaused;
-    public int numActivePlayers;       // 2-4
-
-    public static GameState NewGame(int numPlayers)
+    [System.Serializable]
+    public struct GameState
     {
-        var state = new GameState
-        {
-            districts = new DistrictState[4],
-            cityMetrics = CityMetrics.Default(),
-            currentTick = 0,
-            currentMonth = 0,
-            gameSpeed = 1f,
-            isPaused = false,
-            numActivePlayers = numPlayers
-        };
+        public DistrictState[] districts;
+        public CityMetrics cityMetrics;
+        public int currentTick;            // 0-575
+        public int currentMonth;           // 0-47 (currentTick / 12)
+        public float gameSpeed;            // 0 (paused), 1, 2, or 3
+        public bool isPaused;
 
-        for (int i = 0; i < 4; i++)
+        public static GameState NewGame(DistrictState[] districts)
         {
-            state.districts[i] = DistrictState.Default(i);
+            var state = new GameState
+            {
+                districts = districts,
+                cityMetrics = CityMetrics.Default(),
+                currentTick = 0,
+                currentMonth = 0,
+                gameSpeed = 1f,
+                isPaused = false,
+               
+            };
+
+            return state;
         }
-
-        return state;
     }
 }

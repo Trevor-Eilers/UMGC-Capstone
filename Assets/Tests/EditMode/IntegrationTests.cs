@@ -1,7 +1,9 @@
 // Author: Malcolm Bramble
+// Edited by: Trevor Eilers
 
 using System;
 using NUnit.Framework;
+using Simulation;
 
 [TestFixture]
 public class IntegrationTests
@@ -267,7 +269,11 @@ public class IntegrationTests
     [Test]
     public void SteadyState_576Ticks_MetricsStayNearStartingValues()
     {
-        GameState state = GameState.NewGame(4);
+        const int numOfPlayers = 4;
+        var districts =  new DistrictState[numOfPlayers];
+        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
+        
+        GameState state = GameState.NewGame(districts);
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
         {
@@ -325,9 +331,13 @@ public class IntegrationTests
     [Test]
     public void SteadyState_AllDistrictsRemainIdentical()
     {
+        const int numOfPlayers = 4;
+        var districts =  new DistrictState[numOfPlayers];
+        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
+        
         // With identical starting conditions and no slider changes,
         // all districts should stay identical (deterministic, symmetric).
-        GameState state = GameState.NewGame(4);
+        GameState state = GameState.NewGame(districts);
 
         for (int tick = 0; tick < 100; tick++)
         {
@@ -356,7 +366,11 @@ public class IntegrationTests
     [Test]
     public void SteadyState_NoNaNOrInfinity()
     {
-        GameState state = GameState.NewGame(4);
+        const int numOfPlayers = 4;
+        var districts =  new DistrictState[numOfPlayers];
+        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
+        
+        GameState state = GameState.NewGame(districts);
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
         {
@@ -389,7 +403,11 @@ public class IntegrationTests
     [Test]
     public void Scoring_AfterFullGame_ProducesReasonableScores()
     {
-        GameState state = GameState.NewGame(4);
+        const int numOfPlayers = 4;
+        var districts =  new DistrictState[numOfPlayers];
+        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
+        
+        GameState state = GameState.NewGame(districts);
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
         {
@@ -413,7 +431,11 @@ public class IntegrationTests
     [Test]
     public void Scoring_IdenticalDistricts_EqualScores()
     {
-        GameState state = GameState.NewGame(4);
+        const int numOfPlayers = 4;
+        var districts =  new DistrictState[numOfPlayers];
+        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
+        
+        GameState state = GameState.NewGame(districts);
 
         for (int tick = 0; tick < 100; tick++)
         {
@@ -440,7 +462,11 @@ public class IntegrationTests
     [Test]
     public void TickCounter_AdvancesCorrectly()
     {
-        GameState state = GameState.NewGame(2);
+        const int numOfPlayers = 2;
+        var districts =  new DistrictState[numOfPlayers];
+        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
+        
+        GameState state = GameState.NewGame(districts);
 
         Assert.AreEqual(0, state.currentTick);
         Assert.AreEqual(0, state.currentMonth);

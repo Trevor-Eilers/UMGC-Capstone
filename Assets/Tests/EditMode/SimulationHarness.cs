@@ -1,9 +1,11 @@
 // Author: Malcolm Bramble
+// Edited by: Trevor Eilers
 
 using System;
 using System.Text;
 using System.IO;
 using NUnit.Framework;
+using Simulation;
 
 /// <summary>
 /// Simulation test harness for running full-game scenarios with configurable
@@ -22,48 +24,48 @@ public class SimulationHarness
         switch (profile)
         {
             case "balanced":
-                d.values.taxRate = 15f;
-                d.values.education = 50f;
-                d.values.infrastructure = 50f;
-                d.values.housing = 50f;
-                d.values.environment = 50f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 50f;
+                d.policyValues.infrastructure = 50f;
+                d.policyValues.housing = 50f;
+                d.policyValues.environment = 50f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "education_heavy":
-                d.values.taxRate = 15f;
-                d.values.education = 80f;
-                d.values.infrastructure = 40f;
-                d.values.housing = 40f;
-                d.values.environment = 40f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 80f;
+                d.policyValues.infrastructure = 40f;
+                d.policyValues.housing = 40f;
+                d.policyValues.environment = 40f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "infra_neglect":
-                d.values.taxRate = 15f;
-                d.values.education = 70f;
-                d.values.infrastructure = 10f;
-                d.values.housing = 60f;
-                d.values.environment = 50f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 70f;
+                d.policyValues.infrastructure = 10f;
+                d.policyValues.housing = 60f;
+                d.policyValues.environment = 50f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "high_tax_saver":
-                d.values.taxRate = 25f;
-                d.values.education = 30f;
-                d.values.infrastructure = 30f;
-                d.values.housing = 30f;
-                d.values.environment = 30f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 25f;
+                d.policyValues.education = 30f;
+                d.policyValues.infrastructure = 30f;
+                d.policyValues.housing = 30f;
+                d.policyValues.environment = 30f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "free_rider":
-                d.values.taxRate = 15f;
-                d.values.education = 60f;
-                d.values.infrastructure = 60f;
-                d.values.housing = 60f;
-                d.values.environment = 60f;
-                d.values.cityContribution = 0f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 60f;
+                d.policyValues.infrastructure = 60f;
+                d.policyValues.housing = 60f;
+                d.policyValues.environment = 60f;
+                d.policyValues.cityContribution = 0f;
                 break;
 
             default:
@@ -179,7 +181,11 @@ public class SimulationHarness
     {
         SetCalibratedConstants();
 
-        GameState state = GameState.NewGame(4);
+        const int numOfPlayers = 4;
+        var districts =  new DistrictState[numOfPlayers];
+        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
+        
+        GameState state = GameState.NewGame(districts);
 
         // Apply initial profiles
         for (int i = 0; i < 4; i++)

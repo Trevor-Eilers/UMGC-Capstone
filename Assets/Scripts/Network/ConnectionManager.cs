@@ -1,3 +1,5 @@
+// Author: Trevor Eilers
+
 using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
@@ -30,10 +32,7 @@ namespace Network
         private ISession _session;
    
         private NetworkManager _networkManager;
-   
-
-
-   
+        
    
         private async void Awake()
         {

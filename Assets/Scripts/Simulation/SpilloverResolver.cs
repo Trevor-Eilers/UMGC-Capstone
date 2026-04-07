@@ -1,6 +1,7 @@
 // Author: Malcolm Bramble
 
 using System;
+using Simulation;
 
 public static class SpilloverResolver
 {
@@ -51,13 +52,13 @@ public static class SpilloverResolver
     {
         for (int d = 0; d < numActivePlayers; d++)
         {
-            if (districts[d].values.environment >= SimulationConstants.POLLUTE_ENV_THRESHOLD
+            if (districts[d].policyValues.environment >= SimulationConstants.POLLUTE_ENV_THRESHOLD
                 || districts[d].gdp <= SimulationConstants.POLLUTE_GDP_THRESHOLD)
                 continue;
 
             // Pollution output — additive formula
             float envShortfall = Math.Max(0f,
-                SimulationConstants.POLLUTE_ENV_THRESHOLD - districts[d].values.environment);
+                SimulationConstants.POLLUTE_ENV_THRESHOLD - districts[d].policyValues.environment);
             float gdpExcess = Math.Max(0f,
                 districts[d].gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
             float pollutionOutput = (envShortfall + gdpExcess)

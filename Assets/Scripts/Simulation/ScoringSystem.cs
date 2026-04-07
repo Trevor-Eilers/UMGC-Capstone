@@ -1,6 +1,7 @@
 // Author: Malcolm Bramble
 
 using System;
+using Simulation;
 
 public struct FinalScore
 {

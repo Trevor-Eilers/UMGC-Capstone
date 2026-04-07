@@ -1,7 +1,10 @@
+// Author: Trevor Eilers
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Network;
+using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
@@ -15,18 +18,26 @@ namespace UI
 {
     public class LobbyManager : MonoBehaviour
     {
-        [SerializeField] private string gameSceneName = "MainScene";
-        [SerializeField] private ConnectionManager connectionManager;
+        [SerializeField] 
+        private string gameSceneName = "MainScene";
+        
+        [SerializeField] 
+        private ConnectionManager connectionManager;
+        
         public LobbyUI lobbyUI;
+        
         private const int MaxPlayers = 4;
 
         private Lobby _lobby;
-        [SerializeField] private bool isHost;
+        
+        [SerializeField]
+        [ReadOnly]
+        private bool isHost;
+        
         private bool _gameStarting;
 
         private float _heartbeatTimer;
         private float _pollTimer;
-
         private const float HeartbeatInterval = 15f;
         private const float PollInterval = 2f;
 
@@ -149,9 +160,9 @@ namespace UI
             }
         }
     
-        private Player MakePlayer(string displayName)
+        private Unity.Services.Lobbies.Models.Player MakePlayer(string displayName)
         {
-            return new Player(
+            return new Unity.Services.Lobbies.Models.Player(
                 id: AuthenticationService.Instance.PlayerId,
                 data: new Dictionary<string, PlayerDataObject>
                 {
@@ -327,9 +338,8 @@ namespace UI
 
             connectionManager.playerCount = _lobby.Players.Count;
 
-            var sessionId = Guid.NewGuid().ToString(); // TODO: Add check that != _lobby.id. Buy lottery ticket if this throws
-            await connectionManager.CreateOrJoinSessionAsync(
-                connectionManager.ProfileName, sessionId);
+            var sessionId = Guid.NewGuid().ToString(); // TODO: Add check that != _lobby.id. Buy lottery ticket if it throws
+            await connectionManager.CreateOrJoinSessionAsync(connectionManager.ProfileName, sessionId);
 
             if (connectionManager.State != ConnectionState.Connected)
             {
