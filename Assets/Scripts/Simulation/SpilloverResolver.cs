@@ -1,100 +1,107 @@
 // Author: Malcolm Bramble
 
 using System;
+using Simulation;
 
+/// <summary>
+/// Per-district spillover resolution for distributed authority.
+/// Each method computes effects ON a single district (districtIndex)
+/// by reading other districts from the snapshot. Only modifies d.
+/// </summary>
 public static class SpilloverResolver
 {
     /// <summary>
-    /// Phase 3.1 — Gentrification.
-    /// Triggers when GDP differential between adjacent districts exceeds GENTRIFY_THRESHOLD (8).
-    /// Wealthy district gains GDP, loses happiness. Poor district loses happiness and population.
-    /// Only processes pairs where both districts are active (index &lt; numActivePlayers).
+    /// Phase 3.1 — Gentrification effects ON districtIndex.
+    /// For each pair containing this district, if GDP gap exceeds threshold,
+    /// applies wealthy-side or poor-side effects to d.
     /// </summary>
-    public static void ResolveGentrification(DistrictState[] districts, int numActivePlayers)
+    public static void ApplyGentrification(
+        ref DistrictState d, int districtIndex,
+        DistrictState[] snapshot, int numActivePlayers)
     {
         for (int i = 0; i < AdjacencyMap.AllPairs.Length; i++)
         {
             var pair = AdjacencyMap.AllPairs[i];
             if (pair.indexA >= numActivePlayers || pair.indexB >= numActivePlayers)
                 continue;
+            if (pair.indexA != districtIndex && pair.indexB != districtIndex)
+                continue;
 
-            float gdpDiff = districts[pair.indexA].gdp - districts[pair.indexB].gdp;
+            float gdpDiff = snapshot[pair.indexA].gdp - snapshot[pair.indexB].gdp;
 
             if (Math.Abs(gdpDiff) > SimulationConstants.GENTRIFY_THRESHOLD)
             {
-                int wealthyIdx = gdpDiff > 0 ? pair.indexA : pair.indexB;
-                int poorIdx = gdpDiff > 0 ? pair.indexB : pair.indexA;
-
                 float magnitude = (Math.Abs(gdpDiff) - SimulationConstants.GENTRIFY_THRESHOLD)
                                   * pair.weight;
 
-                // Poor district: displacement stress and population loss
-                districts[poorIdx].happiness -= magnitude * SimulationConstants.K_GENTRIFY_HAPPY;
-                districts[poorIdx].population -= magnitude * SimulationConstants.K_GENTRIFY_POP;
+                bool weAreWealthy = (gdpDiff > 0 && pair.indexA == districtIndex)
+                                 || (gdpDiff < 0 && pair.indexB == districtIndex);
 
-                // Wealthy district: economic expansion but social friction
-                districts[wealthyIdx].gdp += magnitude * SimulationConstants.K_GENTRIFY_GDP_GAIN;
-                districts[wealthyIdx].happiness -= magnitude
-                    * SimulationConstants.K_GENTRIFY_WEALTHY_HAPPY;
+                if (weAreWealthy)
+                {
+                    d.gdp += magnitude * SimulationConstants.K_GENTRIFY_GDP_GAIN;
+                    d.happiness -= magnitude * SimulationConstants.K_GENTRIFY_WEALTHY_HAPPY;
+                }
+                else
+                {
+                    d.happiness -= magnitude * SimulationConstants.K_GENTRIFY_HAPPY;
+                    d.population -= magnitude * SimulationConstants.K_GENTRIFY_POP;
+                }
             }
         }
     }
 
     /// <summary>
-    /// Phase 3.2 — Pollution Drift.
-    /// Triggers when a district has environment slider below POLLUTE_ENV_THRESHOLD (30)
-    /// AND GDP above POLLUTE_GDP_THRESHOLD (40). Both conditions required.
-    /// Polluter damages neighbors' sustainability and happiness; also takes self-damage.
-    /// Only processes active districts (index &lt; numActivePlayers).
+    /// Phase 3.2 — Pollution effects ON districtIndex.
+    /// Checks all districts in the snapshot for pollution sources.
+    /// Applies neighbor damage or self-damage as appropriate.
     /// </summary>
-    public static void ResolvePollution(DistrictState[] districts, int numActivePlayers)
+    public static void ApplyPollution(
+        ref DistrictState d, int districtIndex,
+        DistrictState[] snapshot, int numActivePlayers)
     {
-        for (int d = 0; d < numActivePlayers; d++)
+        for (int src = 0; src < numActivePlayers; src++)
         {
-            if (districts[d].values.environment >= SimulationConstants.POLLUTE_ENV_THRESHOLD
-                || districts[d].gdp <= SimulationConstants.POLLUTE_GDP_THRESHOLD)
+            if (snapshot[src].policyValues.environment >= SimulationConstants.POLLUTE_ENV_THRESHOLD
+                || snapshot[src].gdp <= SimulationConstants.POLLUTE_GDP_THRESHOLD)
                 continue;
 
-            // Pollution output — additive formula
             float envShortfall = Math.Max(0f,
-                SimulationConstants.POLLUTE_ENV_THRESHOLD - districts[d].values.environment);
+                SimulationConstants.POLLUTE_ENV_THRESHOLD - snapshot[src].policyValues.environment);
             float gdpExcess = Math.Max(0f,
-                districts[d].gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
+                snapshot[src].gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
             float pollutionOutput = (envShortfall + gdpExcess)
                                     * SimulationConstants.K_POLLUTION_GENERATE;
 
-            // Damage all neighbors
-            int[] neighbors = AdjacencyMap.GetNeighbors(d);
-            for (int n = 0; n < neighbors.Length; n++)
+            if (src == districtIndex)
             {
-                int neighborIdx = neighbors[n];
-                if (neighborIdx >= numActivePlayers)
-                    continue;
-
-                float weight = AdjacencyMap.GetWeight(d, neighborIdx);
-                districts[neighborIdx].sustainability -=
-                    pollutionOutput * SimulationConstants.K_POLLUTION_SUSTAIN * weight;
-                districts[neighborIdx].happiness -=
-                    pollutionOutput * SimulationConstants.K_POLLUTION_HAPPY * weight;
+                // Self-pollution (lower than neighbor damage)
+                d.sustainability -= pollutionOutput * SimulationConstants.K_POLLUTION_SELF_SUSTAIN;
+                d.happiness -= pollutionOutput * SimulationConstants.K_POLLUTION_SELF_HAPPY;
             }
-
-            // Self-damage (lower than neighbor damage)
-            districts[d].sustainability -=
-                pollutionOutput * SimulationConstants.K_POLLUTION_SELF_SUSTAIN;
-            districts[d].happiness -=
-                pollutionOutput * SimulationConstants.K_POLLUTION_SELF_HAPPY;
+            else
+            {
+                float weight = AdjacencyMap.GetWeight(src, districtIndex);
+                if (weight > 0f)
+                {
+                    d.sustainability -= pollutionOutput
+                        * SimulationConstants.K_POLLUTION_SUSTAIN * weight;
+                    d.happiness -= pollutionOutput
+                        * SimulationConstants.K_POLLUTION_HAPPY * weight;
+                }
+            }
         }
     }
 
     /// <summary>
-    /// Phase 3.3 — Commuter Flows.
-    /// Triggers when GDP differential exceeds COMMUTE_GDP_THRESHOLD (5)
-    /// AND sharedInfraQuality exceeds COMMUTE_INFRA_THRESHOLD (25). Both required.
-    /// Work district gains GDP, loses happiness. Home district loses GDP, gains happiness.
-    /// Only processes pairs where both districts are active.
+    /// Phase 3.3 — Commuting effects ON districtIndex.
+    /// For each pair containing this district, if GDP gap and shared infra
+    /// thresholds are met, applies work-side or home-side effects to d.
     /// </summary>
-    public static void ResolveCommuting(
-        DistrictState[] districts, CityMetrics cityMetrics, int numActivePlayers)
+    public static void ApplyCommuting(
+        ref DistrictState d, int districtIndex,
+        DistrictState[] snapshot, CityMetrics cityMetrics,
+        int numActivePlayers)
     {
         if (cityMetrics.sharedInfraQuality <= SimulationConstants.COMMUTE_INFRA_THRESHOLD)
             return;
@@ -106,25 +113,30 @@ public static class SpilloverResolver
             var pair = AdjacencyMap.AllPairs[i];
             if (pair.indexA >= numActivePlayers || pair.indexB >= numActivePlayers)
                 continue;
+            if (pair.indexA != districtIndex && pair.indexB != districtIndex)
+                continue;
 
-            float gdpDiff = districts[pair.indexA].gdp - districts[pair.indexB].gdp;
+            float gdpDiff = snapshot[pair.indexA].gdp - snapshot[pair.indexB].gdp;
 
             if (Math.Abs(gdpDiff) > SimulationConstants.COMMUTE_GDP_THRESHOLD)
             {
-                int workIdx = gdpDiff > 0 ? pair.indexA : pair.indexB;
-                int homeIdx = gdpDiff > 0 ? pair.indexB : pair.indexA;
-
                 float magnitude = (Math.Abs(gdpDiff) - SimulationConstants.COMMUTE_GDP_THRESHOLD)
                                   * pair.weight;
                 float commuters = magnitude * infraFactor * SimulationConstants.K_COMMUTE_VOLUME;
 
-                // Work district: GDP gain + congestion
-                districts[workIdx].gdp += commuters * SimulationConstants.K_COMMUTE_GDP_GAIN;
-                districts[workIdx].happiness -= commuters * SimulationConstants.K_COMMUTE_CONGESTION;
+                bool weAreWork = (gdpDiff > 0 && pair.indexA == districtIndex)
+                              || (gdpDiff < 0 && pair.indexB == districtIndex);
 
-                // Home district: GDP drain + employed happiness
-                districts[homeIdx].gdp -= commuters * SimulationConstants.K_COMMUTE_GDP_DRAIN;
-                districts[homeIdx].happiness += commuters * SimulationConstants.K_COMMUTE_HOME_HAPPY;
+                if (weAreWork)
+                {
+                    d.gdp += commuters * SimulationConstants.K_COMMUTE_GDP_GAIN;
+                    d.happiness -= commuters * SimulationConstants.K_COMMUTE_CONGESTION;
+                }
+                else
+                {
+                    d.gdp -= commuters * SimulationConstants.K_COMMUTE_GDP_DRAIN;
+                    d.happiness += commuters * SimulationConstants.K_COMMUTE_HOME_HAPPY;
+                }
             }
         }
     }

@@ -1,9 +1,11 @@
 // Author: Malcolm Bramble
+// Edited by: Trevor Eilers
 
 using System;
 using System.Text;
 using System.IO;
 using NUnit.Framework;
+using Simulation;
 
 /// <summary>
 /// Simulation test harness for running full-game scenarios with configurable
@@ -22,48 +24,48 @@ public class SimulationHarness
         switch (profile)
         {
             case "balanced":
-                d.values.taxRate = 15f;
-                d.values.education = 50f;
-                d.values.infrastructure = 50f;
-                d.values.housing = 50f;
-                d.values.environment = 50f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 50f;
+                d.policyValues.infrastructure = 50f;
+                d.policyValues.housing = 50f;
+                d.policyValues.environment = 50f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "education_heavy":
-                d.values.taxRate = 15f;
-                d.values.education = 80f;
-                d.values.infrastructure = 40f;
-                d.values.housing = 40f;
-                d.values.environment = 40f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 80f;
+                d.policyValues.infrastructure = 40f;
+                d.policyValues.housing = 40f;
+                d.policyValues.environment = 40f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "infra_neglect":
-                d.values.taxRate = 15f;
-                d.values.education = 70f;
-                d.values.infrastructure = 10f;
-                d.values.housing = 60f;
-                d.values.environment = 50f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 70f;
+                d.policyValues.infrastructure = 10f;
+                d.policyValues.housing = 60f;
+                d.policyValues.environment = 50f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "high_tax_saver":
-                d.values.taxRate = 25f;
-                d.values.education = 30f;
-                d.values.infrastructure = 30f;
-                d.values.housing = 30f;
-                d.values.environment = 30f;
-                d.values.cityContribution = 25f;
+                d.policyValues.taxRate = 25f;
+                d.policyValues.education = 30f;
+                d.policyValues.infrastructure = 30f;
+                d.policyValues.housing = 30f;
+                d.policyValues.environment = 30f;
+                d.policyValues.cityContribution = 25f;
                 break;
 
             case "free_rider":
-                d.values.taxRate = 15f;
-                d.values.education = 60f;
-                d.values.infrastructure = 60f;
-                d.values.housing = 60f;
-                d.values.environment = 60f;
-                d.values.cityContribution = 0f;
+                d.policyValues.taxRate = 15f;
+                d.policyValues.education = 60f;
+                d.policyValues.infrastructure = 60f;
+                d.policyValues.housing = 60f;
+                d.policyValues.environment = 60f;
+                d.policyValues.cityContribution = 0f;
                 break;
 
             default:
@@ -179,11 +181,14 @@ public class SimulationHarness
     {
         SetCalibratedConstants();
 
-        GameState state = GameState.NewGame(4);
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
 
         // Apply initial profiles
-        for (int i = 0; i < 4; i++)
-            ApplyProfile(ref state.districts[i], profiles[i]);
+        for (int i = 0; i < numPlayers; i++)
+            ApplyProfile(ref districts[i], profiles[i]);
 
         var csv = new StringBuilder();
 
@@ -196,19 +201,20 @@ public class SimulationHarness
         {
             // Mid-game strategy switch
             if (tick == switchTick && switchPlayer >= 0 && switchProfile != null)
-                ApplyProfile(ref state.districts[switchPlayer], switchProfile);
+                ApplyProfile(ref districts[switchPlayer], switchProfile);
 
-            state = TickProcessor.ResolveTick(state);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            int currentTick = tick + 1;
 
             // Report every 12 ticks (once per simulated month)
-            if (state.currentTick % SimulationConstants.TICKS_PER_MONTH == 0)
+            if (currentTick % SimulationConstants.TICKS_PER_MONTH == 0)
             {
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < numPlayers; i++)
                 {
-                    var d = state.districts[i];
+                    var d = districts[i];
                     csv.AppendLine(string.Format(
                         "{0},{1},{2:F2},{3:F2},{4:F2},{5:F2},{6:F2},{7:F2},{8:F2},{9:F2},{10:F2}",
-                        state.currentTick, i,
+                        currentTick, i,
                         d.gdp, d.happiness, d.population,
                         d.infrastructure, d.sustainability,
                         d.debt, d.reserve, d.revenue, d.totalSpending));
@@ -221,10 +227,10 @@ public class SimulationHarness
         csv.AppendLine("# Final Scores");
         csv.AppendLine("district,profile,neighborhoodScore,cityContribScore,finalScore");
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < numPlayers; i++)
         {
             FinalScore score = ScoringSystem.ComputeFinalScore(
-                state.districts[i], state.cityMetrics, state.districts, 4);
+                districts[i], cityMetrics, districts, numPlayers);
             csv.AppendLine(string.Format("{0},{1},{2:F2},{3:F2},{4:F2}",
                 i, profiles[i],
                 score.neighborhoodScore, score.cityContribScore, score.finalScore));

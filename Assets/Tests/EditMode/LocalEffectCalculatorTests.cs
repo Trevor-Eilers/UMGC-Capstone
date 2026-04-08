@@ -2,6 +2,7 @@
 
 using System;
 using NUnit.Framework;
+using Simulation;
 
 [TestFixture]
 public class LocalEffectCalculatorTests
@@ -95,7 +96,7 @@ public class LocalEffectCalculatorTests
         d.infrastructure = infrastructure;
         d.sustainability = sustainability;
         d.debt = debt;
-        d.values.taxRate = taxRate;
+        d.policyValues.taxRate = taxRate;
         return d;
     }
 

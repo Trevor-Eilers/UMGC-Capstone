@@ -2,6 +2,7 @@
 
 using System;
 using NUnit.Framework;
+using Simulation;
 
 [TestFixture]
 public class SpilloverResolverTests
@@ -86,19 +87,34 @@ public class SpilloverResolverTests
         districts[0].happiness = happyA;
         districts[0].population = popA;
         districts[0].sustainability = sustainA;
-        districts[0].values.environment = envSliderA;
+        districts[0].policyValues.environment = envSliderA;
 
         districts[1] = DistrictState.Default(1);
         districts[1].gdp = gdpB;
         districts[1].happiness = happyB;
         districts[1].population = popB;
         districts[1].sustainability = sustainB;
-        districts[1].values.environment = envSliderB;
+        districts[1].policyValues.environment = envSliderB;
 
         // Inactive districts (defaults, won't be processed with numActive=2)
         districts[2] = DistrictState.Default(2);
         districts[3] = DistrictState.Default(3);
         return districts;
+    }
+
+    /// <summary>
+    /// Apply per-district spillover to all active districts from the same snapshot,
+    /// simulating distributed clients computing simultaneously.
+    /// </summary>
+    private static void ApplyToAll(
+        DistrictState[] districts, int numActive,
+        Action<DistrictState[], int> applyFn)
+    {
+        var snapshot = (DistrictState[])districts.Clone();
+        for (int i = 0; i < numActive; i++)
+        {
+            applyFn(snapshot, i);
+        }
     }
 
     // ══════════════════════════════════════════════
@@ -108,19 +124,20 @@ public class SpilloverResolverTests
     [Test]
     public void Gentrification_GdpDiff9_Fires()
     {
-        // District 0 and 1 are direct neighbors (NW↔NE), weight 1.0
         SimulationConstants.K_GENTRIFY_HAPPY = 1.0f;
         SimulationConstants.K_GENTRIFY_POP = 1.0f;
         SimulationConstants.K_GENTRIFY_GDP_GAIN = 1.0f;
         SimulationConstants.K_GENTRIFY_WEALTHY_HAPPY = 1.0f;
 
         var districts = MakeTwoDistricts(gdpA: 59f, gdpB: 50f);
+        var snapshot = (DistrictState[])districts.Clone();
 
-        SpilloverResolver.ResolveGentrification(districts, 2);
+        SpilloverResolver.ApplyGentrification(ref districts[0], 0, snapshot, 2);
+        SpilloverResolver.ApplyGentrification(ref districts[1], 1, snapshot, 2);
 
         // GDP diff = 9, threshold = 8, magnitude = (9-8)*1.0 = 1.0
-        // Poor (B=1): happiness -= 1.0, population -= 1.0
         // Wealthy (A=0): gdp += 1.0, happiness -= 1.0
+        // Poor (B=1): happiness -= 1.0, population -= 1.0
         Assert.AreEqual(60f, districts[0].gdp, 0.01f, "Wealthy GDP should increase");
         Assert.AreEqual(54f, districts[0].happiness, 0.01f, "Wealthy happiness should decrease");
         Assert.AreEqual(54f, districts[1].happiness, 0.01f, "Poor happiness should decrease");
@@ -140,9 +157,10 @@ public class SpilloverResolverTests
         float origHappyB = districts[1].happiness;
         float origPopB = districts[1].population;
 
-        SpilloverResolver.ResolveGentrification(districts, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyGentrification(ref districts[0], 0, snapshot, 2);
+        SpilloverResolver.ApplyGentrification(ref districts[1], 1, snapshot, 2);
 
-        // GDP diff = 7, below threshold 8 — no effects
         Assert.AreEqual(57f, districts[0].gdp, 0.01f, "GDP should not change");
         Assert.AreEqual(origHappyA, districts[0].happiness, 0.01f);
         Assert.AreEqual(origHappyB, districts[1].happiness, 0.01f);
@@ -158,9 +176,9 @@ public class SpilloverResolverTests
         var districts = MakeTwoDistricts(gdpA: 58f, gdpB: 50f);
         float origHappyB = districts[1].happiness;
 
-        SpilloverResolver.ResolveGentrification(districts, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyGentrification(ref districts[1], 1, snapshot, 2);
 
-        // GDP diff = 8, threshold is 8, condition is > (not >=)
         Assert.AreEqual(origHappyB, districts[1].happiness, 0.01f,
             "At exactly threshold, gentrification should not fire");
     }
@@ -173,13 +191,12 @@ public class SpilloverResolverTests
         SimulationConstants.K_GENTRIFY_GDP_GAIN = 1.0f;
         SimulationConstants.K_GENTRIFY_WEALTHY_HAPPY = 1.0f;
 
-        // Verify diagonal weight by comparing border vs diagonal GDP gain.
-        // Use 2-player game: districts 0 and 1 are border neighbors (weight 1.0).
+        // 2-player game: districts 0 and 1 are border neighbors (weight 1.0).
         var borderDistricts = MakeTwoDistricts(gdpA: 59f, gdpB: 50f);
-        SpilloverResolver.ResolveGentrification(borderDistricts, 2);
+        var snapshot = (DistrictState[])borderDistricts.Clone();
+        SpilloverResolver.ApplyGentrification(ref borderDistricts[0], 0, snapshot, 2);
         float borderGdpGain = borderDistricts[0].gdp - 59f;
 
-        // Adjacency weight for 0↔1 is 1.0, diff=9, magnitude=(9-8)*1.0=1.0
         Assert.AreEqual(1.0f, borderGdpGain, 0.01f, "Border pair: full weight");
 
         // Verify diagonal weight is 0.5 via the AdjacencyMap directly
@@ -202,7 +219,6 @@ public class SpilloverResolverTests
         SimulationConstants.K_POLLUTION_SELF_SUSTAIN = 0.5f;
         SimulationConstants.K_POLLUTION_SELF_HAPPY = 0.5f;
 
-        // District 0: env=10 (< 30), gdp=60 (> 40) → pollutes
         var districts = MakeTwoDistricts(
             gdpA: 60f, envSliderA: 10f,
             gdpB: 50f, envSliderB: 50f);
@@ -210,11 +226,10 @@ public class SpilloverResolverTests
         float origSustainB = districts[1].sustainability;
         float origSustainA = districts[0].sustainability;
 
-        SpilloverResolver.ResolvePollution(districts, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyPollution(ref districts[0], 0, snapshot, 2);
+        SpilloverResolver.ApplyPollution(ref districts[1], 1, snapshot, 2);
 
-        // pollutionOutput = (max(0, 30-10) + max(0, 60-40)) * 1.0 = (20+20)*1.0 = 40
-        // Neighbor (B=1, weight 1.0): sustain -= 40*1.0*1.0, happy -= 40*1.0*1.0
-        // Self (A=0): sustain -= 40*0.5, happy -= 40*0.5
         Assert.Less(districts[1].sustainability, origSustainB,
             "Neighbor sustainability should decrease from pollution");
         Assert.Less(districts[0].sustainability, origSustainA,
@@ -230,7 +245,6 @@ public class SpilloverResolverTests
         SimulationConstants.K_POLLUTION_SELF_SUSTAIN = 0.5f;
         SimulationConstants.K_POLLUTION_SELF_HAPPY = 0.5f;
 
-        // District 0: env=10 (< 30) but gdp=30 (<= 40) → no pollution
         var districts = MakeTwoDistricts(
             gdpA: 30f, envSliderA: 10f,
             gdpB: 50f, envSliderB: 50f);
@@ -238,7 +252,9 @@ public class SpilloverResolverTests
         float origSustainA = districts[0].sustainability;
         float origSustainB = districts[1].sustainability;
 
-        SpilloverResolver.ResolvePollution(districts, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyPollution(ref districts[0], 0, snapshot, 2);
+        SpilloverResolver.ApplyPollution(ref districts[1], 1, snapshot, 2);
 
         Assert.AreEqual(origSustainA, districts[0].sustainability, 0.01f,
             "No pollution when GDP is at or below threshold");
@@ -254,14 +270,14 @@ public class SpilloverResolverTests
         SimulationConstants.K_POLLUTION_SELF_SUSTAIN = 0.5f;
         SimulationConstants.K_POLLUTION_SELF_HAPPY = 0.5f;
 
-        // District 0: env=50 (>= 30) and gdp=60 (> 40) → no pollution (env too high)
         var districts = MakeTwoDistricts(
             gdpA: 60f, envSliderA: 50f,
             gdpB: 50f, envSliderB: 50f);
 
         float origSustainB = districts[1].sustainability;
 
-        SpilloverResolver.ResolvePollution(districts, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyPollution(ref districts[1], 1, snapshot, 2);
 
         Assert.AreEqual(origSustainB, districts[1].sustainability, 0.01f,
             "No pollution when environment slider is at or above threshold");
@@ -280,7 +296,9 @@ public class SpilloverResolverTests
             gdpA: 60f, envSliderA: 10f, sustainA: 80f,
             gdpB: 50f, envSliderB: 50f, sustainB: 80f);
 
-        SpilloverResolver.ResolvePollution(districts, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyPollution(ref districts[0], 0, snapshot, 2);
+        SpilloverResolver.ApplyPollution(ref districts[1], 1, snapshot, 2);
 
         float selfLoss = 80f - districts[0].sustainability;
         float neighborLoss = 80f - districts[1].sustainability;
@@ -305,11 +323,10 @@ public class SpilloverResolverTests
         var districts = MakeTwoDistricts(gdpA: 60f, gdpB: 50f);
         var cityMetrics = CityMetrics.Default(); // sharedInfra = 50 (> 25)
 
-        SpilloverResolver.ResolveCommuting(districts, cityMetrics, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyCommuting(ref districts[0], 0, snapshot, cityMetrics, 2);
+        SpilloverResolver.ApplyCommuting(ref districts[1], 1, snapshot, cityMetrics, 2);
 
-        // GDP diff = 10, threshold = 5, magnitude = (10-5)*1.0 = 5
-        // infraFactor = 50/100 = 0.5
-        // commuters = 5 * 0.5 * 1.0 = 2.5
         Assert.Greater(districts[0].gdp, 60f, "Work district GDP should increase");
         Assert.Less(districts[1].gdp, 50f, "Home district GDP should decrease");
     }
@@ -321,11 +338,12 @@ public class SpilloverResolverTests
         SimulationConstants.K_COMMUTE_GDP_GAIN = 1.0f;
         SimulationConstants.K_COMMUTE_GDP_DRAIN = 1.0f;
 
-        // GDP diff = 4, below threshold 5
         var districts = MakeTwoDistricts(gdpA: 54f, gdpB: 50f);
         var cityMetrics = CityMetrics.Default();
 
-        SpilloverResolver.ResolveCommuting(districts, cityMetrics, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyCommuting(ref districts[0], 0, snapshot, cityMetrics, 2);
+        SpilloverResolver.ApplyCommuting(ref districts[1], 1, snapshot, cityMetrics, 2);
 
         Assert.AreEqual(54f, districts[0].gdp, 0.01f, "No commuting below GDP threshold");
         Assert.AreEqual(50f, districts[1].gdp, 0.01f);
@@ -340,9 +358,11 @@ public class SpilloverResolverTests
 
         var districts = MakeTwoDistricts(gdpA: 60f, gdpB: 50f);
         var cityMetrics = CityMetrics.Default();
-        cityMetrics.sharedInfraQuality = 20f; // below threshold 25
+        cityMetrics.sharedInfraQuality = 20f;
 
-        SpilloverResolver.ResolveCommuting(districts, cityMetrics, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyCommuting(ref districts[0], 0, snapshot, cityMetrics, 2);
+        SpilloverResolver.ApplyCommuting(ref districts[1], 1, snapshot, cityMetrics, 2);
 
         Assert.AreEqual(60f, districts[0].gdp, 0.01f,
             "No commuting when shared infra is at or below threshold");
@@ -358,9 +378,11 @@ public class SpilloverResolverTests
 
         var districts = MakeTwoDistricts(gdpA: 60f, gdpB: 50f);
         var cityMetrics = CityMetrics.Default();
-        cityMetrics.sharedInfraQuality = 25f; // exactly at threshold
+        cityMetrics.sharedInfraQuality = 25f;
 
-        SpilloverResolver.ResolveCommuting(districts, cityMetrics, 2);
+        var snapshot = (DistrictState[])districts.Clone();
+        SpilloverResolver.ApplyCommuting(ref districts[0], 0, snapshot, cityMetrics, 2);
+        SpilloverResolver.ApplyCommuting(ref districts[1], 1, snapshot, cityMetrics, 2);
 
         Assert.AreEqual(60f, districts[0].gdp, 0.01f,
             "Commuting requires sharedInfra > threshold, not >=");
@@ -379,14 +401,16 @@ public class SpilloverResolverTests
         var districts50 = MakeTwoDistricts(gdpA: 60f, gdpB: 50f);
         var city50 = CityMetrics.Default();
         city50.sharedInfraQuality = 50f;
-        SpilloverResolver.ResolveCommuting(districts50, city50, 2);
+        var snapshot50 = (DistrictState[])districts50.Clone();
+        SpilloverResolver.ApplyCommuting(ref districts50[0], 0, snapshot50, city50, 2);
         float gdpGain50 = districts50[0].gdp - 60f;
 
         // Run with sharedInfra=100
         var districts100 = MakeTwoDistricts(gdpA: 60f, gdpB: 50f);
         var city100 = CityMetrics.Default();
         city100.sharedInfraQuality = 100f;
-        SpilloverResolver.ResolveCommuting(districts100, city100, 2);
+        var snapshot100 = (DistrictState[])districts100.Clone();
+        SpilloverResolver.ApplyCommuting(ref districts100[0], 0, snapshot100, city100, 2);
         float gdpGain100 = districts100[0].gdp - 60f;
 
         Assert.Greater(gdpGain100, gdpGain50,
@@ -418,7 +442,6 @@ public class SpilloverResolverTests
     [Test]
     public void AdjacencyMap_Symmetric()
     {
-        // Weight should be the same regardless of order
         for (int i = 0; i < AdjacencyMap.AllPairs.Length; i++)
         {
             var p = AdjacencyMap.AllPairs[i];

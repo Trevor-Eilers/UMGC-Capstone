@@ -1,121 +1,119 @@
+// Author: Trevor Eilers
+
 using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
-using Unity.Services.Relay;
 using UnityEngine;
 
-public class ConnectionManager : MonoBehaviour
+namespace Network
 {
-   public string ProfileName { get; private set; }
-
-   public string SessionName { get; private set; }
-
-   public int PlayerCount { get; set; }
-
-   public bool IsConnected => _state == ConnectionState.Connected;
-
-   private readonly int _maxPlayers = 4;
-
-   private ConnectionState _state = ConnectionState.Disconnected;
-
-   private ISession _session;
-
-   private NetworkManager _networkManager;
-
-   private enum ConnectionState
-   {
-       Disconnected,
-       Connecting,
-       Connected,
-   }
-
-   
-   
-    private async void Awake()
+    public enum ConnectionState
     {
-        try
-        {
-            _networkManager = GetComponent<NetworkManager>();
-            _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-            _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
-            await UnityServices.InitializeAsync();
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e.StackTrace); // TODO handle exception
-        }
+        Disconnected,
+        Connecting,
+        Connected,
     }
 
-    private void OnSessionOwnerPromoted(ulong sessionOwnerPromoted)
+    public class ConnectionManager : MonoBehaviour
     {
-        if (_networkManager.LocalClient.IsSessionOwner)
-        {
-            Debug.Log($"Client-{_networkManager.LocalClientId} is the session owner!");
-        }
-    }
-
-    private void OnClientConnectedCallback(ulong clientId)
-    {
-        if (_networkManager.LocalClientId == clientId)
-        {
-            Debug.Log($"Client-{clientId} is connected.");
-        }
-    }
-
-   private void OnDestroy()
-   {
-       _session?.LeaveAsync();
-   }
-
-   public async Task<bool> Authenticate(string profileName)
-   {
-       try
-       {
-           ProfileName = profileName;
-           AuthenticationService.Instance.SwitchProfile(profileName);
-           await AuthenticationService.Instance.SignInAnonymouslyAsync();
-           Debug.Log("Authentication Succeeded");
-           return true;
-       }
-       catch (Exception e)
-       {
-           Debug.Log("Authentication failed");
-           Debug.LogException(e);
-           return false;
-       }
-   }
+        public string ProfileName { get; private set; }
+    
+        public string SessionName { get; private set; }
    
-   public async Task CreateOrJoinSessionAsync(string profileName, string sessionName)
-   {
-       _state = ConnectionState.Connecting;
+        private readonly int _maxPlayers = 4;
 
-       try
-       {
-           ProfileName = profileName;
-           SessionName = sessionName;
+        public int playerCount = 0;
+   
+        public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
+   
+        private ISession _session;
+   
+        private NetworkManager _networkManager;
+        
+   
+        private async void Awake()
+        {
+            try
+            {
+                _networkManager = GetComponent<NetworkManager>();
+                _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+                _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
+                await UnityServices.InitializeAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.StackTrace); // TODO handle exception
+            }
+        }
 
-           if (!AuthenticationService.Instance.IsSignedIn)
-           {
-               AuthenticationService.Instance.SwitchProfile(profileName);
-               await AuthenticationService.Instance.SignInAnonymouslyAsync();
-           }
+        private void OnSessionOwnerPromoted(ulong sessionOwnerPromoted)
+        {
+            if (_networkManager.LocalClient.IsSessionOwner)
+            {
+                Debug.Log($"Client-{_networkManager.LocalClientId} is the session owner!");
+            }
+        }
 
-           var options = new SessionOptions()
-           {
-               Name = sessionName,
-               MaxPlayers = _maxPlayers
-           }.WithDistributedAuthorityNetwork();
+        private void OnClientConnectedCallback(ulong clientId)
+        {
+            if (_networkManager.LocalClientId == clientId)
+            {
+                Debug.Log($"Client-{clientId} is connected.");
+            }
+        }
+
+        private void OnDestroy()
+        {
+            _session?.LeaveAsync();
+        }
+
+        public async Task<bool> Authenticate(string profileName)
+        {
+            try
+            {
+                ProfileName = profileName;
+                AuthenticationService.Instance.SwitchProfile(profileName);
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                Debug.Log("Authentication Succeeded");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.Log("Authentication failed");
+                Debug.LogException(e);
+                return false;
+            }
+        }
+   
+        public async Task CreateOrJoinSessionAsync(string profileName, string sessionName)
+        {
+            State = ConnectionState.Connecting;
+   
+            try
+            {
+                ProfileName = profileName;
+                SessionName = sessionName;
            
-           _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
-           _state = ConnectionState.Connected;
-       }
-       catch (Exception e)
-       {
-           _state = ConnectionState.Disconnected;
-           Debug.LogException(e);
-       }
-   }
+                AuthenticationService.Instance.SwitchProfile(profileName);
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+   
+                var options = new SessionOptions() {
+                    Name = sessionName,
+                    MaxPlayers = _maxPlayers
+                }.WithDistributedAuthorityNetwork();
+   
+                _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
+   
+                State = ConnectionState.Connected;
+            }
+            catch (Exception e)
+            {
+                State = ConnectionState.Disconnected;
+                Debug.LogException(e);
+            }
+        }
+    }
 }

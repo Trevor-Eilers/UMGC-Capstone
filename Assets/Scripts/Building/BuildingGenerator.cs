@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Unity.Netcode;
+using Simulation;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class BuildingGenerator : NetworkBehaviour
+public class BuildingGenerator : MonoBehaviour
 {
     private GameObject _groundPlane;
     [SerializeField] private BuildingPrefabConfig prefabConfig;
