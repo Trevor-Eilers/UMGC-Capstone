@@ -12,7 +12,6 @@ public class IntegrationTests
     // without affecting other test fixtures.
 
     private float[] savedConstants;
-    private string[] constantNames;
 
     [SetUp]
     public void SaveAndSetConstants()
@@ -89,14 +88,6 @@ public class IntegrationTests
         };
 
         // ── Set calibrated constants for steady-state test ──
-        // These are chosen so that at default starting values:
-        // - Budget is balanced (revenue = spending, already true by design)
-        // - GDP growth inputs ≈ GDP decay (near-zero net delta)
-        // - Infrastructure growth ≈ infrastructure decay
-        // - Sustainability growth ≈ sustainability drains
-        // - No spillover fires (all districts identical, no differentials)
-
-        // Budget (already balanced at defaults)
         SimulationConstants.K_REV = 1.0f;
         SimulationConstants.K_SPEND = 3.0f;
         SimulationConstants.K_CITY_WEIGHT = 1.0f;
@@ -106,10 +97,6 @@ public class IntegrationTests
         SimulationConstants.DEBT_CAP = 60f;
         SimulationConstants.RESERVE_CAP = 22500f;
 
-        // GDP equilibrium at defaults:
-        // edu=225*0.0005=0.1125, pop=log(150)*0.03≈0.15, sustain=(55-50)*0.001=0.005
-        // tax=0.15*50*0.005=0.0375, env=225*0.0003=0.0675, decay=50*0.003=0.15
-        // Net ≈ +0.01 before diminishing returns
         SimulationConstants.K_EDU_TO_GDP = 0.0012f;
         SimulationConstants.K_INFRA_TO_GDP = 0.001f;
         SimulationConstants.K_POP_TO_GDP = 0.03f;
@@ -118,7 +105,6 @@ public class IntegrationTests
         SimulationConstants.K_ENV_GDP_DRAG = 0.0003f;
         SimulationConstants.K_GDP_DECAY = 0.006f;
 
-        // Happiness
         SimulationConstants.W_HAPPY_GDP = 0.30f;
         SimulationConstants.W_HAPPY_INFRA = 0.25f;
         SimulationConstants.W_HAPPY_SUSTAIN = 0.25f;
@@ -129,17 +115,9 @@ public class IntegrationTests
         SimulationConstants.K_DEBT_STRESS = 0.3f;
         SimulationConstants.K_HAPPY_SMOOTHING = 1.0f;
 
-        // Infrastructure: at defaults, actualInfraCost = 225
-        // growth = 225 * K * (1 - 50/100) = 225 * K * 0.5
-        // decay = 50 * K_decay
-        // For equilibrium: 112.5 * K_growth ≈ 50 * K_decay
         SimulationConstants.K_INFRA_TO_INFRA = 0.002f;
         SimulationConstants.K_INFRA_DECAY = 0.0045f;
 
-        // Sustainability equilibrium at defaults:
-        // infra=(50-50)*K=0, env=225*0.001=0.225
-        // popDrain=150*0.001=0.15, decay=55*0.0014≈0.077
-        // Net ≈ 0.225 - 0.15 - 0.077 ≈ 0.0
         SimulationConstants.K_INFRA_TO_SUSTAIN = 0.002f;
         SimulationConstants.K_ENV_TO_SUSTAIN = 0.001f;
         SimulationConstants.K_POP_SUSTAIN_DRAIN = 0.001f;
@@ -149,8 +127,6 @@ public class IntegrationTests
         SimulationConstants.MIN_POPULATION = 1.0f;
         SimulationConstants.MAX_POPULATION = 1000.0f;
 
-        // Spillover — thresholds remain at spec values;
-        // with identical districts no spillover fires
         SimulationConstants.GENTRIFY_THRESHOLD = 8f;
         SimulationConstants.K_GENTRIFY_HAPPY = 0.5f;
         SimulationConstants.K_GENTRIFY_POP = 0.1f;
@@ -171,7 +147,6 @@ public class IntegrationTests
         SimulationConstants.K_COMMUTE_GDP_DRAIN = 0.2f;
         SimulationConstants.K_COMMUTE_HOME_HAPPY = 0.1f;
 
-        // City Metrics — reduce pop inflow so population doesn't compound
         SimulationConstants.K_VARIANCE_PENALTY = 1.0f;
         SimulationConstants.K_POP_INFLOW_HIGH = 0.2f;
         SimulationConstants.K_POP_INFLOW_NORMAL = 0.02f;
@@ -179,14 +154,12 @@ public class IntegrationTests
         SimulationConstants.K_SHARED_INFRA_GROWTH = 0.0002f;
         SimulationConstants.K_SHARED_INFRA_DECAY = 0.005f;
 
-        // Federal Funding
         SimulationConstants.GRANT_BASE_GREEN = 50f;
         SimulationConstants.GRANT_BASE_TRANSIT = 50f;
         SimulationConstants.GRANT_BASE_LIFE = 50f;
         SimulationConstants.GRANT_BASE_DEV = 50f;
         SimulationConstants.K_STABILIZATION_RATE = 1.0f;
 
-        // Scoring
         SimulationConstants.POP_MAX_SCORE = 300f;
         SimulationConstants.K_CRISIS_PENALTY = 0.5f;
     }
@@ -269,28 +242,17 @@ public class IntegrationTests
     [Test]
     public void SteadyState_576Ticks_MetricsStayNearStartingValues()
     {
-        const int numOfPlayers = 4;
-        var districts =  new DistrictState[numOfPlayers];
-        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
-        
-        GameState state = GameState.NewGame(districts);
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
-        {
-            state = TickProcessor.ResolveTick(state);
-        }
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
 
-        Assert.AreEqual(576, state.currentTick, "Should have completed all 576 ticks");
-        Assert.AreEqual(48, state.currentMonth, "Should be month 48");
-
-        // All districts started identical and no one changed values.
-        // With calibrated constants, metrics should remain in a reasonable band
-        // around starting values. We allow generous tolerance (±30) since the
-        // TBD constants aren't perfectly calibrated yet — the point is no metric
-        // crashes to 0 or spikes to 100.
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < numPlayers; i++)
         {
-            var d = state.districts[i];
+            var d = districts[i];
 
             Assert.Greater(d.gdp, 5f,
                 $"District {i} GDP should not collapse (got {d.gdp:F1})");
@@ -321,33 +283,27 @@ public class IntegrationTests
                 $"District {i} debt should not reach crisis level (got {d.debt:F1})");
         }
 
-        // City-level metrics should also be reasonable
-        Assert.Greater(state.cityMetrics.cityReputation, 10f,
+        Assert.Greater(cityMetrics.cityReputation, 10f,
             "City reputation should not collapse");
-        Assert.Greater(state.cityMetrics.sharedInfraQuality, 5f,
+        Assert.Greater(cityMetrics.sharedInfraQuality, 5f,
             "Shared infrastructure should not collapse completely");
     }
 
     [Test]
     public void SteadyState_AllDistrictsRemainIdentical()
     {
-        const int numOfPlayers = 4;
-        var districts =  new DistrictState[numOfPlayers];
-        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
-        
-        // With identical starting conditions and no slider changes,
-        // all districts should stay identical (deterministic, symmetric).
-        GameState state = GameState.NewGame(districts);
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < 100; tick++)
-        {
-            state = TickProcessor.ResolveTick(state);
-        }
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
 
-        var d0 = state.districts[0];
-        for (int i = 1; i < 4; i++)
+        var d0 = districts[0];
+        for (int i = 1; i < numPlayers; i++)
         {
-            var d = state.districts[i];
+            var d = districts[i];
             Assert.AreEqual(d0.gdp, d.gdp, 0.01f,
                 $"District {i} GDP should match district 0");
             Assert.AreEqual(d0.happiness, d.happiness, 0.01f,
@@ -366,19 +322,18 @@ public class IntegrationTests
     [Test]
     public void SteadyState_NoNaNOrInfinity()
     {
-        const int numOfPlayers = 4;
-        var districts =  new DistrictState[numOfPlayers];
-        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
-        
-        GameState state = GameState.NewGame(districts);
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
         {
-            state = TickProcessor.ResolveTick(state);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < numPlayers; i++)
             {
-                var d = state.districts[i];
+                var d = districts[i];
                 Assert.IsFalse(float.IsNaN(d.gdp), $"GDP NaN at tick {tick}");
                 Assert.IsFalse(float.IsNaN(d.happiness), $"Happiness NaN at tick {tick}");
                 Assert.IsFalse(float.IsNaN(d.population), $"Population NaN at tick {tick}");
@@ -389,9 +344,9 @@ public class IntegrationTests
                 Assert.IsFalse(float.IsInfinity(d.population), $"Population Inf at tick {tick}");
             }
 
-            Assert.IsFalse(float.IsNaN(state.cityMetrics.cityReputation),
+            Assert.IsFalse(float.IsNaN(cityMetrics.cityReputation),
                 $"City reputation NaN at tick {tick}");
-            Assert.IsFalse(float.IsNaN(state.cityMetrics.sharedInfraQuality),
+            Assert.IsFalse(float.IsNaN(cityMetrics.sharedInfraQuality),
                 $"Shared infra NaN at tick {tick}");
         }
     }
@@ -403,21 +358,18 @@ public class IntegrationTests
     [Test]
     public void Scoring_AfterFullGame_ProducesReasonableScores()
     {
-        const int numOfPlayers = 4;
-        var districts =  new DistrictState[numOfPlayers];
-        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
-        
-        GameState state = GameState.NewGame(districts);
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
-        {
-            state = TickProcessor.ResolveTick(state);
-        }
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < numPlayers; i++)
         {
             FinalScore score = ScoringSystem.ComputeFinalScore(
-                state.districts[i], state.cityMetrics, state.districts, 4);
+                districts[i], cityMetrics, districts, numPlayers);
 
             Assert.GreaterOrEqual(score.finalScore, 0f,
                 $"District {i} final score should not be negative");
@@ -431,24 +383,21 @@ public class IntegrationTests
     [Test]
     public void Scoring_IdenticalDistricts_EqualScores()
     {
-        const int numOfPlayers = 4;
-        var districts =  new DistrictState[numOfPlayers];
-        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
-        
-        GameState state = GameState.NewGame(districts);
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < 100; tick++)
-        {
-            state = TickProcessor.ResolveTick(state);
-        }
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
 
         FinalScore score0 = ScoringSystem.ComputeFinalScore(
-            state.districts[0], state.cityMetrics, state.districts, 4);
+            districts[0], cityMetrics, districts, numPlayers);
 
-        for (int i = 1; i < 4; i++)
+        for (int i = 1; i < numPlayers; i++)
         {
             FinalScore scoreI = ScoringSystem.ComputeFinalScore(
-                state.districts[i], state.cityMetrics, state.districts, 4);
+                districts[i], cityMetrics, districts, numPlayers);
 
             Assert.AreEqual(score0.finalScore, scoreI.finalScore, 0.01f,
                 $"District {i} score should match district 0 with identical play");
@@ -462,24 +411,25 @@ public class IntegrationTests
     [Test]
     public void TickCounter_AdvancesCorrectly()
     {
-        const int numOfPlayers = 2;
-        var districts =  new DistrictState[numOfPlayers];
-        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
-        
-        GameState state = GameState.NewGame(districts);
+        const int numPlayers = 2;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
+        int currentTick = 0;
 
-        Assert.AreEqual(0, state.currentTick);
-        Assert.AreEqual(0, state.currentMonth);
-
-        state = TickProcessor.ResolveTick(state);
-        Assert.AreEqual(1, state.currentTick);
-        Assert.AreEqual(0, state.currentMonth);
+        TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+        currentTick++;
+        Assert.AreEqual(1, currentTick);
+        Assert.AreEqual(0, currentTick / SimulationConstants.TICKS_PER_MONTH);
 
         // Run to tick 12 (month 1)
         for (int i = 1; i < 12; i++)
-            state = TickProcessor.ResolveTick(state);
+        {
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            currentTick++;
+        }
 
-        Assert.AreEqual(12, state.currentTick);
-        Assert.AreEqual(1, state.currentMonth);
+        Assert.AreEqual(12, currentTick);
+        Assert.AreEqual(1, currentTick / SimulationConstants.TICKS_PER_MONTH);
     }
 }

@@ -181,15 +181,14 @@ public class SimulationHarness
     {
         SetCalibratedConstants();
 
-        const int numOfPlayers = 4;
-        var districts =  new DistrictState[numOfPlayers];
-        for (int i = 0; i < numOfPlayers - 1; i++) districts[i] =  DistrictState.Default(i);
-        
-        GameState state = GameState.NewGame(districts);
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        var cityMetrics = CityMetrics.Default();
 
         // Apply initial profiles
-        for (int i = 0; i < 4; i++)
-            ApplyProfile(ref state.districts[i], profiles[i]);
+        for (int i = 0; i < numPlayers; i++)
+            ApplyProfile(ref districts[i], profiles[i]);
 
         var csv = new StringBuilder();
 
@@ -202,19 +201,20 @@ public class SimulationHarness
         {
             // Mid-game strategy switch
             if (tick == switchTick && switchPlayer >= 0 && switchProfile != null)
-                ApplyProfile(ref state.districts[switchPlayer], switchProfile);
+                ApplyProfile(ref districts[switchPlayer], switchProfile);
 
-            state = TickProcessor.ResolveTick(state);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            int currentTick = tick + 1;
 
             // Report every 12 ticks (once per simulated month)
-            if (state.currentTick % SimulationConstants.TICKS_PER_MONTH == 0)
+            if (currentTick % SimulationConstants.TICKS_PER_MONTH == 0)
             {
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < numPlayers; i++)
                 {
-                    var d = state.districts[i];
+                    var d = districts[i];
                     csv.AppendLine(string.Format(
                         "{0},{1},{2:F2},{3:F2},{4:F2},{5:F2},{6:F2},{7:F2},{8:F2},{9:F2},{10:F2}",
-                        state.currentTick, i,
+                        currentTick, i,
                         d.gdp, d.happiness, d.population,
                         d.infrastructure, d.sustainability,
                         d.debt, d.reserve, d.revenue, d.totalSpending));
@@ -227,10 +227,10 @@ public class SimulationHarness
         csv.AppendLine("# Final Scores");
         csv.AppendLine("district,profile,neighborhoodScore,cityContribScore,finalScore");
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < numPlayers; i++)
         {
             FinalScore score = ScoringSystem.ComputeFinalScore(
-                state.districts[i], state.cityMetrics, state.districts, 4);
+                districts[i], cityMetrics, districts, numPlayers);
             csv.AppendLine(string.Format("{0},{1},{2:F2},{3:F2},{4:F2}",
                 i, profiles[i],
                 score.neighborhoodScore, score.cityContribScore, score.finalScore));

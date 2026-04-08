@@ -92,10 +92,6 @@ namespace Tests.EditMode
             var districts = MakeUniformDistricts(2);
             float rep = CityMetricsManager.ComputeCityReputation(districts, 2);
 
-            // All districts identical → stddev = 0 → no penalty
-            // Weighted avg: 55*0.25 + 55*0.25 + 50*0.20 + 50*0.15 + inverseDebt*0.15
-            // inverseDebt = 100 - (15*100/80) = 100 - 18.75 = 81.25
-            // = 13.75 + 13.75 + 10 + 7.5 + 12.1875 = 57.1875
             float inverseDebt = 100f - (15f * 100f / 80f);
             float expected = 55f * 0.25f + 55f * 0.25f + 50f * 0.20f
                              + 50f * 0.15f + inverseDebt * 0.15f;
@@ -112,10 +108,8 @@ namespace Tests.EditMode
             var districts = MakeUniformDistricts(2);
             float repEqual = CityMetricsManager.ComputeCityReputation(districts, 2);
 
-            // Make districts unequal
             districts[0].gdp = 80f;
             districts[1].gdp = 20f;
-            // Average GDP still 50, but now with variance
             float repUnequal = CityMetricsManager.ComputeCityReputation(districts, 2);
 
             Assert.Less(repUnequal, repEqual,
@@ -127,13 +121,11 @@ namespace Tests.EditMode
         {
             SimulationConstants.K_VARIANCE_PENALTY = 1.0f;
 
-            // Mild inequality
             var districtsMild = MakeUniformDistricts(2);
             districtsMild[0].gdp = 60f;
             districtsMild[1].gdp = 40f;
             float repMild = CityMetricsManager.ComputeCityReputation(districtsMild, 2);
 
-            // Severe inequality
             var districtsSevere = MakeUniformDistricts(2);
             districtsSevere[0].gdp = 90f;
             districtsSevere[1].gdp = 10f;
@@ -146,7 +138,7 @@ namespace Tests.EditMode
         [Test]
         public void CityReputation_ClampedTo0_100()
         {
-            SimulationConstants.K_VARIANCE_PENALTY = 100f; // extreme penalty
+            SimulationConstants.K_VARIANCE_PENALTY = 100f;
 
             var districts = MakeUniformDistricts(2);
             districts[0].gdp = 100f;
@@ -166,13 +158,10 @@ namespace Tests.EditMode
         {
             SimulationConstants.K_POP_INFLOW_HIGH = 1.0f;
 
-            // Two districts with different attractiveness
             var districts = MakeUniformDistricts(2);
-            // District 0: high happiness, high housing → more attractive
             districts[0].happiness = 80f;
             districts[0].policyValues.housing = 80f;
             districts[0].policyValues.taxRate = 10f;
-            // District 1: low happiness, low housing → less attractive
             districts[1].happiness = 20f;
             districts[1].policyValues.housing = 20f;
             districts[1].policyValues.taxRate = 25f;
@@ -180,14 +169,17 @@ namespace Tests.EditMode
             float pop0Before = districts[0].population;
             float pop1Before = districts[1].population;
 
-            CityMetricsManager.DistributePopulation(districts, 80f, 2); // rep 80 > 70
+            var snapshot = (DistrictState[])districts.Clone();
+            var cm = CityMetrics.Default();
+            cm.cityReputation = 80f;
+            cm.metroPopulationPool = CityMetricsManager.ComputeMetroPopulationPool(80f);
 
-            float gain0 = districts[0].population - pop0Before;
-            float gain1 = districts[1].population - pop1Before;
+            float delta0 = CityMetricsManager.ComputePopulationDelta(0, snapshot, cm, 2);
+            float delta1 = CityMetricsManager.ComputePopulationDelta(1, snapshot, cm, 2);
 
-            Assert.Greater(gain0, gain1,
+            Assert.Greater(delta0, delta1,
                 "More attractive district should receive more population");
-            Assert.Greater(gain0, 0f, "Attractive district should gain population");
+            Assert.Greater(delta0, 0f, "Attractive district should gain population");
         }
 
         [Test]
@@ -196,40 +188,38 @@ namespace Tests.EditMode
             SimulationConstants.K_POP_INFLOW_HIGH = 1.0f;
 
             var districts = MakeUniformDistricts(2);
-            float popBefore = districts[0].population;
 
-            CityMetricsManager.DistributePopulation(districts, 80f, 2);
+            var snapshot = (DistrictState[])districts.Clone();
+            var cm = CityMetrics.Default();
+            cm.cityReputation = 80f;
+            cm.metroPopulationPool = CityMetricsManager.ComputeMetroPopulationPool(80f);
 
-            float gain0 = districts[0].population - popBefore;
-            float gain1 = districts[1].population - popBefore;
+            float delta0 = CityMetricsManager.ComputePopulationDelta(0, snapshot, cm, 2);
+            float delta1 = CityMetricsManager.ComputePopulationDelta(1, snapshot, cm, 2);
 
-            Assert.AreEqual(gain0, gain1, 0.01f,
+            Assert.AreEqual(delta0, delta1, 0.01f,
                 "Identical districts should receive equal population");
         }
 
         [Test]
         public void DistributePopulation_Outflow_DistributedProportionally()
         {
-            // Per the spec formula, outflow is distributed by the SAME attractiveness
-            // weights as inflow. The more attractive district gets a larger share of
-            // the negative flow (loses more absolute population). The spec's comment
-            // about "least attractive loses most" is aspirational — the formula does
-            // proportional distribution in both directions.
             SimulationConstants.K_POP_OUTFLOW = 1.0f;
 
             var districts = MakeUniformDistricts(2);
-            districts[0].happiness = 80f; // more attractive → larger share
-            districts[1].happiness = 20f; // less attractive → smaller share
+            districts[0].happiness = 80f;
+            districts[1].happiness = 20f;
 
-            float pop0Before = districts[0].population;
-            float pop1Before = districts[1].population;
+            var snapshot = (DistrictState[])districts.Clone();
+            var cm = CityMetrics.Default();
+            cm.cityReputation = 20f;
+            cm.metroPopulationPool = CityMetricsManager.ComputeMetroPopulationPool(20f);
 
-            CityMetricsManager.DistributePopulation(districts, 20f, 2); // rep 20 < 30 → outflow
+            float delta0 = CityMetricsManager.ComputePopulationDelta(0, snapshot, cm, 2);
+            float delta1 = CityMetricsManager.ComputePopulationDelta(1, snapshot, cm, 2);
 
-            float loss0 = pop0Before - districts[0].population;
-            float loss1 = pop1Before - districts[1].population;
-
-            Assert.Greater(loss0, loss1,
+            // Both deltas negative (outflow). More attractive gets larger magnitude share.
+            Assert.Less(delta0, delta1,
                 "More attractive district gets larger share of outflow (proportional distribution)");
         }
 
@@ -244,8 +234,6 @@ namespace Tests.EditMode
             SimulationConstants.K_SHARED_INFRA_DECAY = 0f;
 
             float result = CityMetricsManager.UpdateSharedInfrastructure(100f, 50f);
-
-            // growth = 100 * 0.1 = 10, decay = 0, new = 50 + 10 = 60
             Assert.AreEqual(60f, result, 0.01f);
         }
 
@@ -256,8 +244,6 @@ namespace Tests.EditMode
             SimulationConstants.K_SHARED_INFRA_DECAY = 0.1f;
 
             float result = CityMetricsManager.UpdateSharedInfrastructure(0f, 50f);
-
-            // decay = 50 * 0.1 = 5, new = 50 - 5 = 45
             Assert.AreEqual(45f, result, 0.01f);
         }
 
@@ -291,21 +277,21 @@ namespace Tests.EditMode
 
             var districts = MakeUniformDistricts(1, sustainability: 80f, debt: 10f);
 
-            // Tick 1: streak=0, multiplier = max(0.30, 1.0 - 0*0.15) = 1.00
+            // Tick 1: streak=0, multiplier = 1.00
             float revBefore = districts[0].revenue;
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             float grant1 = districts[0].revenue - revBefore;
             Assert.AreEqual(100f, grant1, 0.01f, "Tick 1: 100% of base");
 
-            // Tick 2: streak=1, multiplier = max(0.30, 1.0 - 1*0.15) = 0.85
+            // Tick 2: streak=1, multiplier = 0.85
             revBefore = districts[0].revenue;
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             float grant2 = districts[0].revenue - revBefore;
             Assert.AreEqual(85f, grant2, 0.01f, "Tick 2: 85% of base");
 
-            // Tick 3: streak=2, multiplier = max(0.30, 1.0 - 2*0.15) = 0.70
+            // Tick 3: streak=2, multiplier = 0.70
             revBefore = districts[0].revenue;
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             float grant3 = districts[0].revenue - revBefore;
             Assert.AreEqual(70f, grant3, 0.01f, "Tick 3: 70% of base");
         }
@@ -320,14 +306,12 @@ namespace Tests.EditMode
             SimulationConstants.K_STABILIZATION_RATE = 0f;
 
             var districts = MakeUniformDistricts(1, sustainability: 80f, debt: 10f);
-            // Pre-set streak to 10 (well past the floor)
             districts[0].greenGrantStreak = 10;
 
             float revBefore = districts[0].revenue;
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             float grant = districts[0].revenue - revBefore;
 
-            // multiplier = max(0.30, 1.0 - 10*0.15) = max(0.30, -0.5) = 0.30
             Assert.AreEqual(30f, grant, 0.01f, "Grant should floor at 30% of base");
         }
 
@@ -342,14 +326,12 @@ namespace Tests.EditMode
 
             var districts = MakeUniformDistricts(1, sustainability: 80f, debt: 10f);
 
-            // Build up streak
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             Assert.AreEqual(2, districts[0].greenGrantStreak);
 
-            // Drop below threshold
             districts[0].sustainability = 60f;
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             Assert.AreEqual(0, districts[0].greenGrantStreak, "Streak should reset to 0");
         }
 
@@ -360,10 +342,9 @@ namespace Tests.EditMode
             SimulationConstants.K_STABILIZATION_RATE = 0f;
 
             var districts = MakeUniformDistricts(1, sustainability: 80f, debt: 60f);
-            // debt = 60 = DEBT_CAP, condition is debt < DEBT_CAP → not eligible
 
             float revBefore = districts[0].revenue;
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             float grant = districts[0].revenue - revBefore;
 
             Assert.AreEqual(0f, grant, 0.01f, "No grants when debt >= DEBT_CAP");
@@ -375,11 +356,10 @@ namespace Tests.EditMode
             SimulationConstants.GRANT_BASE_GREEN = 100f;
             SimulationConstants.K_STABILIZATION_RATE = 1.0f;
 
-            // debt >= 70 → stabilization active → grantsEligible = false
             var districts = MakeUniformDistricts(1, sustainability: 80f, debt: 72f);
 
             float revBefore = districts[0].revenue;
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
             float grant = districts[0].revenue - revBefore;
 
             Assert.AreEqual(0f, grant, 0.01f,
@@ -395,7 +375,7 @@ namespace Tests.EditMode
 
             var districts = MakeUniformDistricts(1, debt: 75f);
 
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
 
             Assert.AreEqual(73f, districts[0].debt, 0.01f,
                 "Debt should decrease by K_STABILIZATION_RATE");
@@ -409,9 +389,9 @@ namespace Tests.EditMode
             SimulationConstants.K_STABILIZATION_RATE = 0f;
 
             var districts = MakeUniformDistricts(1, debt: 50f);
-            districts[0].grantsEligible = false; // was in stabilization
+            districts[0].grantsEligible = false;
 
-            CityMetricsManager.ResolveFederalFunding(districts, 1);
+            CityMetricsManager.ResolveFederalFunding(ref districts[0]);
 
             Assert.IsTrue(districts[0].grantsEligible,
                 "Grants should re-enable once debt < DEBT_CAP");

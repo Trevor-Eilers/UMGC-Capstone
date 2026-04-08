@@ -1,6 +1,5 @@
 // Authors: Malcolm Bramble, Trevor Eilers
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simulation;
@@ -23,12 +22,12 @@ public class GameManager : NetworkBehaviour
     private static readonly Color ColSustain = new(0.25f, 0.80f, 0.60f);
     private static readonly Color ColDebt =    new(0.88f, 0.31f, 0.31f);
 
-
     private Dictionary<Player, District> _playerDistrictMap;
-    private District[] _districtObjects;
+    private int _myDistrictIndex = -1;
 
     void Start()
     {
+        _playerDistrictMap = new Dictionary<Player, District>();
         var districts = FindObjectsByType<District>(FindObjectsSortMode.None);
         var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
         for (int i = 0; i < players.Length; i++)
@@ -36,14 +35,23 @@ public class GameManager : NetworkBehaviour
             _playerDistrictMap.Add(players[i], districts[i]);
         }
 
-        _districtObjects = _playerDistrictMap.Values.ToArray();
+        _gameState.districts = _playerDistrictMap.Values.ToArray();
+        _gameState.numActivePlayers = _gameState.districts.Length;
+        _gameState.cityMetrics = CityMetrics.Default();
+        _gameState.currentTick = 0;
+        _gameState.currentMonth = 0;
+        _gameState.gameSpeed = 1f;
+        _gameState.isPaused = false;
 
-        // Extract DistrictState from each District's network variable
-        var states = new DistrictState[_districtObjects.Length];
-        for (int i = 0; i < _districtObjects.Length; i++)
-            states[i] = _districtObjects[i].state.Value;
-
-        _gameState = GameState.NewGame(states);
+        // Determine which district this client owns
+        for (int i = 0; i < _gameState.districts.Length; i++)
+        {
+            if (_gameState.districts[i].IsOwner)
+            {
+                _myDistrictIndex = i;
+                break;
+            }
+        }
     }
 
     public void Setup()
@@ -70,39 +78,67 @@ public class GameManager : NetworkBehaviour
 
     private void ResolveTick()
     {
-        // Read latest state from network variables (includes policy changes from client RPCs)
-        for (int i = 0; i < _districtObjects.Length; i++)
-            _gameState.districts[i] = _districtObjects[i].state.Value;
+        int n = _gameState.numActivePlayers;
 
-        UpdatePolicies();
+        // Take snapshot from all district network variables (replicated state)
+        var snapshot = new DistrictState[n];
+        for (int i = 0; i < n; i++)
+            snapshot[i] = _gameState.districts[i].state.Value;
 
-        _gameState = TickProcessor.ResolveTick(_gameState);
+        // Apply local policy slider values to our district in the snapshot
+        UpdatePolicies(snapshot);
 
-        // Write updated state back to network variables for replication
-        for (int i = 0; i < _districtObjects.Length; i++)
-            _districtObjects[i].state.Value = _gameState.districts[i];
+        // Compute city-wide metrics (deterministic — all clients get same result)
+        _gameState.cityMetrics = TickProcessor.ResolveCityMetrics(
+            snapshot, _gameState.cityMetrics, n);
 
-        if (_gameState.currentTick >= 576)
+        // Resolve our own district only
+        if (_myDistrictIndex >= 0)
+        {
+            DistrictState result = TickProcessor.ResolveDistrictTick(
+                _myDistrictIndex, snapshot, _gameState.cityMetrics, n);
+
+            // Write back to our district's network variable for replication
+            _gameState.districts[_myDistrictIndex].state.Value = result;
+        }
+
+        _gameState.currentTick++;
+        _gameState.currentMonth = _gameState.currentTick / SimulationConstants.TICKS_PER_MONTH;
+
+        if (_gameState.currentTick >= SimulationConstants.TOTAL_TICKS)
         {
             _gameOver = true;
         }
     }
 
-    private void UpdatePolicies()
+    private void UpdatePolicies(DistrictState[] snapshot)
     {
-        int i = 0;
-        foreach (var player in _playerDistrictMap.Keys)
+        // Each client updates their own district's policy values in the snapshot
+        // before the tick processes. The updated snapshot is used for simulation.
+        foreach (var kvp in _playerDistrictMap)
         {
-            _gameState.districts[i].policyValues = new PolicyValues
+            Player player = kvp.Key;
+            District district = kvp.Value;
+
+            if (!district.IsOwner)
+                continue;
+
+            for (int i = 0; i < _gameState.districts.Length; i++)
             {
-                taxRate = player.policySliders.taxRate,
-                education = player.policySliders.education,
-                infrastructure = player.policySliders.infrastructure,
-                housing = player.policySliders.housing,
-                environment = player.policySliders.environment,
-                cityContribution = player.policySliders.cityContribution
-            };
-            i++;
+                if (_gameState.districts[i] == district)
+                {
+                    snapshot[i].policyValues = new PolicyValues
+                    {
+                        taxRate = player.policySliders.taxRate,
+                        education = player.policySliders.education,
+                        infrastructure = player.policySliders.infrastructure,
+                        housing = player.policySliders.housing,
+                        environment = player.policySliders.environment,
+                        cityContribution = player.policySliders.cityContribution
+                    };
+                    break;
+                }
+            }
         }
     }
 }
