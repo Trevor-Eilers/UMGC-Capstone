@@ -18,9 +18,9 @@ namespace Simulation
         /// Phase 4: City Metrics
         /// Phase 5: Clamp and Commit
         /// </summary>
-        public static GameState ResolveTick(GameState state)
+        public static GameState ResolveTick(GameState gameState)
         {
-            int n = state.districts.Length;
+            int n = gameState.districts.Length;
 
             // Store per-district scaled spending for use across phases
             ScaledSpending[] scaledSpending = new ScaledSpending[n];
@@ -32,7 +32,7 @@ namespace Simulation
 
             for (int i = 0; i < n; i++)
             {
-                ref DistrictState d = ref state.districts[i];
+                DistrictState d = gameState.districts[i].state.Value;
 
                 // Step 1.1 — Revenue
                 d.revenue = BudgetCalculator.ComputeRevenue(
@@ -58,6 +58,8 @@ namespace Simulation
                 d.reserve = reserve;
 
                 totalActualCityCost += scaledSpending[i].actualCityCost;
+                
+                gameState.districts[i].state.Value = d;
             }
 
             // ══════════════════════════════════════════
@@ -66,7 +68,7 @@ namespace Simulation
 
             for (int i = 0; i < n; i++)
             {
-                ref DistrictState d = ref state.districts[i];
+                DistrictState d = gameState.districts[i].state.Value;
                 ScaledSpending s = scaledSpending[i];
 
                 // 2.1 — GDP
@@ -83,34 +85,36 @@ namespace Simulation
 
                 // 2.4 (continued) — Outmigration (uses updated sustainability)
                 d.population -= LocalEffectCalculator.ComputeOutmigration(d);
+                
+                gameState.districts[i].state.Value = d;
             }
 
             // ══════════════════════════════════════════
             // PHASE 3: Spillover
             // ══════════════════════════════════════════
 
-            SpilloverResolver.ResolveGentrification(state.districts, n);
-            SpilloverResolver.ResolvePollution(state.districts, n);
-            SpilloverResolver.ResolveCommuting(state.districts, state.cityMetrics, n);
+            SpilloverResolver.ResolveGentrification(gameState.districts, n);
+            SpilloverResolver.ResolvePollution(gameState.districts, n);
+            SpilloverResolver.ResolveCommuting(gameState.districts, gameState.cityMetrics, n);
 
             // ══════════════════════════════════════════
             // PHASE 4: City Metrics
             // ══════════════════════════════════════════
 
             // 4.1 — City Reputation
-            state.cityMetrics.cityReputation = CityMetricsManager.ComputeCityReputation(
-                state.districts, n);
+            gameState.cityMetrics.cityReputation = CityMetricsManager.ComputeCityReputation(
+                gameState.districts, n);
 
             // 4.2 — Population Distribution
             CityMetricsManager.DistributePopulation(
-                state.districts, state.cityMetrics.cityReputation, n);
+                gameState.districts, gameState.cityMetrics.cityReputation, n);
 
             // 4.3 — Shared Infrastructure
-            state.cityMetrics.sharedInfraQuality = CityMetricsManager.UpdateSharedInfrastructure(
-                totalActualCityCost, state.cityMetrics.sharedInfraQuality);
+            gameState.cityMetrics.sharedInfraQuality = CityMetricsManager.UpdateSharedInfrastructure(
+                totalActualCityCost, gameState.cityMetrics.sharedInfraQuality);
 
             // 4.4 & 4.5 — Federal Funding (grants + stabilization)
-            CityMetricsManager.ResolveFederalFunding(state.districts, n);
+            CityMetricsManager.ResolveFederalFunding(gameState.districts, n);
 
             // ══════════════════════════════════════════
             // PHASE 5: Clamp and Commit
@@ -118,7 +122,7 @@ namespace Simulation
 
             for (int i = 0; i < n; i++)
             {
-                ref DistrictState d = ref state.districts[i];
+                ref DistrictState d = ref gameState.districts[i];
 
                 d.gdp = Math.Min(Math.Max(d.gdp, 0f), 100f);
                 d.happiness = Math.Min(Math.Max(d.happiness, 0f), 100f);
@@ -138,16 +142,16 @@ namespace Simulation
             }
 
             // City-level clamps
-            state.cityMetrics.cityReputation = Math.Min(
-                Math.Max(state.cityMetrics.cityReputation, 0f), 100f);
-            state.cityMetrics.sharedInfraQuality = Math.Min(
-                Math.Max(state.cityMetrics.sharedInfraQuality, 0f), 100f);
+            gameState.cityMetrics.cityReputation = Math.Min(
+                Math.Max(gameState.cityMetrics.cityReputation, 0f), 100f);
+            gameState.cityMetrics.sharedInfraQuality = Math.Min(
+                Math.Max(gameState.cityMetrics.sharedInfraQuality, 0f), 100f);
 
             // Advance tick
-            state.currentTick += 1;
-            state.currentMonth = state.currentTick / SimulationConstants.TICKS_PER_MONTH;
+            gameState.currentTick += 1;
+            gameState.currentMonth = gameState.currentTick / SimulationConstants.TICKS_PER_MONTH;
 
-            return state;
+            return gameState;
         }
     }
 }

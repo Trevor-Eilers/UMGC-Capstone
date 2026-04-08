@@ -23,18 +23,16 @@ public class GameManager : NetworkBehaviour
     private static readonly Color ColSustain = new(0.25f, 0.80f, 0.60f);
     private static readonly Color ColDebt =    new(0.88f, 0.31f, 0.31f);
     
-    private BuildingGenerator _buildingGenerator;
 
-    private Dictionary<Player, DistrictState> _playerDistrictMap;
+    private Dictionary<Player, District> _playerDistrictMap;
 
     void Start()
     {
-        _buildingGenerator = FindAnyObjectByType<BuildingGenerator>();
-
+        var districts = FindObjectsByType<District>(FindObjectsSortMode.None);
         var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
         for (int i = 0; i < players.Length; i++)
         {
-            _playerDistrictMap.Add(players[i], DistrictState.Default(i));
+            _playerDistrictMap.Add(players[i], districts[i]);
         }
         
         _gameState = GameState.NewGame(_playerDistrictMap.Values.ToArray());
@@ -78,8 +76,8 @@ public class GameManager : NetworkBehaviour
     {
         foreach (var player in _playerDistrictMap.Keys)
         {
-            var district = _playerDistrictMap[player];
-            district.policyValues = new PolicyValues
+            var districtState = _playerDistrictMap[player].state.Value;
+            districtState.policyValues = new PolicyValues
             {
                 taxRate = player.policySliders.taxRate,
                 education = player.policySliders.education,
@@ -88,7 +86,7 @@ public class GameManager : NetworkBehaviour
                 environment = player.policySliders.environment,
                 cityContribution = player.policySliders.cityContribution
             };
-            _playerDistrictMap[player] = district;
+            _playerDistrictMap[player].state.Value = districtState;
         }
     }
 }

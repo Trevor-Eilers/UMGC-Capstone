@@ -1,14 +1,16 @@
-// Author: Malcolm Bramble
+// Authors: Malcolm Bramble, Trevor Eilers
 
 
+using Unity.Netcode;
 
 namespace Simulation
 {
     [System.Serializable]
-    public struct DistrictState
+    public struct DistrictState : INetworkSerializable
     {
         public int playerId; // 0-3
         
+        // This field is not replicated
         public PolicyValues policyValues;
 
         public float population;
@@ -36,6 +38,30 @@ namespace Simulation
         public int ticksBelowHappiness20;
         public float totalCitySpending;
 
+        
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref playerId);
+            serializer.SerializeValue(ref population);
+            serializer.SerializeValue(ref happiness);
+            serializer.SerializeValue(ref sustainability);
+            serializer.SerializeValue(ref infrastructure);
+            serializer.SerializeValue(ref gdp);
+            serializer.SerializeValue(ref debt);
+            serializer.SerializeValue(ref reserve);
+            serializer.SerializeValue(ref revenue);
+            serializer.SerializeValue(ref totalSpending);
+            serializer.SerializeValue(ref scaleFactor);
+            serializer.SerializeValue(ref greenGrantStreak);
+            serializer.SerializeValue(ref transitGrantStreak);
+            serializer.SerializeValue(ref lifeGrantStreak);
+            serializer.SerializeValue(ref devGrantStreak);
+            serializer.SerializeValue(ref grantsEligible);
+            serializer.SerializeValue(ref ticksAtDebtCap);
+            serializer.SerializeValue(ref ticksBelowHappiness20);
+            serializer.SerializeValue(ref totalCitySpending);
+        }
+        
         public static DistrictState Default(int playerId)
         {
             return new DistrictState
