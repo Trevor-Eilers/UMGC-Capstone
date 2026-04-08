@@ -32,7 +32,7 @@ namespace Simulation
 
             for (int i = 0; i < n; i++)
             {
-                DistrictState d = gameState.districts[i].state.Value;
+                ref DistrictState d = ref gameState.districts[i];
 
                 // Step 1.1 — Revenue
                 d.revenue = BudgetCalculator.ComputeRevenue(
@@ -58,8 +58,6 @@ namespace Simulation
                 d.reserve = reserve;
 
                 totalActualCityCost += scaledSpending[i].actualCityCost;
-                
-                gameState.districts[i].state.Value = d;
             }
 
             // ══════════════════════════════════════════
@@ -68,7 +66,7 @@ namespace Simulation
 
             for (int i = 0; i < n; i++)
             {
-                DistrictState d = gameState.districts[i].state.Value;
+                ref DistrictState d = ref gameState.districts[i];
                 ScaledSpending s = scaledSpending[i];
 
                 // 2.1 — GDP
@@ -85,8 +83,6 @@ namespace Simulation
 
                 // 2.4 (continued) — Outmigration (uses updated sustainability)
                 d.population -= LocalEffectCalculator.ComputeOutmigration(d);
-                
-                gameState.districts[i].state.Value = d;
             }
 
             // ══════════════════════════════════════════

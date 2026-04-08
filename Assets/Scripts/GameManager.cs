@@ -22,9 +22,10 @@ public class GameManager : NetworkBehaviour
     private static readonly Color ColInfra =   new(0.63f, 0.44f, 0.82f);
     private static readonly Color ColSustain = new(0.25f, 0.80f, 0.60f);
     private static readonly Color ColDebt =    new(0.88f, 0.31f, 0.31f);
-    
+
 
     private Dictionary<Player, District> _playerDistrictMap;
+    private District[] _districtObjects;
 
     void Start()
     {
@@ -34,15 +35,22 @@ public class GameManager : NetworkBehaviour
         {
             _playerDistrictMap.Add(players[i], districts[i]);
         }
-        
-        _gameState = GameState.NewGame(_playerDistrictMap.Values.ToArray());
+
+        _districtObjects = _playerDistrictMap.Values.ToArray();
+
+        // Extract DistrictState from each District's network variable
+        var states = new DistrictState[_districtObjects.Length];
+        for (int i = 0; i < _districtObjects.Length; i++)
+            states[i] = _districtObjects[i].state.Value;
+
+        _gameState = GameState.NewGame(states);
     }
 
     public void Setup()
     {
-        
+
     }
-    
+
     void Update()
     {
         var kb = Keyboard.current;
@@ -59,12 +67,20 @@ public class GameManager : NetworkBehaviour
             ResolveTick();
         }
     }
-    
+
     private void ResolveTick()
     {
+        // Read latest state from network variables (includes policy changes from client RPCs)
+        for (int i = 0; i < _districtObjects.Length; i++)
+            _gameState.districts[i] = _districtObjects[i].state.Value;
+
         UpdatePolicies();
-        
+
         _gameState = TickProcessor.ResolveTick(_gameState);
+
+        // Write updated state back to network variables for replication
+        for (int i = 0; i < _districtObjects.Length; i++)
+            _districtObjects[i].state.Value = _gameState.districts[i];
 
         if (_gameState.currentTick >= 576)
         {
@@ -74,10 +90,10 @@ public class GameManager : NetworkBehaviour
 
     private void UpdatePolicies()
     {
+        int i = 0;
         foreach (var player in _playerDistrictMap.Keys)
         {
-            var districtState = _playerDistrictMap[player].state.Value;
-            districtState.policyValues = new PolicyValues
+            _gameState.districts[i].policyValues = new PolicyValues
             {
                 taxRate = player.policySliders.taxRate,
                 education = player.policySliders.education,
@@ -86,7 +102,7 @@ public class GameManager : NetworkBehaviour
                 environment = player.policySliders.environment,
                 cityContribution = player.policySliders.cityContribution
             };
-            _playerDistrictMap[player].state.Value = districtState;
+            i++;
         }
     }
 }
