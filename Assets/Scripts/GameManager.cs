@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Network;
 using Simulation;
 using UnityEngine;
@@ -29,11 +30,11 @@ public class GameManager : NetworkBehaviour
     private Dictionary<Player, District> _playerDistrictMap = new();
     private int _myDistrictIndex = -1;
 
-    void Start()
+    private void Start()
     {
         _connectionManager = FindFirstObjectByType<ConnectionManager>();
         
-        if (HasAuthority)
+        if (_connectionManager.session.IsHost)
         {
             for (int i = 0; i < _connectionManager.playerCount; i++)
             {
@@ -41,8 +42,10 @@ public class GameManager : NetworkBehaviour
                 var player = playerObject.GetComponent<Player>();
             
                 var districtObject = Instantiate(Resources.Load<GameObject>("District"));
-                var district = districtObject.GetComponent<District>();
-            
+                var networkObject = districtObject.GetComponent<NetworkObject>();
+                networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
+                var district = networkObject.GetComponent<District>();
+                
                 _playerDistrictMap.Add(player, district);
             } 
             
@@ -56,17 +59,13 @@ public class GameManager : NetworkBehaviour
         }
         
         // Determine which district this client owns
-        for (int i = 0; i < _gameState.districts.Length; i++)
+        foreach (var district in _playerDistrictMap.Values)
         {
-            if (_gameState.districts[i].IsOwner)
+            if (district.IsOwner)
             {
-                _myDistrictIndex = i;
-                Debug.Log($"Client found district with index {_myDistrictIndex}");
+                Debug.Log($"Client found district with network ID {district.NetworkObjectId}");
                 break;
             }
-
-            Debug.LogError($"Client could not find owned district");
-            _gameOver =  true;
         }
     }
 
@@ -166,6 +165,6 @@ public class GameManager : NetworkBehaviour
     private void SignalTickReadyRpc()
     {
         _tickReadyCounter++;
-        Debug.Log($"Ready signals received: {_tickReadyCounter}");
+        if (HasAuthority) Debug.Log($"Ready signals received: {_tickReadyCounter}");
     }
 }

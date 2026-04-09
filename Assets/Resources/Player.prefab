@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6764261549735280859}
   - component: {fileID: 1932433236224124661}
   - component: {fileID: 1393076259165708563}
+  - component: {fileID: -8335229693676605101}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -74,3 +75,16 @@ MonoBehaviour:
   housing: 50
   environment: 50
   cityContribution: 25
+--- !u!114 &-8335229693676605101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62406034207436435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9997d2716f594f74798261845c950d65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Player
+  policySliders: {fileID: 0}

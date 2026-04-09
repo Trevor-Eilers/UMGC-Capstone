@@ -334,21 +334,36 @@ namespace UI
 
         private async void StartGame()
         {
-            connectionManager ??= FindAnyObjectByType<ConnectionManager>();
-
-            connectionManager.playerCount = _lobby.Players.Count;
-
-            var sessionId = Guid.NewGuid().ToString(); // TODO: Add check that != _lobby.id. Buy lottery ticket if it throws
-            await connectionManager.CreateOrJoinSessionAsync(connectionManager.ProfileName, sessionId);
-
-            if (connectionManager.State != ConnectionState.Connected)
+            try
             {
-                Debug.LogError("Failed to establish Netcode session.");
-                _gameStarting = false;
-                return;
-            }
+                connectionManager ??= FindAnyObjectByType<ConnectionManager>();
 
-            NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+                connectionManager.playerCount = _lobby.Players.Count;
+
+                var sessionId = _lobby.Id + "_session";
+                
+                await connectionManager.CreateOrJoinSessionAsync(connectionManager.ProfileName, sessionId);
+
+                if (connectionManager.State != ConnectionState.Connected)
+                {
+                    Debug.LogError("Failed to establish Netcode session.");
+                    _gameStarting = false;
+                    return;
+                }
+            
+                while (connectionManager.session.PlayerCount != _lobby.Players.Count)
+                {
+                    Debug.LogWarning("Not all clients have connected. Delaying...");
+                    await Task.Delay(1000);
+                }
+                
+                if (connectionManager.session.IsHost)
+                    NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         private async void OnDestroy()

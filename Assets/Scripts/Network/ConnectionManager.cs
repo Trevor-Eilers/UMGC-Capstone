@@ -20,16 +20,14 @@ namespace Network
     public class ConnectionManager : MonoBehaviour
     {
         public string ProfileName { get; private set; }
-    
         public string SessionName { get; private set; }
    
         private readonly int _maxPlayers = 4;
-
         public int playerCount = 0;
    
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
    
-        private ISession _session;
+        public ISession session;
    
         private NetworkManager _networkManager;
         
@@ -67,7 +65,7 @@ namespace Network
 
         private void OnDestroy()
         {
-            _session?.LeaveAsync();
+            session?.LeaveAsync();
         }
 
         public async Task<bool> Authenticate(string profileName)
@@ -96,16 +94,16 @@ namespace Network
             {
                 ProfileName = profileName;
                 SessionName = sessionName;
-           
-                AuthenticationService.Instance.SwitchProfile(profileName);
-                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+
+                if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
+                
    
                 var options = new SessionOptions() {
                     Name = sessionName,
                     MaxPlayers = _maxPlayers
                 }.WithDistributedAuthorityNetwork();
    
-                _session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
+                session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
    
                 State = ConnectionState.Connected;
             }
