@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Network;
 using Simulation;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,6 +12,7 @@ public class GameManager : NetworkBehaviour
 {
     private GameState _gameState;
     private float _tickTimer;
+    private bool _tickReady = false;
     private bool _gameOver;
 
     // TODO: Move this out
@@ -22,62 +24,80 @@ public class GameManager : NetworkBehaviour
     private static readonly Color ColSustain = new(0.25f, 0.80f, 0.60f);
     private static readonly Color ColDebt =    new(0.88f, 0.31f, 0.31f);
 
-    private Dictionary<Player, District> _playerDistrictMap;
+    private ConnectionManager _connectionManager;
+    private int _tickReadyCounter;
+    private Dictionary<Player, District> _playerDistrictMap = new();
     private int _myDistrictIndex = -1;
 
     void Start()
     {
-        _playerDistrictMap = new Dictionary<Player, District>();
-        var districts = FindObjectsByType<District>(FindObjectsSortMode.None);
-        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        for (int i = 0; i < players.Length; i++)
+        _connectionManager = FindFirstObjectByType<ConnectionManager>();
+        
+        if (HasAuthority)
         {
-            _playerDistrictMap.Add(players[i], districts[i]);
+            for (int i = 0; i < _connectionManager.playerCount; i++)
+            {
+                var playerObject = Instantiate(Resources.Load<GameObject>("Player"));
+                var player = playerObject.GetComponent<Player>();
+            
+                var districtObject = Instantiate(Resources.Load<GameObject>("District"));
+                var district = districtObject.GetComponent<District>();
+            
+                _playerDistrictMap.Add(player, district);
+            } 
+            
+            _gameState.districts = _playerDistrictMap.Values.ToArray();
+            _gameState.numActivePlayers = _gameState.districts.Length;
+            _gameState.cityMetrics = CityMetrics.Default();
+            _gameState.currentTick = 0;
+            _gameState.currentMonth = 0;
+            _gameState.gameSpeed = 1f;
+            _gameState.isPaused = false;
         }
-
-        _gameState.districts = _playerDistrictMap.Values.ToArray();
-        _gameState.numActivePlayers = _gameState.districts.Length;
-        _gameState.cityMetrics = CityMetrics.Default();
-        _gameState.currentTick = 0;
-        _gameState.currentMonth = 0;
-        _gameState.gameSpeed = 1f;
-        _gameState.isPaused = false;
-
+        
         // Determine which district this client owns
         for (int i = 0; i < _gameState.districts.Length; i++)
         {
             if (_gameState.districts[i].IsOwner)
             {
                 _myDistrictIndex = i;
+                Debug.Log($"Client found district with index {_myDistrictIndex}");
                 break;
             }
+
+            Debug.LogError($"Client could not find owned district");
+            _gameOver =  true;
         }
-    }
-
-    public void Setup()
-    {
-
     }
 
     void Update()
     {
-        var kb = Keyboard.current;
-        if (kb == null) return;
-
-        if (_gameState.isPaused || _gameOver) return;
+        if (HasAuthority)
+        {
+            // TODO: This is will not work with the addition of AI
+            if (_tickReadyCounter >= _connectionManager.playerCount)
+            {
+                ResolveTickRpc();
+            }
+        }
+        
+        if (_tickReady || _gameState.isPaused || _gameOver) return;
 
         float tickInterval = 3.125f / _gameState.gameSpeed;
         _tickTimer += Time.deltaTime;
 
         if (_tickTimer >= tickInterval)
         {
-            _tickTimer -= tickInterval;
-            ResolveTick();
+            _tickTimer = 0;
+            _tickReady = true;
+            SignalTickReadyRpc();
         }
     }
 
-    private void ResolveTick()
+    [Rpc(SendTo.Everyone)]
+    private void ResolveTickRpc()
     {
+        Debug.Log("Tick advancing");
         int n = _gameState.numActivePlayers;
 
         // Take snapshot from all district network variables (replicated state)
@@ -140,5 +160,12 @@ public class GameManager : NetworkBehaviour
                 }
             }
         }
+    }
+
+    [Rpc(SendTo.Authority)]
+    private void SignalTickReadyRpc()
+    {
+        _tickReadyCounter++;
+        Debug.Log($"Ready signals received: {_tickReadyCounter}");
     }
 }
