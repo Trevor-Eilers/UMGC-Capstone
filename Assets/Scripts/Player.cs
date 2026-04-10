@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 
 public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
 {
-    public NetworkVariable<NetworkBehaviourReference> district = new(writePerm: NetworkVariableWritePermission.Owner);
+    public NetworkVariable<NetworkBehaviourReference> districtNetRef = new(writePerm: NetworkVariableWritePermission.Owner);
 
     public PolicySliders policySliders;
     private UIDocument _doc;
@@ -26,8 +26,20 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     private InputSystem_Actions _actions;
     private InputSystem_Actions.KeyboardActions _keyboardActions;
 
+    public override void OnNetworkSpawn()
+    {
+        if (!IsOwner)
+        {
+            GetComponent<UIDocument>().enabled = false;
+            GetComponent<PolicySliders>().enabled = false;
+            return;
+        }
+    }
+
     private void Start()
     {
+        if (!IsOwner) return;
+
         policySliders = GetComponent<PolicySliders>();
         _doc = GetComponent<UIDocument>();
         _root = _doc.rootVisualElement;
@@ -43,6 +55,14 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
 
     public void UpdateUI()
     {
+        if (!IsOwner) return;
+
+        Debug.Log($"GDP: {District.state.Value.gdp} " +
+                  $"Surp: {District.state.Value.reserve} " +
+                  $"Rev: {District.state.Value.revenue}" +
+                  $"Pop: {District.state.Value.population} " +
+                  $"Happ: {District.state.Value.happiness}");
+        
         _gdpIndicator.Value = District.state.Value.gdp.ToString();
         _surpIndicator.Value = District.state.Value.reserve.ToString();
         _revIndicator.Value = District.state.Value.revenue.ToString();
@@ -57,7 +77,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     {
         get
         {
-            district.Value.TryGet(out District d, NetworkManager.Singleton);
+            districtNetRef.Value.TryGet(out District d, NetworkManager.Singleton);
             return d;
         }
     }

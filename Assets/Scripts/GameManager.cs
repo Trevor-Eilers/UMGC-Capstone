@@ -115,8 +115,7 @@ public class GameManager : NetworkBehaviour
         if (_tickReady || _gameState.Value.isPaused || _gameOver) return;
 
         _tickTimer += Time.deltaTime;
-
-
+        
         if (_tickTimer >= _tickInterval)
         {
             _tickTimer = 0;

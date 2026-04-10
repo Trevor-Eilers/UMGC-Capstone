@@ -1,5 +1,4 @@
 using Simulation;
-using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -18,7 +17,7 @@ public class District : NetworkBehaviour
         {
             if (player.OwnerClientId == OwnerClientId)
             {
-                player.district.Value = new NetworkBehaviourReference(this);
+                player.districtNetRef.Value = new NetworkBehaviourReference(this);
                 break;
             }
         }

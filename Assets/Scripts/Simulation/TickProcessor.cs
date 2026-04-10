@@ -1,4 +1,4 @@
-// Author: Malcolm Bramble
+// Author: Malcolm Bramble, Trevor Eilers
 
 using System;
 
@@ -8,16 +8,12 @@ namespace Simulation
     /// Per-district tick resolution for distributed authority.
     /// Each client calls ResolveDistrictTick for their own district,
     /// reading other districts from a shared snapshot (last tick's final state).
-    /// City-wide metrics are computed once from the snapshot — all clients
-    /// produce identical results (deterministic).
+    /// City-wide metrics are computed once from the snapshot. All clients
+    /// produce identical (deterministic) results .
     /// </summary>
     public static class TickProcessor
     {
-        /// <summary>
-        /// Compute city-wide metrics from the snapshot. Deterministic: all clients
-        /// produce the same result from the same snapshot.
-        /// Call this ONCE per tick before ResolveDistrictTick.
-        /// </summary>
+        // Call once per tick before ResolveDistrictTick.
         public static CityMetrics ResolveCityMetrics(
             DistrictState[] snapshot, CityMetrics current)
         {
@@ -29,7 +25,7 @@ namespace Simulation
                 snapshot, numActivePlayers);
             cm.cityReputation = Math.Min(Math.Max(cm.cityReputation, 0f), 100f);
 
-            // 4.3 — Shared Infrastructure (from snapshot spending)
+            // 4.3 — Shared Infrastructure
             float totalCityCost = ComputeTotalCityCost(snapshot, numActivePlayers);
             cm.sharedInfraQuality = CityMetricsManager.UpdateSharedInfrastructure(
                 totalCityCost, cm.sharedInfraQuality);
@@ -55,7 +51,7 @@ namespace Simulation
             var numActivePlayers = snapshot.Length;
             
             // ══════════════════════════════════════════
-            // PHASE 1: Budget Resolution (purely local)
+            // PHASE 1: Budget Resolution (local)
             // ══════════════════════════════════════════
 
             d.revenue = BudgetCalculator.ComputeRevenue(
@@ -78,7 +74,7 @@ namespace Simulation
             d.reserve = reserve;
 
             // ══════════════════════════════════════════
-            // PHASE 2: Local Effects (purely local)
+            // PHASE 2: Local Effects (local)
             // ══════════════════════════════════════════
 
             d.gdp += LocalEffectCalculator.ComputeGdpDelta(d, scaledSpending);

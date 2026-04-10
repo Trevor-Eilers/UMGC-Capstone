@@ -64,6 +64,11 @@ namespace Simulation
             return new DistrictState
             {
                 policyValues = PolicyValues.Default(),
+                gdp = SimulationConstants.GDP_START,
+                happiness = SimulationConstants.HAPPINESS_START,
+                population = SimulationConstants.POPULATION_START,
+                infrastructure = SimulationConstants.INFRASTRUCTURE_START,
+                sustainability = SimulationConstants.SUSTAINABILITY_START,
                 debt = SimulationConstants.DEBT_START,
                 reserve = SimulationConstants.RESERVE_START,
                 revenue = 0f,
