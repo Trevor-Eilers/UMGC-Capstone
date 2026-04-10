@@ -1,9 +1,6 @@
 // Author: Malcolm Bramble
 // Edited by: Trevor Eilers
 
-// Game-level state container. Holds references to networked District objects
-// and runtime game state. Not part of the pure simulation layer.
-using Simulation;
 using Unity.Netcode;
 
 [System.Serializable]
@@ -24,7 +21,7 @@ public struct GameState : INetworkSerializable
         serializer.SerializeValue(ref isPaused);
     }
 
-    public void Default()
+    public void Reset()
     {
         cityMetrics = CityMetrics.Default();
         currentTick = 0;

@@ -9,7 +9,18 @@ public class District : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        base.OnNetworkSpawn();
+        if (!IsOwner) return;
+
         state.Value = DistrictState.Default();
+
+        // Find our owning Player and register this district
+        foreach (var player in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        {
+            if (player.OwnerClientId == OwnerClientId)
+            {
+                player.district.Value = new NetworkBehaviourReference(this);
+                break;
+            }
+        }
     }
 }

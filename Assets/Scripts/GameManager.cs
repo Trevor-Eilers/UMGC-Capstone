@@ -42,8 +42,9 @@ public class GameManager : NetworkBehaviour
     {
         if (IsHost)
         {
-            _gameState.Value = new GameState();
-            _gameState.Value.Default();
+            var state = new GameState();
+            state.Reset();
+            _gameState.Value = state;
         }
         
         Initialize();
@@ -85,7 +86,6 @@ public class GameManager : NetworkBehaviour
                     var districtObject = Instantiate(Resources.Load<GameObject>("District"));
                     var networkObject = districtObject.GetComponent<NetworkObject>();
                     networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
-                    // player.district.Value = new NetworkBehaviourReference(districtObject.GetComponent<District>());
                 }
 
                 var value = _gameState.Value;
@@ -108,8 +108,6 @@ public class GameManager : NetworkBehaviour
             if (_tickReadyCounter >= _connectionManager.playerCount)
             {
                 ResolveTickRpc();
-                _tickReadyCounter = 0;
-                _tickReady = false;
                 return;
             }
         }
@@ -121,7 +119,6 @@ public class GameManager : NetworkBehaviour
 
         if (_tickTimer >= _tickInterval)
         {
-            Debug.Log("Preparing to advance tick");
             _tickTimer = 0;
             _tickReady = true;
             SignalTickReadyRpc();
@@ -132,6 +129,9 @@ public class GameManager : NetworkBehaviour
     private void ResolveTickRpc()
     {
         Debug.Log("Tick advancing");
+        
+        _tickReadyCounter = 0;
+        _tickReady = false;
 
         UpdatePolicies();
 
@@ -159,8 +159,7 @@ public class GameManager : NetworkBehaviour
         {
             _gameOver = true;
         }
-
-        // Broadcast resolved metrics so clients don't read stale data
+        
         ResolveDistrictTickRpc(districtStates, gameState.cityMetrics);
     }
 
@@ -184,6 +183,8 @@ public class GameManager : NetworkBehaviour
                 localIndex, districtStates, cityMetrics);
             _localPlayer.District.state.Value = result;
         }
+        
+        _localPlayer.UpdateUI();
     }
 
     private void UpdatePolicies()
