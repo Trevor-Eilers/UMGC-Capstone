@@ -351,13 +351,13 @@ namespace UI
                     return;
                 }
             
-                while (connectionManager.session.PlayerCount != _lobby.Players.Count)
+                while (connectionManager.Session.PlayerCount != _lobby.Players.Count)
                 {
                     Debug.LogWarning("Not all clients have connected. Delaying...");
                     await Task.Delay(1000);
                 }
                 
-                if (connectionManager.session.IsHost)
+                if (connectionManager.Session.IsHost)
                     NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
             }
             catch (Exception e)

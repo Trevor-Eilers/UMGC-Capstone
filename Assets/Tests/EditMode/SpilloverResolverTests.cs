@@ -82,14 +82,14 @@ public class SpilloverResolverTests
         float envSliderA = 50f, float envSliderB = 50f)
     {
         var districts = new DistrictState[4];
-        districts[0] = DistrictState.Default(0);
+        districts[0] = DistrictState.Default();
         districts[0].gdp = gdpA;
         districts[0].happiness = happyA;
         districts[0].population = popA;
         districts[0].sustainability = sustainA;
         districts[0].policyValues.environment = envSliderA;
 
-        districts[1] = DistrictState.Default(1);
+        districts[1] = DistrictState.Default();
         districts[1].gdp = gdpB;
         districts[1].happiness = happyB;
         districts[1].population = popB;
@@ -97,8 +97,8 @@ public class SpilloverResolverTests
         districts[1].policyValues.environment = envSliderB;
 
         // Inactive districts (defaults, won't be processed with numActive=2)
-        districts[2] = DistrictState.Default(2);
-        districts[3] = DistrictState.Default(3);
+        districts[2] = DistrictState.Default();
+        districts[3] = DistrictState.Default();
         return districts;
     }
 

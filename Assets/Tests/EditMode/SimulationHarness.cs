@@ -183,7 +183,7 @@ public class SimulationHarness
 
         const int numPlayers = 4;
         var districts = new DistrictState[numPlayers];
-        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
         var cityMetrics = CityMetrics.Default();
 
         // Apply initial profiles
@@ -203,7 +203,7 @@ public class SimulationHarness
             if (tick == switchTick && switchPlayer >= 0 && switchProfile != null)
                 ApplyProfile(ref districts[switchPlayer], switchProfile);
 
-            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
             int currentTick = tick + 1;
 
             // Report every 12 ticks (once per simulated month)

@@ -89,7 +89,7 @@ public class LocalEffectCalculatorTests
         float infrastructure = 50f, float sustainability = 55f,
         float debt = 15f, float taxRate = 15f)
     {
-        var d = DistrictState.Default(0);
+        var d = DistrictState.Default();
         d.gdp = gdp;
         d.happiness = happiness;
         d.population = population;

@@ -67,7 +67,7 @@ namespace Tests.EditMode
             var districts = new DistrictState[4];
             for (int i = 0; i < 4; i++)
             {
-                districts[i] = DistrictState.Default(i);
+                districts[i] = DistrictState.Default();
                 districts[i].gdp = gdp;
                 districts[i].happiness = happiness;
                 districts[i].infrastructure = infrastructure;

@@ -5,19 +5,11 @@ using UnityEngine;
 
 public class District : NetworkBehaviour
 {
-    [SerializeField]
-    [ReadOnly]
-    public NetworkVariable<DistrictState> state;
-    
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    public NetworkVariable<DistrictState> state = new();
 
-    // Update is called once per frame
-    void Update()
+    public override void OnNetworkSpawn()
     {
-        
+        base.OnNetworkSpawn();
+        state.Value = DistrictState.Default();
     }
 }

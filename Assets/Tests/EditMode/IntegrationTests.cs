@@ -244,11 +244,11 @@ public class IntegrationTests
     {
         const int numPlayers = 4;
         var districts = new DistrictState[numPlayers];
-        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
         var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
-            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
 
         for (int i = 0; i < numPlayers; i++)
         {
@@ -294,11 +294,11 @@ public class IntegrationTests
     {
         const int numPlayers = 4;
         var districts = new DistrictState[numPlayers];
-        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
         var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < 100; tick++)
-            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
 
         var d0 = districts[0];
         for (int i = 1; i < numPlayers; i++)
@@ -324,12 +324,12 @@ public class IntegrationTests
     {
         const int numPlayers = 4;
         var districts = new DistrictState[numPlayers];
-        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
         var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
         {
-            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
 
             for (int i = 0; i < numPlayers; i++)
             {
@@ -360,11 +360,11 @@ public class IntegrationTests
     {
         const int numPlayers = 4;
         var districts = new DistrictState[numPlayers];
-        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
         var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
-            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
 
         for (int i = 0; i < numPlayers; i++)
         {
@@ -385,11 +385,11 @@ public class IntegrationTests
     {
         const int numPlayers = 4;
         var districts = new DistrictState[numPlayers];
-        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
         var cityMetrics = CityMetrics.Default();
 
         for (int tick = 0; tick < 100; tick++)
-            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
 
         FinalScore score0 = ScoringSystem.ComputeFinalScore(
             districts[0], cityMetrics, districts, numPlayers);
@@ -413,11 +413,11 @@ public class IntegrationTests
     {
         const int numPlayers = 2;
         var districts = new DistrictState[numPlayers];
-        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default(i);
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
         var cityMetrics = CityMetrics.Default();
         int currentTick = 0;
 
-        TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+        TickProcessor.ResolveFullTick(districts, ref cityMetrics);
         currentTick++;
         Assert.AreEqual(1, currentTick);
         Assert.AreEqual(0, currentTick / SimulationConstants.TICKS_PER_MONTH);
@@ -425,7 +425,7 @@ public class IntegrationTests
         // Run to tick 12 (month 1)
         for (int i = 1; i < 12; i++)
         {
-            TickProcessor.ResolveFullTick(districts, ref cityMetrics, numPlayers);
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
             currentTick++;
         }
 

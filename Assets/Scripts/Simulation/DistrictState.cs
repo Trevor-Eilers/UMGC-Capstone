@@ -8,8 +8,6 @@ namespace Simulation
     [System.Serializable]
     public struct DistrictState : INetworkSerializable
     {
-        public int playerId; // 0-3
-        
         // This field is not replicated
         public PolicyValues policyValues;
 
@@ -41,7 +39,6 @@ namespace Simulation
         
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref playerId);
             serializer.SerializeValue(ref population);
             serializer.SerializeValue(ref happiness);
             serializer.SerializeValue(ref sustainability);
@@ -62,11 +59,10 @@ namespace Simulation
             serializer.SerializeValue(ref totalCitySpending);
         }
         
-        public static DistrictState Default(int playerId)
+        public static DistrictState Default()
         {
             return new DistrictState
             {
-                playerId = playerId,
                 policyValues = PolicyValues.Default(),
                 debt = SimulationConstants.DEBT_START,
                 reserve = SimulationConstants.RESERVE_START,

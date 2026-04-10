@@ -27,7 +27,7 @@ namespace Network
    
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
    
-        public ISession session;
+        public ISession Session { get; private set; }
    
         private NetworkManager _networkManager;
         
@@ -65,7 +65,7 @@ namespace Network
 
         private void OnDestroy()
         {
-            session?.LeaveAsync();
+            Session?.LeaveAsync();
         }
 
         public async Task<bool> Authenticate(string profileName)
@@ -103,7 +103,7 @@ namespace Network
                     MaxPlayers = _maxPlayers
                 }.WithDistributedAuthorityNetwork();
    
-                session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
+                Session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
    
                 State = ConnectionState.Connected;
             }

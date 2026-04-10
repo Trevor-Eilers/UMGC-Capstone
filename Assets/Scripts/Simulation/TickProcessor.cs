@@ -19,10 +19,11 @@ namespace Simulation
         /// Call this ONCE per tick before ResolveDistrictTick.
         /// </summary>
         public static CityMetrics ResolveCityMetrics(
-            DistrictState[] snapshot, CityMetrics current, int numActivePlayers)
+            DistrictState[] snapshot, CityMetrics current)
         {
             CityMetrics cm = current;
-
+            var numActivePlayers = snapshot.Length;
+            
             // 4.1 — City Reputation
             cm.cityReputation = CityMetricsManager.ComputeCityReputation(
                 snapshot, numActivePlayers);
@@ -48,11 +49,11 @@ namespace Simulation
         public static DistrictState ResolveDistrictTick(
             int districtIndex,
             DistrictState[] snapshot,
-            CityMetrics cityMetrics,
-            int numActivePlayers)
+            CityMetrics cityMetrics)
         {
             DistrictState d = snapshot[districtIndex];
-
+            var numActivePlayers = snapshot.Length;
+            
             // ══════════════════════════════════════════
             // PHASE 1: Budget Resolution (purely local)
             // ══════════════════════════════════════════
@@ -156,12 +157,13 @@ namespace Simulation
         /// Simulates all clients computing from the same snapshot.
         /// </summary>
         public static void ResolveFullTick(
-            DistrictState[] districts, ref CityMetrics cityMetrics, int numActivePlayers)
+            DistrictState[] districts, ref CityMetrics cityMetrics)
         {
+            var numActivePlayers = districts.Length;
             var snapshot = (DistrictState[])districts.Clone();
-            cityMetrics = ResolveCityMetrics(snapshot, cityMetrics, numActivePlayers);
+            cityMetrics = ResolveCityMetrics(snapshot, cityMetrics);
             for (int i = 0; i < numActivePlayers; i++)
-                districts[i] = ResolveDistrictTick(i, snapshot, cityMetrics, numActivePlayers);
+                districts[i] = ResolveDistrictTick(i, snapshot, cityMetrics);
         }
     }
 }
