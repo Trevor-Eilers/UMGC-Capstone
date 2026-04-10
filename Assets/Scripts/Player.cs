@@ -56,12 +56,6 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     public void UpdateUI()
     {
         if (!IsOwner) return;
-
-        Debug.Log($"GDP: {District.state.Value.gdp} " +
-                  $"Surp: {District.state.Value.reserve} " +
-                  $"Rev: {District.state.Value.revenue}" +
-                  $"Pop: {District.state.Value.population} " +
-                  $"Happ: {District.state.Value.happiness}");
         
         _gdpIndicator.Value = District.state.Value.gdp.ToString();
         _surpIndicator.Value = District.state.Value.reserve.ToString();

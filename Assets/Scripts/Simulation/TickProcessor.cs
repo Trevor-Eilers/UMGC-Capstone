@@ -84,7 +84,7 @@ namespace Simulation
             d.population -= LocalEffectCalculator.ComputeOutmigration(d);
 
             // ══════════════════════════════════════════
-            // PHASE 3: Spillover (reads others from snapshot)
+            // PHASE 3: Spillover (from snapshot)
             // ══════════════════════════════════════════
 
             SpilloverResolver.ApplyGentrification(

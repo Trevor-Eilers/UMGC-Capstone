@@ -16,7 +16,7 @@ public class GameManager : NetworkBehaviour
     private float _tickTimer = 0f;
     private bool _tickReady = false;
     private bool _gameOver =  false;
-    private float _tickInterval = 3.125f;
+    private float _tickInterval = 2f;
 
     // TODO: Move this out
     // Metric bar colors

@@ -8,7 +8,6 @@ namespace Simulation
     [System.Serializable]
     public struct DistrictState : INetworkSerializable
     {
-        // This field is not replicated
         public PolicyValues policyValues;
 
         public float population;
@@ -39,6 +38,7 @@ namespace Simulation
         
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
+            policyValues.NetworkSerialize(serializer);
             serializer.SerializeValue(ref population);
             serializer.SerializeValue(ref happiness);
             serializer.SerializeValue(ref sustainability);
