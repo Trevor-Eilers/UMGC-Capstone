@@ -178,6 +178,19 @@ public class GameManager : NetworkBehaviour
 
         if (localIndex >= 0)
         {
+            // Inject live slider values so each client uses its own current
+            // policy, not the stale snapshot the host gathered before this
+            // client's UpdatePolicies write could replicate.
+            districtStates[localIndex].policyValues = new PolicyValues
+            {
+                taxRate = _localPlayer.policySliders.taxRate,
+                education = _localPlayer.policySliders.education,
+                infrastructure = _localPlayer.policySliders.infrastructure,
+                housing = _localPlayer.policySliders.housing,
+                environment = _localPlayer.policySliders.environment,
+                cityContribution = _localPlayer.policySliders.cityContribution
+            };
+
             var result = TickProcessor.ResolveDistrictTick(
                 localIndex, districtStates, cityMetrics);
             _localPlayer.District.state.Value = result;
