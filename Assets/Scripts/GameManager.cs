@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Collections;
 using Network;
 using Simulation;
 using UnityEngine;
@@ -47,55 +47,48 @@ public class GameManager : NetworkBehaviour
             _gameState.Value = state;
         }
         
-        Initialize();
+        StartCoroutine(Initialize());
     }
 
-    private async void Initialize()
+    private IEnumerator Initialize()
     {
-        try
+        _connectionManager = FindFirstObjectByType<ConnectionManager>();
+
+        // Wait for local player to spawn
+        while (_localPlayer == null)
         {
-            _connectionManager = FindFirstObjectByType<ConnectionManager>();
-            
-            // Wait for local player to spawn
-            while (_localPlayer == null)
+            var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+            foreach (var player in players)
             {
-                var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-                foreach (var player in players)
-                {
-                    if (player.IsOwner) _localPlayer = player;
-                }
-
-                if (_localPlayer == null) await Task.Delay(100);
+                if (player.IsOwner) _localPlayer = player;
             }
 
-            SignalInitializeRpc();
-
-            if (HasAuthority)
-            {
-                while (_initializationCounter < _connectionManager.playerCount)
-                {
-                    Debug.Log("Waiting for clients");
-                    await Task.Delay(1500);
-                }
-                
-                var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-                for (int i = 0; i < players.Length; i++)
-                {
-                    _players.Add(players[i].NetworkObject);
-                    
-                    var districtObject = Instantiate(Resources.Load<GameObject>("District"));
-                    var networkObject = districtObject.GetComponent<NetworkObject>();
-                    networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
-                }
-
-                var gameState = _gameState.Value;
-                gameState.isPaused = false;
-                _gameState.Value = gameState;
-            }
+            if (_localPlayer == null) yield return new WaitForSeconds(0.1f);
         }
-        catch (Exception e)
+
+        SignalInitializeRpc();
+
+        if (HasAuthority)
         {
-            Debug.LogException(e);
+            while (_initializationCounter < _connectionManager.playerCount)
+            {
+                Debug.Log("Waiting for clients");
+                yield return new WaitForSeconds(1.5f);
+            }
+
+            var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+            for (int i = 0; i < players.Length; i++)
+            {
+                _players.Add(players[i].NetworkObject);
+
+                var districtObject = Instantiate(Resources.Load<GameObject>("District"));
+                var networkObject = districtObject.GetComponent<NetworkObject>();
+                networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
+            }
+
+            var gameState = _gameState.Value;
+            gameState.isPaused = false;
+            _gameState.Value = gameState;
         }
     }
     

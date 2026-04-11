@@ -1,6 +1,7 @@
 // Author: Trevor Eilers
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Network;
@@ -351,21 +352,26 @@ namespace UI
                     return;
                 }
             
-                while (connectionManager.Session.PlayerCount != _lobby.Players.Count)
-                {
-                    Debug.LogWarning("Not all clients have connected. Delaying...");
-                    await Task.Delay(1000);
-                }
-
-                if (connectionManager.Session.IsHost)
-                {
-                    Debug.Log("Loading scene");
-                    NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
-                }
+                StartCoroutine(WaitForPlayersAndLoadScene());
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
+            }
+        }
+
+        private IEnumerator WaitForPlayersAndLoadScene()
+        {
+            while (connectionManager.Session.PlayerCount != _lobby.Players.Count)
+            {
+                Debug.LogWarning("Not all clients have connected. Delaying...");
+                yield return new WaitForSeconds(1f);
+            }
+
+            if (connectionManager.Session.IsHost)
+            {
+                Debug.Log("Loading scene");
+                NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
             }
         }
 
