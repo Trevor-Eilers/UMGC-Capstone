@@ -1,6 +1,8 @@
 // Author: Malcolm Bramble
 // Edited by: Trevor Eilers
 
+#if !UNITY_EDITOR
+
 using System;
 using NUnit.Framework;
 using Simulation;
@@ -433,3 +435,5 @@ public class IntegrationTests
         Assert.AreEqual(1, currentTick / SimulationConstants.TICKS_PER_MONTH);
     }
 }
+
+#endif

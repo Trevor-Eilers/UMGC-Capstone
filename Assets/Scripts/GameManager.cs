@@ -88,9 +88,9 @@ public class GameManager : NetworkBehaviour
                     networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
                 }
 
-                var value = _gameState.Value;
-                value.isPaused = false;
-                _gameState.Value = value;
+                var gameState = _gameState.Value;
+                gameState.isPaused = false;
+                _gameState.Value = gameState;
             }
         }
         catch (Exception e)
@@ -178,9 +178,6 @@ public class GameManager : NetworkBehaviour
 
         if (localIndex >= 0)
         {
-            // Inject live slider values so each client uses its own current
-            // policy, not the stale snapshot the host gathered before this
-            // client's UpdatePolicies write could replicate.
             districtStates[localIndex].policyValues = new PolicyValues
             {
                 taxRate = _localPlayer.policySliders.taxRate,

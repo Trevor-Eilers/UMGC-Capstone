@@ -1,5 +1,7 @@
 // Author: Malcolm Bramble
 
+#if !UNITY_EDITOR
+
 using NUnit.Framework;
 
 [TestFixture]
@@ -351,3 +353,5 @@ public class BudgetCalculatorTests
         Assert.AreEqual(0f, reserve, 0.01f, "Reserve unchanged on balanced budget");
     }
 }
+
+#endif

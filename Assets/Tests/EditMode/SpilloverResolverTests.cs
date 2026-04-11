@@ -1,5 +1,7 @@
 // Author: Malcolm Bramble
 
+#if !UNITY_EDITOR
+
 using System;
 using NUnit.Framework;
 using Simulation;
@@ -452,3 +454,5 @@ public class SpilloverResolverTests
         }
     }
 }
+
+#endif

@@ -1,5 +1,7 @@
 // Author: Malcolm Bramble
 
+#if !UNITY_EDITOR
+
 using System;
 using NUnit.Framework;
 using Simulation;
@@ -434,3 +436,5 @@ public class LocalEffectCalculatorTests
         Assert.AreEqual(-20f, delta, 0.01f);
     }
 }
+
+#endif

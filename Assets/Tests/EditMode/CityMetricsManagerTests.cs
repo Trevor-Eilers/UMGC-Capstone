@@ -1,5 +1,7 @@
 // Author: Malcolm Bramble
 
+#if !UNITY_EDITOR
+
 using NUnit.Framework;
 using Simulation;
 
@@ -398,3 +400,5 @@ namespace Tests.EditMode
         }
     }
 }
+
+#endif

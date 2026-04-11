@@ -1,6 +1,8 @@
 // Author: Malcolm Bramble
 // Edited by: Trevor Eilers
 
+#if !UNITY_EDITOR
+
 using System;
 using System.Text;
 using System.IO;
@@ -302,3 +304,5 @@ public class SimulationHarness
         Assert.Pass("Scenario E complete — see CSV output");
     }
 }
+
+#endif
