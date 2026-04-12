@@ -1,18 +1,14 @@
 // Authors: Malcolm Bramble, Trevor Eilers
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Collections;
 using Network;
 using Simulation;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Unity.Netcode;
 
 public class GameManager : NetworkBehaviour
 {
-    private NetworkVariable<GameState> _gameState = new();
+    public static NetworkVariable<GameState> GameState { get; } = new();
     private float _tickTimer = 0f;
     private bool _tickReady = false;
     private bool _gameOver =  false;
@@ -37,19 +33,20 @@ public class GameManager : NetworkBehaviour
     private NetworkList<NetworkObjectReference> _players = new();
     
     private Player _localPlayer;
-
+    
+    
     public override void OnNetworkSpawn()
     {
-        if (IsHost)
+        if (HasAuthority)
         {
             var state = new GameState();
-            state.Reset();
-            _gameState.Value = state;
+            state.Default();
+            GameState.Value = state;
         }
         
         StartCoroutine(Initialize());
     }
-
+    
     private IEnumerator Initialize()
     {
         _connectionManager = FindFirstObjectByType<ConnectionManager>();
@@ -70,7 +67,7 @@ public class GameManager : NetworkBehaviour
 
         if (HasAuthority)
         {
-            while (_initializationCounter < _connectionManager.playerCount)
+            while (_initializationCounter < _connectionManager.PlayerCount)
             {
                 Debug.Log("Waiting for clients");
                 yield return new WaitForSeconds(1.5f);
@@ -86,9 +83,11 @@ public class GameManager : NetworkBehaviour
                 networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
             }
 
-            var gameState = _gameState.Value;
+            var gameState = GameState.Value;
             gameState.isPaused = false;
-            _gameState.Value = gameState;
+            GameState.Value = gameState;
+
+            Debug.Log("Initialization complete.");
         }
     }
     
@@ -98,18 +97,18 @@ public class GameManager : NetworkBehaviour
         if (HasAuthority)
         {
             // TODO: This is will not work with the addition of AI
-            if (_tickReadyCounter >= _connectionManager.playerCount)
+            if (_tickReadyCounter >= _connectionManager.PlayerCount)
             {
                 ResolveTickRpc();
                 return;
             }
         }
         
-        if (_tickReady || _gameState.Value.isPaused || _gameOver) return;
+        if (_tickReady || GameState.Value.isPaused || _gameOver) return;
 
         _tickTimer += Time.deltaTime;
         
-        if (_tickTimer >= _tickInterval)
+        if (_tickTimer >= _tickInterval / GameState.Value.gameSpeed)
         {
             _tickTimer = 0;
             _tickReady = true;
@@ -141,11 +140,11 @@ public class GameManager : NetworkBehaviour
         }
 
         // Host resolves city-wide metrics
-        var gameState = _gameState.Value;
+        var gameState = GameState.Value;
         gameState.cityMetrics = TickProcessor.ResolveCityMetrics(districtStates, gameState.cityMetrics);
         gameState.currentTick++;
         gameState.currentMonth = gameState.currentTick / SimulationConstants.TICKS_PER_MONTH;
-        _gameState.Value = gameState;
+        GameState.Value = gameState;
 
         if (gameState.currentTick >= SimulationConstants.TOTAL_TICKS)
         {

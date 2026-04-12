@@ -1,5 +1,4 @@
-// Author: Malcolm Bramble
-// Edited by: Trevor Eilers
+// Authors: Malcolm Bramble, Trevor Eilers
 
 using Unity.Netcode;
 
@@ -21,7 +20,7 @@ public struct GameState : INetworkSerializable
         serializer.SerializeValue(ref isPaused);
     }
 
-    public void Reset()
+    public void Default()
     {
         cityMetrics = CityMetrics.Default();
         currentTick = 0;

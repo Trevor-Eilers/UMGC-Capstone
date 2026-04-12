@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 15024, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 3 Player
+  m_Name: 4 Player
   m_EditorClassIdentifier: UnityEditor.MultiplayerModule.dll::Unity.Multiplayer.PlayMode.Editor.ScenarioConfig
   m_Description: 
   m_EnableEditors: 1
@@ -22,7 +22,7 @@ MonoBehaviour:
     - Main Editor|0_deploy
     m_Role: 1
     m_PlayerTag: 
-    m_InitialScene: {fileID: 102900000, guid: 4c128d683b2376444a47b5c1283089bf, type: 3}
+    m_InitialScene: {fileID: 0}
   m_EditorInstances:
   - Name: Player 2
     <CorrespondingNodeId>k__BackingField: Player 2|1_run
@@ -34,7 +34,7 @@ MonoBehaviour:
     m_InitialScene: {fileID: 0}
     m_AdvancedConfiguration:
       StreamLogsToMainEditor: 1
-      LogsColor: {r: 0, g: 0.7830189, b: 0, a: 1}
+      LogsColor: {r: 0.3643, g: 0.581, b: 0.8679, a: 1}
   - Name: Player 3
     <CorrespondingNodeId>k__BackingField: Player 3|2_run
     m_Nodes:
@@ -45,7 +45,18 @@ MonoBehaviour:
     m_InitialScene: {fileID: 0}
     m_AdvancedConfiguration:
       StreamLogsToMainEditor: 1
-      LogsColor: {r: 0.3643, g: 0.581, b: 0.8679, a: 1}
+      LogsColor: {r: 0, g: 0.8113208, b: 0, a: 1}
+  - Name: Player 4
+    <CorrespondingNodeId>k__BackingField: Player 4|3_run
+    m_Nodes:
+    - Player 4|3_run
+    - Player 4|3_deploy
+    m_Role: 1
+    m_PlayerTag: 
+    m_InitialScene: {fileID: 0}
+    m_AdvancedConfiguration:
+      StreamLogsToMainEditor: 1
+      LogsColor: {r: 1, g: 0.581, b: 0, a: 1}
   m_LocalInstances: []
   m_RemoteInstances: []
   m_MainEditorInstanceObsolete:

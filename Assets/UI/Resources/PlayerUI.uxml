@@ -1,9 +1,12 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:Template name="IndicatorBarWidget" src="project://database/Assets/UI/Resources/IndicatorBarWidget.uxml?fileID=9197481963319205126&amp;guid=c78faf8cd7db6f04187519d2260bae67&amp;type=3#IndicatorBarWidget"/>
     <ui:Template name="PolicyBarWidget" src="project://database/Assets/UI/Resources/PolicyBarWidget.uxml?fileID=9197481963319205126&amp;guid=51f2213a46e0da94b8132a8c5b4b9d6c&amp;type=3#PolicyBarWidget"/>
+    <ui:Template name="TopBarWidget" src="project://database/Assets/UI/Resources/TopBarWidget.uxml?fileID=9197481963319205126&amp;guid=68d7a5bea012eb44895546d04f8f1a83&amp;type=3#TopBarWidget"/>
     <ui:VisualElement style="flex-grow: 1; width: 100%; height: 100%; flex-direction: column;">
         <ui:VisualElement style="flex-grow: 1; flex-direction: row; width: 100%;">
-            <ui:VisualElement style="flex-grow: 1; background-color: rgba(0,0,0,0);"/>
+            <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);">
+                <ui:Instance template="TopBarWidget"/>
+            </ui:VisualElement>
             <ui:Instance template="PolicyBarWidget" style="align-self: stretch; flex-shrink: 0;"/>
         </ui:VisualElement>
         <ui:Instance template="IndicatorBarWidget" style="align-self: stretch; flex-shrink: 0;"/>
