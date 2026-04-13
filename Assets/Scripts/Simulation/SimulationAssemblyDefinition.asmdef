@@ -1,9 +1,15 @@
 {
-    "name": "TestAssemblyDefinition",
+    "name": "SimulationAssemblyDefinition",
     "rootNamespace": "",
-    "references": ["SimulationAssemblyDefinition"],
+    "references": [
+        "GUID:1491147abca9d7d4bb7105af628b223e"
+    ],
     "includePlatforms": [
-        "Editor"
+        "Editor",
+        "iOS",
+        "WebGL",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

@@ -1,6 +1,6 @@
 // Author: Malcolm Bramble
 
-#if !UNITY_EDITOR
+#if UNITY_EDITOR
 
 using NUnit.Framework;
 using Simulation;

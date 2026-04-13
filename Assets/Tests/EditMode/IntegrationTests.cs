@@ -1,11 +1,12 @@
 // Author: Malcolm Bramble
 // Edited by: Trevor Eilers
 
-#if !UNITY_EDITOR
+#if UNITY_EDITOR
 
 using System;
 using NUnit.Framework;
 using Simulation;
+
 
 [TestFixture]
 public class IntegrationTests
