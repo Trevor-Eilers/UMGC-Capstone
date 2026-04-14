@@ -1,5 +1,6 @@
 // Authors: Malcolm Bramble, Trevor Eilers
 
+using System;
 using System.Collections;
 using Network;
 using Simulation;
@@ -14,15 +15,6 @@ public class GameManager : NetworkBehaviour
     private bool _gameOver =  false;
     private float _tickInterval = 2f;
 
-    // TODO: Move this out
-    // Metric bar colors
-    private static readonly Color ColGdp =     new(0.30f, 0.72f, 0.91f);
-    private static readonly Color ColHappy =   new(0.91f, 0.75f, 0.19f);
-    private static readonly Color ColPop =     new(0.38f, 0.78f, 0.38f);
-    private static readonly Color ColInfra =   new(0.63f, 0.44f, 0.82f);
-    private static readonly Color ColSustain = new(0.25f, 0.80f, 0.60f);
-    private static readonly Color ColDebt =    new(0.88f, 0.31f, 0.31f);
-
     private ConnectionManager _connectionManager;
     
     private int _tickReadyCounter = 0;
@@ -33,17 +25,21 @@ public class GameManager : NetworkBehaviour
     private NetworkList<NetworkObjectReference> _players = new();
     
     private Player _localPlayer;
-    
+
+    public static GameManager Instance { get; private set; }
+
     
     public override void OnNetworkSpawn()
     {
+        Instance = this;
+
         if (HasAuthority)
         {
             var state = new GameState();
             state.Default();
             GameState.Value = state;
         }
-        
+
         StartCoroutine(Initialize());
     }
     
@@ -127,8 +123,7 @@ public class GameManager : NetworkBehaviour
         UpdatePolicies();
 
         if (!HasAuthority) return;
-
-        // Gather all district states
+        
         var districtStates = new DistrictState[_players.Count];
         for (int i = 0; i < _players.Count; i++)
         {
@@ -170,38 +165,18 @@ public class GameManager : NetworkBehaviour
 
         if (localIndex >= 0)
         {
-            districtStates[localIndex].policyValues = new PolicyValues
-            {
-                taxRate = _localPlayer.policySliders.taxRate,
-                education = _localPlayer.policySliders.education,
-                infrastructure = _localPlayer.policySliders.infrastructure,
-                housing = _localPlayer.policySliders.housing,
-                environment = _localPlayer.policySliders.environment,
-                cityContribution = _localPlayer.policySliders.cityContribution
-            };
+            districtStates[localIndex].policyValues = _localPlayer.CurrentPolicies;
 
             var result = TickProcessor.ResolveDistrictTick(
                 localIndex, districtStates, cityMetrics);
             _localPlayer.District.state.Value = result;
         }
-        
-        _localPlayer.UpdateUI();
     }
 
     private void UpdatePolicies()
     {
-        var newValues = new PolicyValues()
-        {
-            taxRate = _localPlayer.policySliders.taxRate,
-            education = _localPlayer.policySliders.education,
-            infrastructure = _localPlayer.policySliders.infrastructure,
-            housing = _localPlayer.policySliders.housing,
-            environment = _localPlayer.policySliders.environment,
-            cityContribution = _localPlayer.policySliders.cityContribution
-        };
-        
         var districtState = _localPlayer.District.state.Value;
-        districtState.policyValues = newValues;
+        districtState.policyValues = _localPlayer.CurrentPolicies;
         _localPlayer.District.state.Value = districtState;
     }
 
@@ -217,5 +192,23 @@ public class GameManager : NetworkBehaviour
     {
         _initializationCounter++;
         if (HasAuthority) Debug.Log($"Initialization signals received: {_initializationCounter}");
+    }
+
+    [Rpc(SendTo.Authority)]
+    public void RequestSetSpeedRpc(int speed)
+    {
+        var state = GameState.Value;
+        state.gameSpeed = speed;
+        state.isPaused = false;
+        GameState.Value = state;
+    }
+
+    [Rpc(SendTo.Authority)]
+    public void RequestSetPauseRpc(bool paused)
+    {
+        var state = GameState.Value;
+        state.isPaused = paused;
+        if (paused) state.gameSpeed = 0;
+        GameState.Value = state;
     }
 }

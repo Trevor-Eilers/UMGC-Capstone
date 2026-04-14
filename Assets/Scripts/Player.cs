@@ -1,6 +1,7 @@
 // Author: Trevor Eilers
 
 using System;
+using Simulation;
 using UI;
 using Unity.Netcode;
 using UnityEngine;
@@ -10,9 +11,18 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
 {
     public NetworkVariable<NetworkBehaviourReference> districtNetRef = new(writePerm: NetworkVariableWritePermission.Owner);
 
-    public PolicySliders policySliders;
+    public PolicyValues CurrentPolicies { get; private set; } = PolicyValues.Default();
+
+    // Data sources for UI Toolkit binding
+    private DistrictViewModel _districtVM;
+    private TopBarViewModel _topBar;
+
+    private PolicySliders _policySliders;
     private UIDocument _doc;
     private VisualElement _root;
+
+    // Indicator references kept as manual-update fallback until
+    // binding paths are configured in UIBuilder.
     private IndicatorWidget _gdpIndicator;
     private IndicatorWidget _surpIndicator;
     private IndicatorWidget _revIndicator;
@@ -21,8 +31,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     private IndicatorWidget _infraIndicator;
     private IndicatorWidget _sustIndicator;
     private IndicatorWidget _pollIndicator;
-    
-    
+
     private InputSystem_Actions _actions;
     private InputSystem_Actions.KeyboardActions _keyboardActions;
 
@@ -40,33 +49,28 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     {
         if (!IsOwner) return;
 
-        policySliders = GetComponent<PolicySliders>();
+        // ── Resolve components ──
+        _policySliders = GetComponent<PolicySliders>();
         _doc = GetComponent<UIDocument>();
         _root = _doc.rootVisualElement;
-        _gdpIndicator = (IndicatorWidget)_root.Q("gdp-indicator");
-        _surpIndicator = (IndicatorWidget)_root.Q("surp-indicator");
-        _revIndicator = (IndicatorWidget)_root.Q("rev-indicator");
-        _popIndicator = (IndicatorWidget)_root.Q("pop-indicator");
-        _happIndicator = (IndicatorWidget)_root.Q("happ-indicator");
-        _infraIndicator = (IndicatorWidget)_root.Q("infra-indicator");
-        _sustIndicator = (IndicatorWidget)_root.Q("sust-indicator");
-        _pollIndicator = (IndicatorWidget)_root.Q("poll-indicator");
+        
+        _districtVM = ScriptableObject.CreateInstance<DistrictViewModel>();
+        _topBar = ScriptableObject.CreateInstance<TopBarViewModel>();
+        
+        _root.dataSource = _districtVM;
+        _topBar.BindToPanel(_root);
+        
+        _policySliders.OnPolicyChanged += values => CurrentPolicies = values;
+        
+        _topBar.OnSpeedChangeRequested += speed => GameManager.Instance.RequestSetSpeedRpc(speed);
+        _topBar.OnPauseChangeRequested += paused => GameManager.Instance.RequestSetPauseRpc(paused);
+        
+        GameManager.GameState.OnValueChanged += (oldVal, newVal) =>
+        {
+            _topBar.UpdateFromState(newVal);
+        };
     }
 
-    public void UpdateUI()
-    {
-        if (!IsOwner) return;
-        
-        _gdpIndicator.Value = District.state.Value.gdp.ToString();
-        _surpIndicator.Value = District.state.Value.reserve.ToString();
-        _revIndicator.Value = District.state.Value.revenue.ToString();
-        _popIndicator.Value = District.state.Value.population.ToString();
-        _happIndicator.Value = District.state.Value.happiness.ToString();
-        _infraIndicator.Value = District.state.Value.infrastructure.ToString();
-        _sustIndicator.Value = District.state.Value.sustainability.ToString();
-        _pollIndicator.Value = "0";
-    }
-    
     public District District
     {
         get
@@ -74,5 +78,12 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
             districtNetRef.Value.TryGet(out District d, NetworkManager.Singleton);
             return d;
         }
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        if (_districtVM != null) Destroy(_districtVM);
+        if (_topBar != null) Destroy(_topBar);
     }
 }

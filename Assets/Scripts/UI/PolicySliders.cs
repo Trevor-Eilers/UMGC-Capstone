@@ -24,12 +24,26 @@ namespace UI
             _doc = GetComponent<UIDocument>();
             _root = _doc.rootVisualElement;
 
-            _root.Q<Slider>("TaxSlider").RegisterValueChangedCallback(OnSliderValueChanged);
-            _root.Q<Slider>("EduSlider").RegisterValueChangedCallback(OnSliderValueChanged);
-            _root.Q<Slider>("InfraSlider").RegisterValueChangedCallback(OnSliderValueChanged);
-            _root.Q<Slider>("HousingSlider").RegisterValueChangedCallback(OnSliderValueChanged);
-            _root.Q<Slider>("EnvSlider").RegisterValueChangedCallback(OnSliderValueChanged);
-            _root.Q<Slider>("CitySlider").RegisterValueChangedCallback(OnSliderValueChanged);
+            var taxSlider = _root.Q<Slider>("TaxSlider");
+            var eduSlider = _root.Q<Slider>("EduSlider");
+            var infraSlider = _root.Q<Slider>("InfraSlider");
+            var housingSlider = _root.Q<Slider>("HousingSlider");
+            var envSlider = _root.Q<Slider>("EnvSlider");
+            var citySlider = _root.Q<Slider>("CitySlider");
+
+            taxSlider.value = taxRate;
+            eduSlider.value = education;
+            infraSlider.value = infrastructure;
+            housingSlider.value = housing;
+            envSlider.value = environment;
+            citySlider.value = cityContribution;
+            
+            taxSlider.RegisterValueChangedCallback(OnSliderValueChanged);
+            eduSlider.RegisterValueChangedCallback(OnSliderValueChanged);
+            infraSlider.RegisterValueChangedCallback(OnSliderValueChanged);
+            housingSlider.RegisterValueChangedCallback(OnSliderValueChanged);
+            envSlider.RegisterValueChangedCallback(OnSliderValueChanged);
+            citySlider.RegisterValueChangedCallback(OnSliderValueChanged);
         }
 
         private void OnSliderValueChanged(ChangeEvent<float> evt)

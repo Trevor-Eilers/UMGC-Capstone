@@ -7,7 +7,7 @@ namespace UI
     public partial class IndicatorWidget : VisualElement
     {
         private VisualElement _barFill;
-
+        
         [UxmlAttribute]
         public string Title
         {
