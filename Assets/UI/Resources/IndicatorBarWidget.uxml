@@ -1,18 +1,48 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement style="flex-grow: 0; flex-direction: row; justify-content: flex-start; align-self: stretch; align-items: center; background-color: rgba(10, 14, 26, 0.85); padding-left: 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px;">
-        <ui:VisualElement name="VisualElement" style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start; padding-right: 10px; margin-right: 10px; border-right-width: 1px; border-right-color: rgba(255, 255, 255, 0.12);">
-            <UI.IndicatorWidget title="GDP" name="gdp-indicator"/>
-            <UI.IndicatorWidget title="Surp." name="surp-indicator"/>
-            <UI.IndicatorWidget title="Rev." name="rev-indicator"/>
+    <ui:VisualElement data-source-type="TopBarViewModel, Assembly-CSharp" style="flex-grow: 0; flex-direction: row; justify-content: center; align-self: stretch; align-items: center; background-color: rgba(10, 14, 26, 0); padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;">
+        <ui:VisualElement name="VisualElement" style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start; padding-right: 0; margin-right: 0; border-right-width: 0; border-right-color: rgba(255, 255, 255, 0); border-top-width: 0; border-bottom-width: 0; border-left-width: 0; border-left-color: rgba(255, 255, 255, 0); border-top-color: rgba(255, 255, 255, 0); border-bottom-color: rgba(255, 255, 255, 0);">
+            <UI.IndicatorWidget title="GDP" name="gdp-indicator" data-source-type="TopBarViewModel, Assembly-CSharp" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Gdp" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Res" name="surp-indicator" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="BudgetSurplus" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Rev" name="rev-indicator" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Revenue" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                </Bindings>
+            </UI.IndicatorWidget>
         </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start; padding-right: 10px; margin-right: 10px; border-right-width: 1px; border-right-color: rgba(255, 255, 255, 0.12);">
-            <UI.IndicatorWidget title="Pop." name="pop-indicator"/>
-            <UI.IndicatorWidget title="Happ." name="happ-indicator"/>
+        <ui:VisualElement name="Divider" style="width: 1px; height: 24px; background-color: rgb(64, 64, 77); margin-right: 5px; margin-left: 5px;"/>
+        <ui:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start; padding-right: 0; margin-right: 0; border-right-width: 0; border-right-color: rgba(255, 255, 255, 0); border-top-width: 0; border-bottom-width: 0; border-left-width: 0; border-left-color: rgba(255, 255, 255, 0); border-top-color: rgba(255, 255, 255, 0); border-bottom-color: rgba(255, 255, 255, 0);">
+            <UI.IndicatorWidget title="Pop" name="pop-indicator" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Population" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Hap" name="happ-indicator" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Happiness" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                </Bindings>
+            </UI.IndicatorWidget>
         </ui:VisualElement>
+        <ui:VisualElement name="Divider" style="width: 1px; height: 24px; background-color: rgb(64, 64, 77); margin-right: 5px; margin-left: 5px;"/>
         <ui:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start;">
-            <UI.IndicatorWidget title="Infra." name="infra-indicator"/>
-            <UI.IndicatorWidget title="Sust." name="sust-indicator"/>
-            <UI.IndicatorWidget title="Poll." name="poll-indicator"/>
+            <UI.IndicatorWidget title="Infra" name="infra-indicator" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Infrastructure" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Sus" name="sust-indicator" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Sustainability" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Pol" name="poll-indicator" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

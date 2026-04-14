@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,32 +12,36 @@ namespace UI
         private UIDocument _doc;
         private VisualElement _root;
         private bool _dirty;
-
-        public float taxRate = SimulationConstants.TAX_RATE_DEFAULT;
-        public float education = SimulationConstants.SLIDERS_DEFAULT;
-        public float infrastructure = SimulationConstants.SLIDERS_DEFAULT;
-        public float housing = SimulationConstants.SLIDERS_DEFAULT;
-        public float environment = SimulationConstants.SLIDERS_DEFAULT;
-        public float cityContribution = SimulationConstants.CITY_CONTRIB_DEFAULT;
+        
+        [SerializeField, ReadOnly]
+        private float taxRate = SimulationConstants.TAX_RATE_DEFAULT;
+        
+        [SerializeField, ReadOnly]
+        private float education = SimulationConstants.SLIDERS_DEFAULT;
+        
+        [SerializeField, ReadOnly]
+        private float infrastructure = SimulationConstants.SLIDERS_DEFAULT;
+        
+        [SerializeField, ReadOnly]
+        private float housing = SimulationConstants.SLIDERS_DEFAULT;
+        
+        [SerializeField, ReadOnly]
+        private float environment = SimulationConstants.SLIDERS_DEFAULT;
+        
+        [SerializeField, ReadOnly]
+        private float cityContribution = SimulationConstants.CITY_CONTRIB_DEFAULT;
 
         void Start()
         {
             _doc = GetComponent<UIDocument>();
             _root = _doc.rootVisualElement;
-
+            
             var taxSlider = _root.Q<Slider>("TaxSlider");
             var eduSlider = _root.Q<Slider>("EduSlider");
             var infraSlider = _root.Q<Slider>("InfraSlider");
             var housingSlider = _root.Q<Slider>("HousingSlider");
             var envSlider = _root.Q<Slider>("EnvSlider");
             var citySlider = _root.Q<Slider>("CitySlider");
-
-            taxSlider.value = taxRate;
-            eduSlider.value = education;
-            infraSlider.value = infrastructure;
-            housingSlider.value = housing;
-            envSlider.value = environment;
-            citySlider.value = cityContribution;
             
             taxSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             eduSlider.RegisterValueChangedCallback(OnSliderValueChanged);
@@ -44,6 +49,15 @@ namespace UI
             housingSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             envSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             citySlider.RegisterValueChangedCallback(OnSliderValueChanged);
+            
+            taxSlider.value = taxRate;
+            eduSlider.value = education;
+            infraSlider.value = infrastructure;
+            housingSlider.value = housing;
+            envSlider.value = environment;
+            citySlider.value = cityContribution;
+
+            _dirty = true;
         }
 
         private void OnSliderValueChanged(ChangeEvent<float> evt)

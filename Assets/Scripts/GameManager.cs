@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 using Network;
 using Simulation;
 using UnityEngine;
@@ -12,8 +13,9 @@ public class GameManager : NetworkBehaviour
     public static NetworkVariable<GameState> GameState { get; } = new();
     private float _tickTimer = 0f;
     private bool _tickReady = false;
+    private bool _resolvingTick = false;
     private bool _gameOver =  false;
-    private float _tickInterval = 2f;
+    private readonly float _tickInterval = 2f;
 
     private ConnectionManager _connectionManager;
     
@@ -22,7 +24,7 @@ public class GameManager : NetworkBehaviour
     private int _initializationCounter = 0;
     
     // This is only needed by the host
-    private NetworkList<NetworkObjectReference> _players = new();
+    private readonly NetworkList<NetworkObjectReference> _players = new();
     
     private Player _localPlayer;
 
@@ -43,11 +45,11 @@ public class GameManager : NetworkBehaviour
         StartCoroutine(Initialize());
     }
     
+    
     private IEnumerator Initialize()
     {
         _connectionManager = FindFirstObjectByType<ConnectionManager>();
-
-        // Wait for local player to spawn
+        
         while (_localPlayer == null)
         {
             var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
@@ -92,7 +94,6 @@ public class GameManager : NetworkBehaviour
     {
         if (HasAuthority)
         {
-            // TODO: This is will not work with the addition of AI
             if (_tickReadyCounter >= _connectionManager.PlayerCount)
             {
                 ResolveTickRpc();
@@ -112,6 +113,7 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    
     [Rpc(SendTo.Everyone)]
     private void ResolveTickRpc()
     {
@@ -119,6 +121,7 @@ public class GameManager : NetworkBehaviour
         
         _tickReadyCounter = 0;
         _tickReady = false;
+        _resolvingTick = true;
 
         UpdatePolicies();
 
@@ -149,6 +152,7 @@ public class GameManager : NetworkBehaviour
         ResolveDistrictTickRpc(districtStates, gameState.cityMetrics);
     }
 
+    
     [Rpc(SendTo.Everyone)]
     private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
     {
@@ -171,8 +175,11 @@ public class GameManager : NetworkBehaviour
                 localIndex, districtStates, cityMetrics);
             _localPlayer.District.state.Value = result;
         }
+
+        _resolvingTick = false;
     }
 
+    
     private void UpdatePolicies()
     {
         var districtState = _localPlayer.District.state.Value;
@@ -180,6 +187,7 @@ public class GameManager : NetworkBehaviour
         _localPlayer.District.state.Value = districtState;
     }
 
+    
     [Rpc(SendTo.Authority)]
     private void SignalTickReadyRpc()
     {
@@ -187,6 +195,7 @@ public class GameManager : NetworkBehaviour
         Debug.Log($"Ready signals received: {_tickReadyCounter}");
     }
 
+    
     [Rpc(SendTo.Authority)]
     private void SignalInitializeRpc()
     {
@@ -194,6 +203,7 @@ public class GameManager : NetworkBehaviour
         if (HasAuthority) Debug.Log($"Initialization signals received: {_initializationCounter}");
     }
 
+    
     [Rpc(SendTo.Authority)]
     public void RequestSetSpeedRpc(int speed)
     {
@@ -203,6 +213,7 @@ public class GameManager : NetworkBehaviour
         GameState.Value = state;
     }
 
+    
     [Rpc(SendTo.Authority)]
     public void RequestSetPauseRpc(bool paused)
     {
@@ -210,5 +221,54 @@ public class GameManager : NetworkBehaviour
         state.isPaused = paused;
         if (paused) state.gameSpeed = 0;
         GameState.Value = state;
+    }
+
+    
+    [Rpc(SendTo.Authority)]
+    public void RequestQuitRpc(ulong networkObjectId, RpcParams rpcParams = default)
+    {
+        if (!HasAuthority) return;
+        try
+        {
+            StartCoroutine(nameof(RemovePlayer), networkObjectId);
+            ConfirmQuitRpc(RpcTarget.Single(rpcParams.Receive.SenderClientId, RpcTargetUse.Temp));
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+    }
+
+    
+    private IEnumerable RemovePlayer(ulong networkObjectId)
+    {
+        if (!HasAuthority) yield break;
+        
+        while (_resolvingTick) yield return null;
+        
+        for (int i = 0; i < _players.Count; i++)
+        {
+            if (_players[i].TryGet(out NetworkObject netObj) 
+                && netObj.NetworkObjectId == networkObjectId)
+            {
+                _players.RemoveAt(i);
+                break;
+            }
+        }
+    }
+    
+    
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void ConfirmQuitRpc(RpcParams rpcParams = default)
+    {
+        _ = LeaveGame();
+    }
+
+    
+    private async Task LeaveGame()
+    {
+        await _connectionManager.Session.LeaveAsync();
+        NetworkManager.Singleton.Shutdown();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MenuScene");
     }
 }

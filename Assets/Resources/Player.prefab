@@ -70,7 +70,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d14c4838cdd44084398bb74b2329223d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PolicyValues
-  taxRate: 0
+  taxRate: 15
   education: 50
   infrastructure: 50
   housing: 50
@@ -88,7 +88,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 185058583
+  GlobalObjectIdHash: 3145624173
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1

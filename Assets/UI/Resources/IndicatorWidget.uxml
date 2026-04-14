@@ -1,34 +1,8 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" 
-         xmlns:uie="UnityEditor.UIElements" 
-         editor-extension-mode="False">
-    <ui:VisualElement name="VisualElement" 
-        style="flex-grow: 0; flex-direction: row; flex-shrink: 0; 
-               align-self: flex-start; align-items: center;
-               background-color: rgba(255,255,255,0.08);
-               border-top-left-radius: 20px; border-top-right-radius: 20px;
-               border-bottom-right-radius: 20px; border-bottom-left-radius: 20px;
-               border-left-width: 1px; border-right-width: 1px;
-               border-top-width: 1px; border-bottom-width: 1px;
-               border-left-color: rgba(255,255,255,0.12);
-               border-right-color: rgba(255,255,255,0.12);
-               border-top-color: rgba(255,255,255,0.12);
-               border-bottom-color: rgba(255,255,255,0.12);
-               padding-left: 10px; padding-right: 10px;
-               padding-top: 4px; padding-bottom: 4px;
-               height: 28px; max-width: 160px;">
-        <ui:Label text="Label" name="Label" 
-            style="color: rgba(255,255,255,0.55); font-size: 10px;
-                   -unity-font-style: normal;
-                   margin-right: 6px; padding: 0;"/>
-        <ui:VisualElement name="ValueContainer" 
-            style="flex-grow: 0; flex-shrink: 0; flex-direction: row;
-                   align-self: center; align-items: center;
-                   justify-content: center;">
-            <ui:Label text="Val" name="IndicatorValue" 
-                style="color: rgb(255,255,255); font-size: 12px;
-                       -unity-font-style: bold;
-                       -unity-text-align: middle-center;
-                       padding: 0; margin: 0;"/>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="VisualElement" style="flex-grow: 0; flex-direction: column; flex-shrink: 0; align-self: center; align-items: center; background-color: rgba(255, 255, 255, 0); border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0; border-left-color: rgba(255, 255, 255, 0); border-right-color: rgba(255, 255, 255, 0); border-top-color: rgba(255, 255, 255, 0); border-bottom-color: rgba(255, 255, 255, 0); padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; height: auto; max-width: none; align-content: center; justify-content: center; margin-top: 2px; margin-bottom: 2px; margin-left: 0; margin-right: 0;">
+        <ui:Label text="Label" name="Label" style="color: rgba(229, 229, 229, 0.59); font-size: 10px; -unity-font-style: normal; margin-right: 0; padding: 0; -unity-text-align: upper-center; align-self: center; margin-top: 0; margin-bottom: 2px; margin-left: 0;"/>
+        <ui:VisualElement name="ValueContainer" style="flex-grow: 0; flex-shrink: 0; flex-direction: row; align-self: center; align-items: center; justify-content: center; font-size: 12px; margin-bottom: 2px; margin-top: 2px;">
+            <ui:Label text="--" name="IndicatorValue" style="color: rgb(96, 200, 96); font-size: 11px; -unity-font-style: bold; -unity-text-align: middle-center; padding: 0; margin: 0;"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
