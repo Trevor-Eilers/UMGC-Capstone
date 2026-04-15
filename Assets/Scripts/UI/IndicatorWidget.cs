@@ -1,3 +1,4 @@
+using Unity.Properties;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -8,18 +9,36 @@ namespace UI
     {
         private VisualElement _barFill;
 
+        private Label _titleLabel;
+        private string _title;
+        
+        private Label _valueLabel;
+        private string _value;
+
         [UxmlAttribute]
+        [CreateProperty]
         public string Title
         {
-            get => this.Q<Label>("Label").text;
-            set => this.Q<Label>("Label").text = value;
+            get => _title;
+            set
+            {
+                _title = value;
+                _titleLabel ??= this.Q<Label>("Label");
+                if (_titleLabel != null) _titleLabel.text = value;
+            }
         }
 
         [UxmlAttribute]
+        [CreateProperty]
         public string Value
         {
-            get => this.Q<Label>("IndicatorValue").text;
-            set => this.Q<Label>("IndicatorValue").text = value;
+            get => _value;
+            set
+            {
+                _value = value;
+                _valueLabel ??= this.Q<Label>("IndicatorValue");
+                if (_valueLabel != null) _valueLabel.text = value;
+            }
         }
 
         public void SetFill(float percent, Color color)

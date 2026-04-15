@@ -2,15 +2,13 @@
 
 
 using Unity.Netcode;
+using UnityEngine.UIElements;
 
 namespace Simulation
 {
     [System.Serializable]
     public struct DistrictState : INetworkSerializable
     {
-        public int playerId; // 0-3
-        
-        // This field is not replicated
         public PolicyValues policyValues;
 
         public float population;
@@ -41,7 +39,7 @@ namespace Simulation
         
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref playerId);
+            policyValues.NetworkSerialize(serializer);
             serializer.SerializeValue(ref population);
             serializer.SerializeValue(ref happiness);
             serializer.SerializeValue(ref sustainability);
@@ -62,12 +60,16 @@ namespace Simulation
             serializer.SerializeValue(ref totalCitySpending);
         }
         
-        public static DistrictState Default(int playerId)
+        public static DistrictState Default()
         {
             return new DistrictState
             {
-                playerId = playerId,
                 policyValues = PolicyValues.Default(),
+                gdp = SimulationConstants.GDP_START,
+                happiness = SimulationConstants.HAPPINESS_START,
+                population = SimulationConstants.POPULATION_START,
+                infrastructure = SimulationConstants.INFRASTRUCTURE_START,
+                sustainability = SimulationConstants.SUSTAINABILITY_START,
                 debt = SimulationConstants.DEBT_START,
                 reserve = SimulationConstants.RESERVE_START,
                 revenue = 0f,

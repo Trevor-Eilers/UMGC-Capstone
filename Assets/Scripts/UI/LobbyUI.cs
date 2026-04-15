@@ -23,7 +23,8 @@ namespace UI
         {
             doc = GetComponent<UIDocument>();
             _root = doc.rootVisualElement;
-
+            SetVisible(false);
+            
             _playerList = _root.Q<ListView>("PlayerList");
             _startButton = _root.Q<Button>("StartButton");
             _leaveButton = _root.Q<Button>("LeaveButton");

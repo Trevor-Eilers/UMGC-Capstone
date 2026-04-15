@@ -1,85 +1,24 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-         xmlns:ui="UnityEngine.UIElements" 
-         xmlns:uie="UnityEditor.UIElements" 
-         noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" 
-         editor-extension-mode="False">
-    <ui:VisualElement name="VisualElement" 
-        style="flex-grow: 1; width: 220px; flex-shrink: 0;
-               flex-direction: column; align-items: stretch;
-               background-color: rgba(10,14,26,0.92);
-               border-left-width: 1px;
-               border-left-color: rgba(255,255,255,0.08);
-               padding-left: 12px; padding-right: 12px;
-               padding-top: 12px; padding-bottom: 12px;">
-
-        <ui:Label text="Policies" 
-            style="color: rgb(255,255,255); font-size: 11px;
-                   -unity-font-style: bold;
-                   -unity-text-align: middle-left;
-                   margin-bottom: 12px;
-                   border-bottom-width: 1px;
-                   border-bottom-color: rgba(255,255,255,0.07);
-                   padding-bottom: 8px;"/>
-
-        <ui:Slider label="" value="0" high-value="100" name="TaxSlider"
-            show-input-field="false" direction="Horizontal" fill="true"
-            style="width: 100%; margin-left: 0; margin-right: 0;
-                   margin-bottom: 14px; flex-shrink: 0; scale: 1 1;">
-            <ui:Label text="Tax Rate" 
-                style="font-size: 11px; color: rgba(255,255,255,0.6);
-                       -unity-text-align: middle-left; width: 120px;
-                       -unity-font-style: normal;"/>
-        </ui:Slider>
-
-        <ui:Slider label="" value="0" high-value="100" name="EduSlider"
-            show-input-field="false" direction="Horizontal" fill="true"
-            style="width: 100%; margin-left: 0; margin-right: 0;
-                   margin-bottom: 14px; flex-shrink: 0; scale: 1 1;">
-            <ui:Label text="Education" 
-                style="font-size: 11px; color: rgba(255,255,255,0.6);
-                       -unity-text-align: middle-left; width: 120px;
-                       -unity-font-style: normal;"/>
-        </ui:Slider>
-
-        <ui:Slider label="" value="0" high-value="100" name="InfraSlider"
-            show-input-field="false" direction="Horizontal" fill="true"
-            style="width: 100%; margin-left: 0; margin-right: 0;
-                   margin-bottom: 14px; flex-shrink: 0; scale: 1 1;">
-            <ui:Label text="Infrastructure" 
-                style="font-size: 11px; color: rgba(255,255,255,0.6);
-                       -unity-text-align: middle-left; width: 120px;
-                       -unity-font-style: normal;"/>
-        </ui:Slider>
-
-        <ui:Slider label="" value="0" high-value="100" name="HousingSlider"
-            show-input-field="false" direction="Horizontal" fill="true"
-            style="width: 100%; margin-left: 0; margin-right: 0;
-                   margin-bottom: 14px; flex-shrink: 0; scale: 1 1;">
-            <ui:Label text="Housing" 
-                style="font-size: 11px; color: rgba(255,255,255,0.6);
-                       -unity-text-align: middle-left; width: 120px;
-                       -unity-font-style: normal;"/>
-        </ui:Slider>
-
-        <ui:Slider label="" value="0" high-value="100" name="EnvSlider"
-            show-input-field="false" direction="Horizontal" fill="true"
-            style="width: 100%; margin-left: 0; margin-right: 0;
-                   margin-bottom: 14px; flex-shrink: 0; scale: 1 1;">
-            <ui:Label text="Environment" 
-                style="font-size: 11px; color: rgba(255,255,255,0.6);
-                       -unity-text-align: middle-left; width: 120px;
-                       -unity-font-style: normal;"/>
-        </ui:Slider>
-
-        <ui:Slider label="" value="0" high-value="100" name="CitySlider"
-            show-input-field="false" direction="Horizontal" fill="true"
-            style="width: 100%; margin-left: 0; margin-right: 0;
-                   flex-shrink: 0; scale: 1 1;">
-            <ui:Label text="City Contribution" 
-                style="font-size: 11px; color: rgba(255,255,255,0.6);
-                       -unity-text-align: middle-left; width: 120px;
-                       -unity-font-style: normal;"/>
-        </ui:Slider>
-
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="VisualElement" style="flex-grow: 0; width: 250px; flex-shrink: 0; flex-direction: column; align-items: stretch; background-color: rgba(17, 17, 24, 0.98); border-left-width: 1px; border-left-color: rgba(255, 255, 255, 0.08); padding-left: 24px; padding-right: 24px; padding-top: 24px; padding-bottom: 24px; min-width: auto; border-top-left-radius: 32px; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 32px; justify-content: flex-start; align-content: auto;">
+        <ui:Label text="Policies" style="color: rgb(255, 255, 255); font-size: 14px; -unity-font-style: bold; -unity-text-align: middle-center; margin-bottom: 4px; padding-bottom: 8px;"/>
+        <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
+        <ui:Label text="Tax Rate" style="font-size: 12px; color: rgba(255, 255, 255, 0.6); -unity-text-align: middle-left; width: 120px; -unity-font-style: normal; margin-top: 2px; margin-right: 0; margin-bottom: 2px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        <ui:Slider label="" value="15" high-value="30" name="TaxSlider" show-input-field="false" direction="Horizontal" fill="true" low-value="5" inverted="false" style="width: 100%; margin-left: 0; margin-right: 0; margin-bottom: 2px; flex-shrink: 0; scale: 1 0.8; flex-direction: row;"/>
+        <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
+        <ui:Label text="Education" style="font-size: 12px; color: rgba(255, 255, 255, 0.6); -unity-text-align: middle-left; width: 120px; -unity-font-style: normal; margin-top: 2px; margin-right: 0; margin-bottom: 2px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        <ui:Slider label="" value="50" high-value="100" name="EduSlider" show-input-field="false" direction="Horizontal" fill="true" style="width: 100%; margin-left: 0; margin-right: 0; margin-bottom: 2px; flex-shrink: 0; scale: 1 0.8;"/>
+        <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
+        <ui:Label text="Infrastructure" style="font-size: 12px; color: rgba(255, 255, 255, 0.6); -unity-text-align: middle-left; width: 120px; -unity-font-style: normal; margin-top: 2px; margin-right: 0; margin-bottom: 2px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        <ui:Slider label="" value="50" high-value="100" name="InfraSlider" show-input-field="false" direction="Horizontal" fill="true" style="width: 100%; margin-left: 0; margin-right: 0; margin-bottom: 2px; flex-shrink: 0; scale: 1 0.8;"/>
+        <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
+        <ui:Label text="Housing" style="font-size: 12px; color: rgba(255, 255, 255, 0.6); -unity-text-align: middle-left; width: 120px; -unity-font-style: normal; margin-top: 2px; margin-right: 0; margin-bottom: 2px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        <ui:Slider label="" value="50" high-value="100" name="HousingSlider" show-input-field="false" direction="Horizontal" fill="true" style="width: 100%; margin-left: 0; margin-right: 0; margin-bottom: 2px; flex-shrink: 0; scale: 1 0.8;"/>
+        <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
+        <ui:Label text="Environment" style="font-size: 12px; color: rgba(255, 255, 255, 0.6); -unity-text-align: middle-left; width: 120px; -unity-font-style: normal; margin-top: 2px; margin-right: 0; margin-bottom: 2px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        <ui:Slider label="" value="50" high-value="100" name="EnvSlider" show-input-field="false" direction="Horizontal" fill="true" style="width: 100%; margin-left: 0; margin-right: 0; margin-bottom: 2px; flex-shrink: 0; scale: 1 0.8;"/>
+        <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
+        <ui:Label text="City Contribution" style="font-size: 12px; color: rgba(255, 255, 255, 0.6); -unity-text-align: middle-left; width: 120px; -unity-font-style: normal; margin-top: 2px; margin-right: 0; margin-bottom: 2px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        <ui:Slider label="" value="25" high-value="50" name="CitySlider" show-input-field="false" direction="Horizontal" fill="true" style="width: 100%; margin-left: 0; margin-right: 0; flex-shrink: 0; scale: 1 0.8;"/>
+        <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
     </ui:VisualElement>
 </ui:UXML>

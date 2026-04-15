@@ -1,92 +1,274 @@
 // Authors: Malcolm Bramble, Trevor Eilers
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections;
+using System.Threading.Tasks;
+using Network;
 using Simulation;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Unity.Netcode;
 
 public class GameManager : NetworkBehaviour
 {
-    private GameState _gameState;
-    private float _tickTimer;
-    private bool _gameOver;
+    public static NetworkVariable<GameState> GameState { get; } = new();
+    private float _tickTimer = 0f;
+    private bool _tickReady = false;
+    private bool _resolvingTick = false;
+    private bool _gameOver =  false;
+    private readonly float _tickInterval = 2f;
 
-    // TODO: Move this out
-    // Metric bar colors
-    private static readonly Color ColGdp =     new(0.30f, 0.72f, 0.91f);
-    private static readonly Color ColHappy =   new(0.91f, 0.75f, 0.19f);
-    private static readonly Color ColPop =     new(0.38f, 0.78f, 0.38f);
-    private static readonly Color ColInfra =   new(0.63f, 0.44f, 0.82f);
-    private static readonly Color ColSustain = new(0.25f, 0.80f, 0.60f);
-    private static readonly Color ColDebt =    new(0.88f, 0.31f, 0.31f);
+    private ConnectionManager _connectionManager;
     
+    private int _tickReadyCounter = 0;
+    
+    private int _initializationCounter = 0;
+    
+    // This is only needed by the host
+    private readonly NetworkList<NetworkObjectReference> _players = new();
+    
+    private Player _localPlayer;
 
-    private Dictionary<Player, District> _playerDistrictMap;
+    public static GameManager Instance { get; private set; }
 
-    void Start()
+    
+    public override void OnNetworkSpawn()
     {
-        var districts = FindObjectsByType<District>(FindObjectsSortMode.None);
-        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
-        for (int i = 0; i < players.Length; i++)
+        Instance = this;
+
+        if (HasAuthority)
         {
-            _playerDistrictMap.Add(players[i], districts[i]);
+            var state = new GameState();
+            state.Default();
+            GameState.Value = state;
         }
-        
-        _gameState = GameState.NewGame(_playerDistrictMap.Values.ToArray());
-    }
 
-    public void Setup()
-    {
-        
+        StartCoroutine(Initialize());
     }
+    
+    
+    private IEnumerator Initialize()
+    {
+        _connectionManager = FindFirstObjectByType<ConnectionManager>();
+        
+        while (_localPlayer == null)
+        {
+            var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+            foreach (var player in players)
+            {
+                if (player.IsOwner) _localPlayer = player;
+            }
+
+            if (_localPlayer == null) yield return new WaitForSeconds(0.1f);
+        }
+
+        SignalInitializeRpc();
+
+        if (HasAuthority)
+        {
+            while (_initializationCounter < _connectionManager.PlayerCount)
+            {
+                Debug.Log("Waiting for clients");
+                yield return new WaitForSeconds(1.5f);
+            }
+
+            var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+            for (int i = 0; i < players.Length; i++)
+            {
+                _players.Add(players[i].NetworkObject);
+
+                var districtObject = Instantiate(Resources.Load<GameObject>("District"));
+                var networkObject = districtObject.GetComponent<NetworkObject>();
+                networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
+            }
+
+            var gameState = GameState.Value;
+            gameState.isPaused = false;
+            GameState.Value = gameState;
+
+            Debug.Log("Initialization complete.");
+        }
+    }
+    
     
     void Update()
     {
-        var kb = Keyboard.current;
-        if (kb == null) return;
-
-        if (_gameState.isPaused || _gameOver) return;
-
-        float tickInterval = 3.125f / _gameState.gameSpeed;
-        _tickTimer += Time.deltaTime;
-
-        if (_tickTimer >= tickInterval)
+        if (HasAuthority)
         {
-            _tickTimer -= tickInterval;
-            ResolveTick();
+            if (_tickReadyCounter >= _connectionManager.PlayerCount)
+            {
+                ResolveTickRpc();
+                return;
+            }
+        }
+        
+        if (_tickReady || GameState.Value.isPaused || _gameOver) return;
+
+        _tickTimer += Time.deltaTime;
+        
+        if (_tickTimer >= _tickInterval / GameState.Value.gameSpeed)
+        {
+            _tickTimer = 0;
+            _tickReady = true;
+            SignalTickReadyRpc();
         }
     }
-    
-    private void ResolveTick()
-    {
-        UpdatePolicies();
-        
-        _gameState = TickProcessor.ResolveTick(_gameState);
 
-        if (_gameState.currentTick >= 576)
+    
+    [Rpc(SendTo.Everyone)]
+    private void ResolveTickRpc()
+    {
+        Debug.Log("Tick advancing");
+        
+        _tickReadyCounter = 0;
+        _tickReady = false;
+        _resolvingTick = true;
+
+        UpdatePolicies();
+
+        if (!HasAuthority) return;
+        
+        var districtStates = new DistrictState[_players.Count];
+        for (int i = 0; i < _players.Count; i++)
+        {
+            if (_players[i].TryGet(out NetworkObject networkObject))
+            {
+                var player = networkObject.GetComponent<Player>();
+                districtStates[i] = player.District.state.Value;
+            }
+        }
+
+        // Host resolves city-wide metrics
+        var gameState = GameState.Value;
+        gameState.cityMetrics = TickProcessor.ResolveCityMetrics(districtStates, gameState.cityMetrics);
+        gameState.currentTick++;
+        gameState.currentMonth = gameState.currentTick / SimulationConstants.TICKS_PER_MONTH;
+        GameState.Value = gameState;
+
+        if (gameState.currentTick >= SimulationConstants.TOTAL_TICKS)
         {
             _gameOver = true;
         }
+        
+        ResolveDistrictTickRpc(districtStates, gameState.cityMetrics);
     }
 
+    
+    [Rpc(SendTo.Everyone)]
+    private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
+    {
+        int localIndex = -1;
+        for (int i = 0; i < _players.Count; i++)
+        {
+            if (_players[i].TryGet(out NetworkObject networkObject) &&
+                networkObject.GetComponent<Player>() == _localPlayer)
+            {
+                localIndex = i;
+                break;
+            }
+        }
+
+        if (localIndex >= 0)
+        {
+            districtStates[localIndex].policyValues = _localPlayer.CurrentPolicies;
+
+            var result = TickProcessor.ResolveDistrictTick(
+                localIndex, districtStates, cityMetrics);
+            _localPlayer.District.state.Value = result;
+        }
+
+        _resolvingTick = false;
+    }
+
+    
     private void UpdatePolicies()
     {
-        foreach (var player in _playerDistrictMap.Keys)
+        var districtState = _localPlayer.District.state.Value;
+        districtState.policyValues = _localPlayer.CurrentPolicies;
+        _localPlayer.District.state.Value = districtState;
+    }
+
+    
+    [Rpc(SendTo.Authority)]
+    private void SignalTickReadyRpc()
+    {
+        _tickReadyCounter++;
+        Debug.Log($"Ready signals received: {_tickReadyCounter}");
+    }
+
+    
+    [Rpc(SendTo.Authority)]
+    private void SignalInitializeRpc()
+    {
+        _initializationCounter++;
+        if (HasAuthority) Debug.Log($"Initialization signals received: {_initializationCounter}");
+    }
+
+    
+    [Rpc(SendTo.Authority)]
+    public void RequestSetSpeedRpc(int speed)
+    {
+        var state = GameState.Value;
+        state.gameSpeed = speed;
+        state.isPaused = false;
+        GameState.Value = state;
+    }
+
+    
+    [Rpc(SendTo.Authority)]
+    public void RequestSetPauseRpc(bool paused)
+    {
+        var state = GameState.Value;
+        state.isPaused = paused;
+        if (paused) state.gameSpeed = 0;
+        GameState.Value = state;
+    }
+
+    
+    [Rpc(SendTo.Authority)]
+    public void RequestQuitRpc(ulong networkObjectId, RpcParams rpcParams = default)
+    {
+        if (!HasAuthority) return;
+        try
         {
-            var districtState = _playerDistrictMap[player].state.Value;
-            districtState.policyValues = new PolicyValues
-            {
-                taxRate = player.policySliders.taxRate,
-                education = player.policySliders.education,
-                infrastructure = player.policySliders.infrastructure,
-                housing = player.policySliders.housing,
-                environment = player.policySliders.environment,
-                cityContribution = player.policySliders.cityContribution
-            };
-            _playerDistrictMap[player].state.Value = districtState;
+            StartCoroutine(nameof(RemovePlayer), networkObjectId);
+            ConfirmQuitRpc(RpcTarget.Single(rpcParams.Receive.SenderClientId, RpcTargetUse.Temp));
         }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+    }
+
+    
+    private IEnumerable RemovePlayer(ulong networkObjectId)
+    {
+        if (!HasAuthority) yield break;
+        
+        while (_resolvingTick) yield return null;
+        
+        for (int i = 0; i < _players.Count; i++)
+        {
+            if (_players[i].TryGet(out NetworkObject netObj) 
+                && netObj.NetworkObjectId == networkObjectId)
+            {
+                _players.RemoveAt(i);
+                break;
+            }
+        }
+    }
+    
+    
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void ConfirmQuitRpc(RpcParams rpcParams = default)
+    {
+        _ = LeaveGame();
+    }
+
+    
+    private async Task LeaveGame()
+    {
+        await _connectionManager.Session.LeaveAsync();
+        NetworkManager.Singleton.Shutdown();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MenuScene");
     }
 }

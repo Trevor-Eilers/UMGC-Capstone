@@ -1,6 +1,7 @@
 // Author: Trevor Eilers
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Network;
@@ -41,11 +42,22 @@ namespace UI
         private const float HeartbeatInterval = 15f;
         private const float PollInterval = 2f;
 
-        private void Awake()
+        private int _synchronizedClients = 1;
+
+        private async void Start()
         {
             lobbyUI = GetComponent<LobbyUI>();
+
+            while (NetworkManager.Singleton == null || NetworkManager.Singleton.SceneManager == null)
+            {
+                await Task.Delay(500);
+            }
+            
+            NetworkManager.Singleton.SceneManager.OnSynchronizeComplete += OnSynchronizeComplete;
         }
 
+        private void OnSynchronizeComplete(ulong clientId) => _synchronizedClients++;
+        
         private void Update()
         {
             if (_lobby == null || _gameStarting) return;
@@ -233,18 +245,33 @@ namespace UI
 
             try
             {
+                connectionManager ??= FindAnyObjectByType<ConnectionManager>();
+              
+                var sessionName = _lobby.Id + "_session";
+                
+                await connectionManager.CreateOrJoinSessionAsync(connectionManager.ProfileName, sessionName, _lobby);
+
+                if (connectionManager.State != ConnectionState.Connected)
+                {
+                    Debug.LogError("Failed to establish Netcode session.");
+                    _gameStarting = false;
+                    return;
+                }
+                
+                _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
+                
+                var netcodeSessionId = connectionManager.Session.Id;
                 var update = new UpdateLobbyOptions
                 {
                     Data = new Dictionary<string, DataObject>
                     {
-                        {
-                            "GameStarted",
-                            new DataObject(DataObject.VisibilityOptions.Member, "true")
-                        }
+                        { "GameStarted", new DataObject(DataObject.VisibilityOptions.Member, "true") },
+                        { "NetcodeSessionId", new DataObject(DataObject.VisibilityOptions.Member, netcodeSessionId) }
                     }
                 };
                 _lobby = await LobbyService.Instance.UpdateLobbyAsync(_lobby.Id, update);
-                StartGame();
+
+                StartCoroutine(WaitForPlayersAndLoadScene());
             }
             catch (Exception e)
             {
@@ -325,7 +352,8 @@ namespace UI
         {
             if (_lobby.Data != null &&
                 _lobby.Data.TryGetValue("GameStarted", out var started) &&
-                started.Value == "true")
+                started.Value == "true" &&
+                _lobby.Data.TryGetValue("NetcodeSessionId", out _))
             {
                 _gameStarting = true;
                 StartGame();
@@ -334,21 +362,47 @@ namespace UI
 
         private async void StartGame()
         {
-            connectionManager ??= FindAnyObjectByType<ConnectionManager>();
-
-            connectionManager.playerCount = _lobby.Players.Count;
-
-            var sessionId = Guid.NewGuid().ToString(); // TODO: Add check that != _lobby.id. Buy lottery ticket if it throws
-            await connectionManager.CreateOrJoinSessionAsync(connectionManager.ProfileName, sessionId);
-
-            if (connectionManager.State != ConnectionState.Connected)
+            try
             {
-                Debug.LogError("Failed to establish Netcode session.");
-                _gameStarting = false;
-                return;
+                connectionManager ??= FindAnyObjectByType<ConnectionManager>();
+
+                var netcodeSessionId = _lobby.Data["NetcodeSessionId"].Value;
+                await connectionManager.JoinSessionByIdDirectAsync(connectionManager.ProfileName, netcodeSessionId);
+
+                if (connectionManager.State != ConnectionState.Connected)
+                {
+                    Debug.LogError("Failed to establish Netcode session.");
+                    _gameStarting = false;
+                    return;
+                }
+
+
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        private IEnumerator WaitForPlayersAndLoadScene()
+        {
+            while (connectionManager.Session.PlayerCount != _lobby.Players.Count)
+            {
+                Debug.Log("Not all clients have connected. Delaying...");
+                yield return new WaitForSeconds(1f);
+            }
+            
+            while (_synchronizedClients != _lobby.Players.Count)
+            {
+                Debug.Log("Not all clients have synchronized. Delaying...");
+                yield return new WaitForSeconds(1f);
             }
 
-            NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+            if (connectionManager.Session.IsHost)
+            {
+                Debug.Log("Loading scene");
+                NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+            }
         }
 
         private async void OnDestroy()

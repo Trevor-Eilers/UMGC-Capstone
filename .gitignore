@@ -74,9 +74,31 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 Assets/.claude/worktrees/adoring-albattani/
+Assets/_Recovery/0 (2).unity.meta
+Assets/_Recovery/0 (2).unity
 Assets/.claude/worktrees/youthful-turing/
 Assets/.claude/worktrees/peaceful-napier/
 Assets/.claude/worktrees/lucid-robinson/
 Assets/.claude/worktrees/epic-kare/
 Assets/.claude/worktrees/charming-merkle/
 Assets/.claude/worktrees/amazing-herschel/
+bin/Build/bin.data
+bin/Build/bin.framework.js
+bin/Build/bin.loader.js
+bin/Build/bin.wasm
+bin/index.html
+bin/StreamingAssets/UnityServicesProjectConfiguration.json
+bin/TemplateData/favicon.ico
+bin/TemplateData/fullscreen-button.png
+bin/TemplateData/MemoryProfiler.png
+bin/TemplateData/profiler.js
+bin/TemplateData/progress-bar-empty-dark.png
+bin/TemplateData/progress-bar-empty-light.png
+bin/TemplateData/progress-bar-full-dark.png
+bin/TemplateData/progress-bar-full-light.png
+bin/TemplateData/style.css
+bin/TemplateData/unity-logo-dark.png
+bin/TemplateData/unity-logo-light.png
+bin/TemplateData/unity-logo-title-footer.png
+bin/TemplateData/webmemd-icon.png
+/.idea
