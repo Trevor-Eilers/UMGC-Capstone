@@ -35,7 +35,7 @@ namespace Building
     public class BuildingRegistry : MonoBehaviour
     {
         private static Object[] _buildingObjects;
-        private static readonly Dictionary<(string type, string tier), HashSet<GameObject>> Buildings = new();
+        private static readonly Dictionary<(string type, string tier), List<GameObject>> Buildings = new();
         
         // Start is called once before the first execution of Update after the MonoBehaviour is created
         void Start()
@@ -50,17 +50,17 @@ namespace Building
 
                 if (Buildings.ContainsKey((tags[0], tags[1])))
                 {
-                    var set = Buildings[(tags[0], tags[1])];
-                    set.Add(building);
+                    var list = Buildings[(tags[0], tags[1])];
+                    list.Add(building);
                 }
                 else
                 {
-                    Buildings.Add((tags[0], tags[1]), new HashSet<GameObject>());
+                    Buildings.Add((tags[0], tags[1]), new List<GameObject>());
                 }
             }
         }
         
-        public static HashSet<GameObject> Get(BuildingType type, BuildingTier tier)
+        public static List<GameObject> Get(BuildingType type, BuildingTier tier)
         {
             return !Buildings.ContainsKey((type.ToString(), tier.ToString())) 
                 ? null 
