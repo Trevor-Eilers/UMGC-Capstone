@@ -22,7 +22,8 @@ public class DistrictPlot : MonoBehaviour
 
     public void Add(int i, GameObject prefab)
     {
-        if (UnoccupiedIndices.Contains(i)) return;
+        if (UnoccupiedIndices.Contains(i)) 
+            throw new System.Exception("Cannot add to already occupied plot");
         
         _buildings[i] = Instantiate(prefab, _plots[i].transform.position, _plots[i].transform.rotation);
         UnoccupiedIndices.Remove(i);

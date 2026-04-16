@@ -1,8 +1,6 @@
 // Authors: Malcolm Bramble, Trevor Eilers
 
-
 using Unity.Netcode;
-using UnityEngine.UIElements;
 
 namespace Simulation
 {
