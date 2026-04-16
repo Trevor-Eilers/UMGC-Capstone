@@ -10,7 +10,7 @@ using Unity.Netcode;
 
 public class GameManager : NetworkBehaviour
 {
-    public static NetworkVariable<GameState> GameState { get; } = new();
+    public static NetworkVariable<GameState> GameState { get; private set; } = new();
     private float _tickTimer = 0f;
     private bool _tickReady = false;
     private bool _resolvingTick = false;

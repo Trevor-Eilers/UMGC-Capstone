@@ -7,9 +7,7 @@ using UnityEngine.UIElements;
 
 public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
 {
-    public NetworkVariable<NetworkBehaviourReference> districtNetRef = new(writePerm: NetworkVariableWritePermission.Owner);
-
-    public PolicyValues CurrentPolicies { get; private set; } = PolicyValues.Default();
+    public PolicyValues CurrentPolicies { get; protected set; } = PolicyValues.Default();
     
     private TopBarViewModel _topBar;
     private PolicySliders _policySliders;
@@ -19,6 +17,18 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     private InputSystem_Actions _actions;
     private InputSystem_Actions.KeyboardActions _keyboardActions;
 
+    public NetworkVariable<NetworkBehaviourReference> districtNetRef = new(writePerm: NetworkVariableWritePermission.Owner);
+    
+    public District District
+    {
+        get
+        {
+            districtNetRef.Value.TryGet(out District d, NetworkManager.Singleton);
+            return d;
+        }
+    }
+    
+    
     public override void OnNetworkSpawn()
     {
         if (!IsOwner)
@@ -29,7 +39,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
         }
     }
 
-    private void Start()
+    protected virtual void Start()
     {
         if (!IsOwner) return;
 
@@ -61,15 +71,6 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
                 };
             }
         };
-    }
-
-    public District District
-    {
-        get
-        {
-            districtNetRef.Value.TryGet(out District d, NetworkManager.Singleton);
-            return d;
-        }
     }
 
     public override void OnDestroy()

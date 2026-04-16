@@ -7,7 +7,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="width: 1px; height: 30px; background-color: rgb(64, 64, 77); margin-right: 24px; margin-left: 24px; align-self: auto; align-items: flex-end; justify-content: center; align-content: flex-start;"/>
         <ui:VisualElement name="CityContainer" data-source-type="TopBarViewModel, Assembly-CSharp" style="flex-grow: 0; flex-direction: row; margin-left: 0; margin-right: 0; justify-content: flex-start;">
-            <ui:VisualElement style="margin-right: 12px; flex-direction: row; align-items: center;">
+            <ui:VisualElement tooltip="City Reputation" style="margin-right: 12px; flex-direction: row; align-items: center;">
                 <ui:Label text="Rep" style="color: rgb(134, 134, 134); font-size: 11px; margin-right: 4px;"/>
                 <ui:Label text="--" name="CityRepValue" style="color: rgb(232, 217, 64); font-size: 12px; -unity-font-style: bold; margin-right: 4px;">
                     <Bindings>
@@ -20,8 +20,8 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement style="margin-right: 12px; flex-direction: row; align-items: center;">
-                <ui:Label text="Infra" style="color: rgb(134, 134, 134); font-size: 11px; margin-right: 4px;"/>
+            <ui:VisualElement tooltip="Shared Infrastucture" style="margin-right: 12px; flex-direction: row; align-items: center;">
+                <ui:Label text="Shared Infra" style="color: rgb(134, 134, 134); font-size: 11px; margin-right: 4px;"/>
                 <ui:Label text="--" name="SharedInfraValue" style="color: rgb(97, 128, 224); font-size: 12px; -unity-font-style: bold; margin-right: 4px;">
                     <Bindings>
                         <ui:DataBinding property="text" data-source-path="SharedInfraQuality" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
@@ -33,8 +33,8 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement style="margin-right: 12px; flex-direction: row; align-items: center;">
-                <ui:Label text="Metro" style="color: rgb(134, 134, 134); font-size: 11px; margin-right: 4px;"/>
+            <ui:VisualElement tooltip="Population Inflow" style="margin-right: 12px; flex-direction: row; align-items: center;">
+                <ui:Label text="Inflow" style="color: rgb(134, 134, 134); font-size: 11px; margin-right: 4px;"/>
                 <ui:Label text="--" name="MetroInflowValue" style="color: rgb(96, 200, 96); font-size: 12px; -unity-font-style: bold;">
                     <Bindings>
                         <ui:DataBinding property="text" data-source-path="MetroInflowPercent" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
@@ -60,7 +60,7 @@
                     </Bindings>
                 </ui:Label>
             </ui:VisualElement>
-            <ui:VisualElement name="TimeControlsContainer" style="flex-direction: row; align-items: center; scale: 1 1; margin-left: 8px; margin-right: 0;">
+            <ui:VisualElement name="TimeControlsContainer" tooltip="Game Speed" style="flex-direction: row; align-items: center; scale: 1 1; margin-left: 8px; margin-right: 0;">
                 <ui:Button text="1x" name="Speed1Btn" class="speed-btn speed-btn-active" style="width: 30px; height: 30px; font-size: 9px;"/>
                 <ui:Button text="2x" name="Speed2Btn" class="speed-btn" style="width: 30px; height: 30px; font-size: 9px;"/>
                 <ui:Button text="3x" name="Speed3Btn" class="speed-btn" style="width: 30px; height: 30px; font-size: 9px;"/>
@@ -68,6 +68,6 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="width: 1px; height: 30px; background-color: rgb(64, 64, 77); margin-right: 24px; margin-left: 24px; align-self: auto; align-items: flex-end; justify-content: center; align-content: flex-start;"/>
-        <ui:Button text="" icon-image="" name="QuitButton" style="align-items: center; align-content: flex-end; width: 35px; height: 35px; justify-content: flex-end; align-self: center; flex-direction: row; flex-shrink: 0; flex-grow: 0; background-color: rgba(188, 188, 188, 0); padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 0; margin-right: 0; background-image: url(&quot;project://database/Assets/UI/exit_icon.png?fileID=2800000&amp;guid=21b0a1d46163fce448ee80a22cd7678e&amp;type=3#exit_icon&quot;); background-size: 30px 30px; -unity-background-scale-mode: stretch-to-fill; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(250, 144, 133, 0.83); border-right-color: rgba(250, 144, 133, 0.83); border-top-color: rgba(250, 144, 133, 0.83); border-bottom-color: rgba(250, 144, 133, 0.83); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px;"/>
+        <ui:Button text="" icon-image="" name="QuitButton" tooltip="Quit Game" style="align-items: center; align-content: flex-end; width: 35px; height: 35px; justify-content: flex-end; align-self: center; flex-direction: row; flex-shrink: 0; flex-grow: 0; background-color: rgba(188, 188, 188, 0); padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 0; margin-right: 0; background-image: url(&quot;project://database/Assets/UI/exit_icon.png?fileID=2800000&amp;guid=21b0a1d46163fce448ee80a22cd7678e&amp;type=3#exit_icon&quot;); background-size: 30px 30px; -unity-background-scale-mode: stretch-to-fill; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(250, 144, 133, 0.83); border-right-color: rgba(250, 144, 133, 0.83); border-top-color: rgba(250, 144, 133, 0.83); border-bottom-color: rgba(250, 144, 133, 0.83); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px;"/>
     </ui:VisualElement>
 </ui:UXML>
