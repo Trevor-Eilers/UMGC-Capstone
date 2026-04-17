@@ -16,6 +16,9 @@ TagManager:
   - Commercial_Low
   - Commercial_Mid
   - Commercial_High
+  - Residential
+  - Commercial
+  - Industrial
   layers:
   - Default
   - TransparentFX

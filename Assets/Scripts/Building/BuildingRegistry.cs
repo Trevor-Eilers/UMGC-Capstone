@@ -1,12 +1,14 @@
 // Author: Trevor Eilers
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 
 namespace Building
 {
-    public readonly struct BuildingType
+    public readonly struct BuildingType : IEquatable<BuildingType>
     {
         private readonly string _type;
         
@@ -17,6 +19,21 @@ namespace Building
         private BuildingType(string type) => _type = type;
         
         public override string ToString() => _type;
+
+        public override bool Equals(object obj)
+        {
+            return _type == obj?.ToString();
+        }
+
+        public bool Equals(BuildingType other)
+        {
+            return _type == other._type;
+        }
+
+        public override int GetHashCode()
+        {
+            return (_type != null ? _type.GetHashCode() : 0);
+        }
     }
 
     public readonly struct BuildingTier
