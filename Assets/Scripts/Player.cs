@@ -1,5 +1,6 @@
 // Author: Trevor Eilers
 
+using Simulation;
 using UI;
 using Unity.Netcode;
 using UnityEngine;
@@ -61,17 +62,15 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
         
         districtNetRef.OnValueChanged += (_, _) =>
         {
-            Debug.Log("District value changed");
             var district = District;
-            if (district != null)
-            {
-                district.state.OnValueChanged += (_, newState) =>
-                {
-                    _topBar.UpdateFromDistrictState(newState);
-                };
-            }
+            if (district == null) return;
+            district.state.OnValueChanged -= OnDistrictStateChanged;
+            district.state.OnValueChanged += OnDistrictStateChanged;
         };
     }
+
+    private void OnDistrictStateChanged(DistrictState _, DistrictState newState)
+        => _topBar.UpdateFromDistrictState(newState);
 
     public override void OnDestroy()
     {

@@ -1,4 +1,5 @@
 using Unity.Properties;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -50,11 +51,27 @@ namespace UI
             _barFill.style.width = Length.Percent(Mathf.Clamp(percent, 0f, 100f));
             _barFill.style.backgroundColor = color;
         }
-
+        
         public IndicatorWidget()
         {
             var template = Resources.Load<VisualTreeAsset>("IndicatorWidget");
             template.CloneTree(this);
+            
+            var tooltipController = new TooltipController(this);
+            
+            RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                UnregisterCallback<MouseEnterEvent>(evt => RegisterCallbacks(evt, tooltipController));
+                RegisterCallback<MouseEnterEvent>(evt => RegisterCallbacks(evt, tooltipController));
+            });
+            
+            RegisterCallback<MouseLeaveEvent>(_ => tooltipController.Hide());
+        }
+
+        public void RegisterCallbacks(MouseEnterEvent evt, TooltipController controller)
+        {
+            var pos = this.WorldToLocal(worldBound.center);
+            controller.Show(tooltip, pos, new Vector2(12, 20));
         }
     }
 }
