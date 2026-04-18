@@ -1,14 +1,13 @@
 // Author: Trevor Eilers
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Multiplayer;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Network
@@ -31,15 +30,19 @@ namespace Network
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
    
         public ISession Session { get; private set; }
-        public IHostSession HostSession { get; private set; }
    
         private NetworkManager _networkManager;
+
+        public static ConnectionManager Instance { get; private set; }
+        
         
    
         private async void Awake()
         {
             try
             {
+                Instance = this; // WTF is the issue? ******************************
+                
                 _networkManager = GetComponent<NetworkManager>();
                 _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
                 _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
@@ -69,6 +72,11 @@ namespace Network
 
         private void OnDestroy()
         {
+            if (_networkManager != null)
+            {
+                _networkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+                _networkManager.OnSessionOwnerPromoted -= OnSessionOwnerPromoted;
+            }
             Session?.LeaveAsync();
         }
 
@@ -118,75 +126,6 @@ namespace Network
                 Debug.LogException(e);
             }
         }
-        
-        public async Task JoinSessionAsync(string profileName, string sessionName)
-        {
-            State = ConnectionState.Connecting;
-            
-            ProfileName = profileName;
-            SessionName = sessionName;
-
-            do
-            {
-                await Task.Delay(2000);
-                if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
-                Debug.Log("Attempting to join Netcode session.");
-                
-                var options = new QuerySessionsOptions
-                {
-                    FilterOptions = new List<FilterOption>
-                    {
-                        new(
-                            field: FilterField.Name,
-                            value: sessionName,
-                            operation: FilterOperation.Equal
-                        )
-                    }
-                };
-
-                var results = await MultiplayerService.Instance.QuerySessionsAsync(options);
-                
-                if (results.Sessions.Count > 0)
-                {
-                    Session = await MultiplayerService.Instance.JoinSessionByIdAsync(results.Sessions[0].Id);
-                }
-                else
-                {
-                    Debug.Log("Session not found. Retrying.");
-                }
-            } 
-            while (Session == null);
-            
-            State = ConnectionState.Connected;
-        }
-        
-        public async Task CreateSessionAsync(string profileName, string sessionName)
-        {
-            State = ConnectionState.Connecting;
-   
-            try
-            {
-                ProfileName = profileName;
-                SessionName = sessionName;
-
-                if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
-                
-   
-                var options = new SessionOptions() {
-                    Name = sessionName,
-                    MaxPlayers = _maxPlayers
-                }.WithDistributedAuthorityNetwork();
-   
-                Session = await MultiplayerService.Instance.CreateSessionAsync(options);
-   
-                State = ConnectionState.Connected;
-            }
-            catch (Exception e)
-            {
-                State = ConnectionState.Disconnected;
-                Debug.LogException(e);
-            }
-        }
 
         public async Task JoinSessionByIdDirectAsync(string profileName, string sessionId)
         {
@@ -210,6 +149,7 @@ namespace Network
                 catch (SessionException e) when (attempt < maxRetries)
                 {
                     Debug.LogWarning($"Session join attempt {attempt}/{maxRetries} failed: {e.Message}. Retrying in {retryDelayMs}ms...");
+                    await CleanupPartialSessionAsync();
                     await Task.Delay(retryDelayMs);
                 }
                 catch (Exception e)
@@ -217,12 +157,28 @@ namespace Network
                     // Non-retryable error or final attempt exhausted
                     State = ConnectionState.Disconnected;
                     Debug.LogException(e);
+                    await CleanupPartialSessionAsync();
                     return;
                 }
             }
             
             State = ConnectionState.Disconnected;
             Debug.LogError("JoinSessionByIdDirectAsync: all retry attempts exhausted.");
+        }
+
+        private async Task CleanupPartialSessionAsync()
+        {
+            if (Session != null)
+            {
+                try { await Session.LeaveAsync(); }
+                catch (Exception cleanupEx) { Debug.LogWarning($"Session cleanup failed: {cleanupEx.Message}"); }
+                Session = null;
+            }
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+                await Task.Delay(250);
+            }
         }
     }
 }

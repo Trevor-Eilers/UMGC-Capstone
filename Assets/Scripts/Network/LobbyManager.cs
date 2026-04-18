@@ -4,7 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Network;
+using UI;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Authentication;
@@ -12,18 +12,20 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using ConnectionState = Network.ConnectionState;
 
 
-namespace UI
+namespace Network
 {
     public class LobbyManager : MonoBehaviour
     {
         [SerializeField] 
         private string gameSceneName = "MainScene";
         
-        [SerializeField] 
+        [SerializeField]
         private ConnectionManager connectionManager;
+
+        [SerializeField]
+        private float maxWaitSeconds = 30f;
         
         public LobbyUI lobbyUI;
         
@@ -40,20 +42,29 @@ namespace UI
         private float _heartbeatTimer;
         private float _pollTimer;
         private const float HeartbeatInterval = 15f;
-        private const float PollInterval = 2f;
+        private const float PollInterval = 3f;
 
         private int _synchronizedClients = 1;
 
         private async void Start()
         {
-            lobbyUI = GetComponent<LobbyUI>();
-
-            while (NetworkManager.Singleton == null || NetworkManager.Singleton.SceneManager == null)
+            try
             {
-                await Task.Delay(500);
-            }
+                lobbyUI = GetComponent<LobbyUI>();
+
+                connectionManager = ConnectionManager.Instance;
+
+                while (NetworkManager.Singleton == null || NetworkManager.Singleton.SceneManager == null)
+                {
+                    await Task.Delay(500);
+                }
             
-            NetworkManager.Singleton.SceneManager.OnSynchronizeComplete += OnSynchronizeComplete;
+                NetworkManager.Singleton.SceneManager.OnSynchronizeComplete += OnSynchronizeComplete;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         private void OnSynchronizeComplete(ulong clientId) => _synchronizedClients++;
@@ -213,6 +224,7 @@ namespace UI
                 {
                     Debug.Log($"You are now the host.");
                     lobbyUI.SetStartButtonVisible(true);
+                    lobbyUI.OnStartClicked -= OnStartButtonClicked;
                     lobbyUI.OnStartClicked += OnStartButtonClicked;
                 }
 
@@ -245,8 +257,6 @@ namespace UI
 
             try
             {
-                connectionManager ??= FindAnyObjectByType<ConnectionManager>();
-              
                 var sessionName = _lobby.Id + "_session";
                 
                 await connectionManager.CreateOrJoinSessionAsync(connectionManager.ProfileName, sessionName, _lobby);
@@ -339,6 +349,7 @@ namespace UI
                 _lobby = null;
                 isHost = false;
                 _gameStarting = false;
+                _synchronizedClients = 1;
 
                 lobbyUI.SetVisible(false);
                 lobbyUI.SetConnected(false);
@@ -364,8 +375,6 @@ namespace UI
         {
             try
             {
-                connectionManager ??= FindAnyObjectByType<ConnectionManager>();
-
                 var netcodeSessionId = _lobby.Data["NetcodeSessionId"].Value;
                 await connectionManager.JoinSessionByIdDirectAsync(connectionManager.ProfileName, netcodeSessionId);
 
@@ -386,16 +395,33 @@ namespace UI
 
         private IEnumerator WaitForPlayersAndLoadScene()
         {
+            var waitOneSecond = new WaitForSeconds(1f);
+            float elapsed = 0f;
+
             while (connectionManager.Session.PlayerCount != _lobby.Players.Count)
             {
+                if (elapsed >= maxWaitSeconds)
+                {
+                    Debug.LogError($"Timed out waiting for clients to connect ({connectionManager.Session.PlayerCount}/{_lobby.Players.Count}).");
+                    _gameStarting = false;
+                    yield break;
+                }
                 Debug.Log("Not all clients have connected. Delaying...");
-                yield return new WaitForSeconds(1f);
+                yield return waitOneSecond;
+                elapsed += 1f;
             }
-            
+
             while (_synchronizedClients != _lobby.Players.Count)
             {
+                if (elapsed >= maxWaitSeconds)
+                {
+                    Debug.LogError($"Timed out waiting for clients to synchronize ({_synchronizedClients}/{_lobby.Players.Count}).");
+                    _gameStarting = false;
+                    yield break;
+                }
                 Debug.Log("Not all clients have synchronized. Delaying...");
-                yield return new WaitForSeconds(1f);
+                yield return waitOneSecond;
+                elapsed += 1f;
             }
 
             if (connectionManager.Session.IsHost)
@@ -411,7 +437,10 @@ namespace UI
             {
                 lobbyUI.OnStartClicked -= OnStartButtonClicked;
                 lobbyUI.OnLeaveClicked -= OnLeaveButtonClicked;
-            
+
+                if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+                    NetworkManager.Singleton.SceneManager.OnSynchronizeComplete -= OnSynchronizeComplete;
+
                 if (!_gameStarting) await LeaveLobby();
             }
             catch (Exception e)
