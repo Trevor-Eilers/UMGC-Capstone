@@ -17,18 +17,37 @@ public class GameManager : NetworkBehaviour
     private bool _gameOver =  false;
     private readonly float _tickInterval = 2f;
 
+    [SerializeField] private bool _soloDebug = false;
+    private int ExpectedPlayers => _soloDebug
+        ? 1
+        : (_connectionManager != null ? _connectionManager.PlayerCount : 1);
+
     private ConnectionManager _connectionManager;
-    
+
     private int _tickReadyCounter = 0;
-    
+
     private int _initializationCounter = 0;
-    
+
     // This is only needed by the host
     private readonly NetworkList<NetworkObjectReference> _players = new();
-    
+
     private Player _localPlayer;
 
+    private BuildingGenerator _buildingGen;
+
+    private DistrictState[] _lastDistrictStates;
+
     public static GameManager Instance { get; private set; }
+
+    public int PlayerCount => _players.Count;
+
+    public NetworkObjectReference GetPlayer(int index) => _players[index];
+
+    public DistrictState[] LastDistrictStates => _lastDistrictStates;
+
+    public int NumActivePlayers => _connectionManager != null ? _connectionManager.PlayerCount : _players.Count;
+
+    public event Action<DistrictState[], CityMetrics> OnDistrictStatesUpdated;
 
     
     public override void OnNetworkSpawn()
@@ -49,7 +68,10 @@ public class GameManager : NetworkBehaviour
     private IEnumerator Initialize()
     {
         _connectionManager = FindFirstObjectByType<ConnectionManager>();
-        
+        _buildingGen = FindFirstObjectByType<BuildingGenerator>();
+        if (_buildingGen == null)
+            Debug.LogWarning("GameManager: no BuildingGenerator found in scene — city visuals will not update.");
+
         while (_localPlayer == null)
         {
             var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
@@ -65,9 +87,9 @@ public class GameManager : NetworkBehaviour
 
         if (HasAuthority)
         {
-            while (_initializationCounter < _connectionManager.PlayerCount)
+            while (_initializationCounter < ExpectedPlayers)
             {
-                Debug.Log("Waiting for clients");
+                Debug.Log($"Waiting for clients ({_initializationCounter}/{ExpectedPlayers})");
                 yield return new WaitForSeconds(1.5f);
             }
 
@@ -92,19 +114,24 @@ public class GameManager : NetworkBehaviour
     
     void Update()
     {
+        // Skip while netcode is tearing down — Update() can fire for another frame
+        // after OnNetworkDespawn, and RPC invocations there throw
+        // "Rpc methods can only be invoked after starting the NetworkManager!".
+        if (!IsSpawned) return;
+
         if (HasAuthority)
         {
-            if (_tickReadyCounter >= _connectionManager.PlayerCount)
+            if (_tickReadyCounter >= ExpectedPlayers)
             {
                 ResolveTickRpc();
                 return;
             }
         }
-        
+
         if (_tickReady || GameState.Value.isPaused || _gameOver) return;
 
         _tickTimer += Time.deltaTime;
-        
+
         if (_tickTimer >= _tickInterval / GameState.Value.gameSpeed)
         {
             _tickTimer = 0;
@@ -175,6 +202,16 @@ public class GameManager : NetworkBehaviour
                 localIndex, districtStates, cityMetrics);
             _localPlayer.District.state.Value = result;
         }
+
+        _lastDistrictStates = districtStates;
+
+        if (_buildingGen != null)
+        {
+            for (int i = 0; i < districtStates.Length; i++)
+                _buildingGen.UpdateDistrict(i, districtStates[i]);
+        }
+
+        OnDistrictStatesUpdated?.Invoke(districtStates, cityMetrics);
 
         _resolvingTick = false;
     }
@@ -267,8 +304,10 @@ public class GameManager : NetworkBehaviour
     
     private async Task LeaveGame()
     {
+        // Session.LeaveAsync() tears down the underlying NetworkManager for us —
+        // calling Shutdown() afterward produces a "NetworkManager has been shutdown
+        // outside of a session" warning and can leave dangling callbacks.
         await _connectionManager.Session.LeaveAsync();
-        NetworkManager.Singleton.Shutdown();
         UnityEngine.SceneManagement.SceneManager.LoadScene("MenuScene");
     }
 }

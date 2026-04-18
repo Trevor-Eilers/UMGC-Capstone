@@ -67,8 +67,22 @@ namespace Network
             }
         }
 
+        private bool _isQuitting;
+
+        private void OnApplicationQuit()
+        {
+            _isQuitting = true;
+        }
+
         private void OnDestroy()
         {
+            // When the app is quitting (including editor Play-mode stop), the
+            // Multiplayer Services SDK disposes the session from its own teardown
+            // path before our OnDestroy runs. Calling LeaveAsync there races with
+            // that and triggers "Called after dispose" / "session was never started"
+            // warnings. Only leave the session when this component is being
+            // destroyed mid-session (scene transition, explicit Destroy, etc.).
+            if (_isQuitting) return;
             Session?.LeaveAsync();
         }
 
