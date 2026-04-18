@@ -30,6 +30,7 @@ public class BuildingGenerator : MonoBehaviour
     private MaterialPropertyBlock _propBlock;
     private List<Renderer>[] _districtRenderers;
     private float[] _lastHealth;
+    private int[,] _lastTier;
 
     void Awake()
     {
@@ -39,6 +40,10 @@ public class BuildingGenerator : MonoBehaviour
 
         _districtRenderers = new List<Renderer>[4];
         _lastHealth = new float[] { -1f, -1f, -1f, -1f };
+        _lastTier = new int[4, 4];
+        for (int d = 0; d < 4; d++)
+            for (int c = 0; c < 4; c++)
+                _lastTier[d, c] = -1;
         for (int i = 0; i < 4; i++)
         {
             _districtSlots[i] = new List<BuildingSlot>();
@@ -173,8 +178,9 @@ public class BuildingGenerator : MonoBehaviour
                     _roadBounds.Add(r.bounds);
             }
 
-            // Recurse into containers
-            if (name.StartsWith("District") || name.StartsWith("road stretch") || name.StartsWith("road"))
+            // Recurse into any container that isn't a building/forest tile itself
+            if (!IsBuilding(name) && !name.StartsWith("Forest Tile")
+                && !name.StartsWith("Plane") && !name.StartsWith("CityGround"))
                 CollectRoadBounds(child);
         }
     }
@@ -215,9 +221,9 @@ public class BuildingGenerator : MonoBehaviour
                     hasBuilding = false
                 });
             }
-            else if (name.StartsWith("District") || name.StartsWith("road"))
+            else if (!IsBuilding(name) && !name.StartsWith("Plane") && !name.StartsWith("CityGround"))
             {
-                // Recurse into District/road containers to find nested Forest Tiles
+                // Recurse into any container (DistrictPlots, Plots, road stretch, etc.)
                 CollectForestTiles(child);
             }
         }
@@ -323,7 +329,7 @@ public class BuildingGenerator : MonoBehaviour
         {
             int toSpawn = Mathf.Min(targetBuildings - current, BUILDINGS_PER_TICK);
             for (int s = 0; s < toSpawn; s++)
-                SpawnBuilding(districtIndex, district.gdp);
+                SpawnBuilding(districtIndex, district);
         }
         else if (targetBuildings < current)
         {
@@ -332,10 +338,21 @@ public class BuildingGenerator : MonoBehaviour
                 RemoveBuilding(districtIndex);
         }
 
+        for (int c = 0; c < 4; c++)
+        {
+            var cat = (BuildingCategory)c;
+            int tier = SelectTier(cat, district);
+            if (tier != _lastTier[districtIndex, c])
+            {
+                _lastTier[districtIndex, c] = tier;
+                ReskinCategory(districtIndex, cat, tier);
+            }
+        }
+
         ApplyTinting(districtIndex, district);
     }
 
-    private void SpawnBuilding(int districtIndex, float gdp)
+    private void SpawnBuilding(int districtIndex, DistrictState district)
     {
         var slots = _districtSlots[districtIndex];
 
@@ -348,10 +365,10 @@ public class BuildingGenerator : MonoBehaviour
                 if (slot.forestTile != null)
                     slot.forestTile.SetActive(false);
 
-                GameObject prefab = PickPrefab(gdp);
+                GameObject prefab = PickPrefab(i, district);
                 if (prefab == null) return;
 
-                Quaternion rot = Quaternion.Euler(0, ValidRotations[Random.Range(0, ValidRotations.Length)], 0);
+                Quaternion rot = Quaternion.Euler(0, ValidRotations[i & 3], 0);
                 slot.building = Instantiate(prefab, slot.position, rot, transform);
                 slot.hasBuilding = true;
                 slots[i] = slot;
@@ -361,6 +378,32 @@ public class BuildingGenerator : MonoBehaviour
                 return;
             }
         }
+    }
+
+    private void ReskinCategory(int districtIndex, BuildingCategory cat, int tier)
+    {
+        var pool = prefabConfig.GetTier(cat, tier);
+        if (pool == null || pool.Length == 0) return;
+
+        var slots = _districtSlots[districtIndex];
+        for (int i = 0; i < slots.Count; i++)
+        {
+            var slot = slots[i];
+            if (!slot.hasBuilding) continue;
+            if (CategoryForSlot(i) != cat) continue;
+            if (slot.building == null) continue;
+
+            var oldRenderers = slot.building.GetComponentsInChildren<Renderer>();
+            foreach (var r in oldRenderers) _districtRenderers[districtIndex].Remove(r);
+            Destroy(slot.building);
+
+            var prefab = pool[i % pool.Length];
+            Quaternion rot = Quaternion.Euler(0, ValidRotations[i & 3], 0);
+            slot.building = Instantiate(prefab, slot.position, rot, transform);
+            slots[i] = slot;
+            _districtRenderers[districtIndex].AddRange(slot.building.GetComponentsInChildren<Renderer>());
+        }
+        _lastHealth[districtIndex] = -1f;
     }
 
     private void RemoveBuilding(int districtIndex)
@@ -389,38 +432,32 @@ public class BuildingGenerator : MonoBehaviour
         }
     }
 
-    private GameObject PickPrefab(float gdp)
+    private static BuildingCategory CategoryForSlot(int slotIndex)
+        => (BuildingCategory)(slotIndex & 3);
+
+    private GameObject PickPrefab(int slotIndex, DistrictState district)
     {
-        float lowChance, midChance;
-        if (gdp < 30f)
-        {
-            lowChance = 0.7f; midChance = 0.3f;
-        }
-        else if (gdp < 60f)
-        {
-            lowChance = 0.3f; midChance = 0.5f;
-        }
-        else
-        {
-            lowChance = 0.1f; midChance = 0.4f;
-        }
+        var cat = CategoryForSlot(slotIndex);
+        int tier = SelectTier(cat, district);
+        var pool = prefabConfig.GetTier(cat, tier);
+        if (pool == null || pool.Length == 0) return null;
+        return pool[slotIndex % pool.Length];
+    }
 
-        float roll = Random.value;
-        GameObject[] tier;
-        if (roll < lowChance && prefabConfig.lowTier.Length > 0)
-            tier = prefabConfig.lowTier;
-        else if (roll < lowChance + midChance && prefabConfig.midTier.Length > 0)
-            tier = prefabConfig.midTier;
-        else if (prefabConfig.highTier.Length > 0)
-            tier = prefabConfig.highTier;
-        else if (prefabConfig.midTier.Length > 0)
-            tier = prefabConfig.midTier;
-        else if (prefabConfig.lowTier.Length > 0)
-            tier = prefabConfig.lowTier;
-        else
-            return null;
+    private static int SelectTier(BuildingCategory cat, DistrictState d) => cat switch
+    {
+        BuildingCategory.Residential => TierFromMetric(d.population, 100f, 300f),
+        BuildingCategory.Commercial => TierFromMetric(d.gdp, 30f, 60f),
+        BuildingCategory.Industrial => TierFromMetric(d.infrastructure, 30f, 60f),
+        BuildingCategory.Civic => TierFromMetric(d.happiness, 30f, 60f),
+        _ => 1
+    };
 
-        return tier[Random.Range(0, tier.Length)];
+    private static int TierFromMetric(float value, float lowCut, float highCut)
+    {
+        if (value < lowCut) return 0;
+        if (value < highCut) return 1;
+        return 2;
     }
 
     private void ApplyTinting(int districtIndex, DistrictState district)

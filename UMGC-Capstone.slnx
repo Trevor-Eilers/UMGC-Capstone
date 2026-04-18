@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="SimulationAssemblyDefinition.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="TestAssemblyDefinition.csproj" />
+</Solution>

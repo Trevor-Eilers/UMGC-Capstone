@@ -150,7 +150,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e3234dd87ddef54f834e8cd396cd803, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ConnectionManager
-  playerCount: 0
 --- !u!114 &766002789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,7 +221,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Services.Multiplayer::Unity.Services.DistributedAuthority.DistributedAuthorityTransport
   m_ProtocolType: 0
-  m_UseWebSockets: 1
+  m_UseWebSockets: 0
   m_UseEncryption: 0
   m_MaxPacketQueueSize: 128
   m_MaxPayloadSize: 16384
