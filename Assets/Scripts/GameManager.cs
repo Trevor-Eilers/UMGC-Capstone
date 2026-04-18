@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Network;
 using Simulation;
@@ -10,7 +11,7 @@ using Unity.Netcode;
 
 public class GameManager : NetworkBehaviour
 {
-    public static NetworkVariable<GameState> GameState { get; private set; } = new();
+    public NetworkVariable<GameState> GameState = new();
     private float _tickTimer = 0f;
     private bool _tickReady = false;
     private bool _resolvingTick = false;
@@ -23,7 +24,6 @@ public class GameManager : NetworkBehaviour
     
     private int _initializationCounter = 0;
     
-    // This is only needed by the host
     private readonly NetworkList<NetworkObjectReference> _players = new();
     
     private Player _localPlayer;
@@ -40,12 +40,53 @@ public class GameManager : NetworkBehaviour
             var state = new GameState();
             state.Default();
             GameState.Value = state;
+
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
         }
 
         StartCoroutine(Initialize());
     }
-    
-    
+
+
+    public override void OnNetworkDespawn()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        }
+    }
+
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        if (!HasAuthority) return;
+
+        for (int i = _players.Count - 1; i >= 0; i--)
+        {
+            bool resolved = _players[i].TryGet(out NetworkObject netObj);
+            if (!resolved || netObj == null || netObj.OwnerClientId == clientId)
+            {
+                _players.RemoveAt(i);
+            }
+        }
+    }
+
+
+    private List<Player> GetActivePlayers()
+    {
+        var active = new List<Player>(_players.Count);
+        for (int i = 0; i < _players.Count; i++)
+        {
+            if (!_players[i].TryGet(out NetworkObject networkObject)) continue;
+            if (networkObject == null) continue;
+            var player = networkObject.GetComponent<Player>();
+            if (player == null || player.District == null) continue;
+            active.Add(player);
+        }
+        return active;
+    }
+
+
     private IEnumerator Initialize()
     {
         _connectionManager = FindFirstObjectByType<ConnectionManager>();
@@ -126,15 +167,12 @@ public class GameManager : NetworkBehaviour
         UpdatePolicies();
 
         if (!HasAuthority) return;
-        
-        var districtStates = new DistrictState[_players.Count];
-        for (int i = 0; i < _players.Count; i++)
+
+        var activePlayers = GetActivePlayers();
+        var districtStates = new DistrictState[activePlayers.Count];
+        for (int i = 0; i < activePlayers.Count; i++)
         {
-            if (_players[i].TryGet(out NetworkObject networkObject))
-            {
-                var player = networkObject.GetComponent<Player>();
-                districtStates[i] = player.District.state.Value;
-            }
+            districtStates[i] = activePlayers[i].District.state.Value;
         }
 
         // Host resolves city-wide metrics
@@ -156,18 +194,10 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
     {
-        int localIndex = -1;
-        for (int i = 0; i < _players.Count; i++)
-        {
-            if (_players[i].TryGet(out NetworkObject networkObject) &&
-                networkObject.GetComponent<Player>() == _localPlayer)
-            {
-                localIndex = i;
-                break;
-            }
-        }
+        var activePlayers = GetActivePlayers();
+        int localIndex = activePlayers.IndexOf(_localPlayer);
 
-        if (localIndex >= 0)
+        if (localIndex >= 0 && localIndex < districtStates.Length)
         {
             districtStates[localIndex].policyValues = _localPlayer.CurrentPolicies;
 
@@ -230,7 +260,7 @@ public class GameManager : NetworkBehaviour
         if (!HasAuthority) return;
         try
         {
-            StartCoroutine(nameof(RemovePlayer), networkObjectId);
+            StartCoroutine(RemovePlayer(networkObjectId));
             ConfirmQuitRpc(RpcTarget.Single(rpcParams.Receive.SenderClientId, RpcTargetUse.Temp));
         }
         catch (Exception e)
@@ -239,11 +269,11 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    
-    private IEnumerable RemovePlayer(ulong networkObjectId)
+
+    private IEnumerator RemovePlayer(ulong networkObjectId)
     {
         if (!HasAuthority) yield break;
-        
+
         while (_resolvingTick) yield return null;
         
         for (int i = 0; i < _players.Count; i++)
