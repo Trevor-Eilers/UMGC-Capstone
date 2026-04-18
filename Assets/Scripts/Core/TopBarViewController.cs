@@ -23,10 +23,18 @@ namespace UI
             _buttons["Speed3Btn"] = root.Q<Button>("Speed3Btn");
             _buttons["PauseBtn"]  = root.Q<Button>("PauseBtn");
 
+            StartCoroutine(ConfigureSpeedControlsWhenReady());
+        }
+
+        private IEnumerator ConfigureSpeedControlsWhenReady()
+        {
+            while (ConnectionManager.Instance == null || ConnectionManager.Instance.Session == null)
+                yield return null;
+
             if (!ConnectionManager.Instance.Session.IsHost)
             {
                 foreach (var button in _buttons.Values) button.SetEnabled(false);
-                return;
+                yield break;
             }
 
             foreach (var btn in _buttons.Values)

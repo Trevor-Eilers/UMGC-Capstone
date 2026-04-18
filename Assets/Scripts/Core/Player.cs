@@ -2,7 +2,6 @@
 
 using UI;
 using Unity.Netcode;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions

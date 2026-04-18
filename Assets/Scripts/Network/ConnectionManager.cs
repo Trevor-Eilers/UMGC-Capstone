@@ -7,7 +7,6 @@ using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Multiplayer;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Network
@@ -33,24 +32,44 @@ namespace Network
    
         private NetworkManager _networkManager;
 
-        public static ConnectionManager Instance { get; private set; }
-        
-        
-   
-        private async void Awake()
+        private static ConnectionManager _instance;
+        public static ConnectionManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindAnyObjectByType<ConnectionManager>();
+                }
+                return _instance;
+            }
+        }
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            _instance = this;
+
+            _networkManager = GetComponent<NetworkManager>();
+            _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+            _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
+
+            _ = InitializeServicesAsync();
+        }
+
+        private async Task InitializeServicesAsync()
         {
             try
             {
-                Instance = this; // WTF is the issue? ******************************
-                
-                _networkManager = GetComponent<NetworkManager>();
-                _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-                _networkManager.OnSessionOwnerPromoted += OnSessionOwnerPromoted;
                 await UnityServices.InitializeAsync();
             }
             catch (Exception e)
             {
-                Debug.Log(e.StackTrace); // TODO handle exception
+                Debug.Log(e.StackTrace);
             }
         }
 
@@ -78,6 +97,8 @@ namespace Network
                 _networkManager.OnSessionOwnerPromoted -= OnSessionOwnerPromoted;
             }
             Session?.LeaveAsync();
+
+            if (_instance == this) _instance = null;
         }
 
         public async Task<bool> Authenticate(string profileName)
@@ -144,7 +165,7 @@ namespace Network
                     Session = await MultiplayerService.Instance.JoinSessionByIdAsync(sessionId);
 
                     State = ConnectionState.Connected;
-                    return; // success — exit immediately
+                    return;
                 }
                 catch (SessionException e) when (attempt < maxRetries)
                 {
