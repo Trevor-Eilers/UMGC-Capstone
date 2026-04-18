@@ -26,6 +26,8 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
     [SerializeField] private int _cityReputation;
     [SerializeField] private int _sharedInfraQuality;
     [SerializeField] private int _metroPopulationPool;
+    [SerializeField] private int _prevCityReputation;
+    [SerializeField] private int _prevSharedInfraQuality;
 
     [CreateProperty] public int CityReputation
     {
@@ -44,6 +46,9 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         get => _metroPopulationPool;
         set => SetProperty(ref _metroPopulationPool, value);
     }
+
+    [CreateProperty] public float CityReputationDelta => _cityReputation - _prevCityReputation;
+    [CreateProperty] public float SharedInfraQualityDelta => _sharedInfraQuality - _prevSharedInfraQuality;
 
     private const float METRO_FLOW_SCALE = 10f;
 
@@ -109,6 +114,24 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
     [SerializeField] private float _totalSpending;
     [SerializeField] private float _scaleFactor;
 
+    // Previous-tick cache — used to compute per-tick deltas for HUD chips.
+    [SerializeField] private float _prevGdp;
+    [SerializeField] private float _prevHappiness;
+    [SerializeField] private float _prevPopulation;
+    [SerializeField] private float _prevInfrastructure;
+    [SerializeField] private float _prevSustainability;
+    [SerializeField] private float _prevDebt;
+    [SerializeField] private float _prevReserve;
+    [SerializeField] private float _prevRevenue;
+    [SerializeField] private float _prevTotalSpending;
+    private bool _deltaSeedReady;
+
+    // Locally-computed pollution index (0-100). The sim doesn't persist pollution on
+    // DistrictState (it's an ephemeral spillover each tick), so we mirror the formula
+    // here for display only. See CLAUDE.md §3.2.
+    [SerializeField] private float _pollution;
+    [SerializeField] private float _prevPollution;
+
     [CreateProperty] public float Gdp
     {
         get => _gdp;
@@ -172,6 +195,26 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
     [CreateProperty] public float BudgetSurplus => _revenue - _totalSpending;
 
     [CreateProperty] public float Efficiency => _scaleFactor * 100f;
+
+    [CreateProperty] public float Pollution
+    {
+        get => _pollution;
+        set => SetProperty(ref _pollution, value);
+    }
+
+    // Per-tick deltas — 0 until the first two ticks have arrived (no baseline to diff against).
+    [CreateProperty] public float GdpDelta            => _deltaSeedReady ? _gdp - _prevGdp : 0f;
+    [CreateProperty] public float HappinessDelta      => _deltaSeedReady ? _happiness - _prevHappiness : 0f;
+    [CreateProperty] public float PopulationDelta     => _deltaSeedReady ? _population - _prevPopulation : 0f;
+    [CreateProperty] public float InfrastructureDelta => _deltaSeedReady ? _infrastructure - _prevInfrastructure : 0f;
+    [CreateProperty] public float SustainabilityDelta => _deltaSeedReady ? _sustainability - _prevSustainability : 0f;
+    [CreateProperty] public float DebtDelta           => _deltaSeedReady ? _debt - _prevDebt : 0f;
+    [CreateProperty] public float ReserveDelta        => _deltaSeedReady ? _reserve - _prevReserve : 0f;
+    [CreateProperty] public float RevenueDelta        => _deltaSeedReady ? _revenue - _prevRevenue : 0f;
+    [CreateProperty] public float BudgetSurplusDelta  => _deltaSeedReady
+        ? (_revenue - _totalSpending) - (_prevRevenue - _prevTotalSpending)
+        : 0f;
+    [CreateProperty] public float PollutionDelta      => _deltaSeedReady ? _pollution - _prevPollution : 0f;
 
 
     // Grants
@@ -244,6 +287,10 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
     //  Updaters
     public void UpdateFromGameState(GameState state)
     {
+        // Snapshot city-metric deltas before overwriting.
+        _prevCityReputation = _cityReputation;
+        _prevSharedInfraQuality = _sharedInfraQuality;
+
         CityReputation = (int)state.cityMetrics.cityReputation;
         SharedInfraQuality = (int)state.cityMetrics.sharedInfraQuality;
         MetroPopulationPool = (int)state.cityMetrics.metroPopulationPool;
@@ -255,12 +302,26 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         IsPaused = state.isPaused;
 
         Notify(nameof(MetroInflowPercent));
+        Notify(nameof(CityReputationDelta));
+        Notify(nameof(SharedInfraQualityDelta));
         Notify(nameof(MonthDisplay));
         Notify(nameof(TickDisplay));
     }
 
     public void UpdateFromDistrictState(DistrictState state)
     {
+        // Snapshot everything we diff on the next tick.
+        _prevGdp = _gdp;
+        _prevHappiness = _happiness;
+        _prevPopulation = _population;
+        _prevInfrastructure = _infrastructure;
+        _prevSustainability = _sustainability;
+        _prevDebt = _debt;
+        _prevReserve = _reserve;
+        _prevRevenue = _revenue;
+        _prevTotalSpending = _totalSpending;
+        _prevPollution = _pollution;
+
         Gdp = state.gdp;
         Happiness = state.happiness;
         Population = state.population;
@@ -272,6 +333,15 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         Revenue = state.revenue;
         TotalSpending = state.totalSpending;
         ScaleFactor = state.scaleFactor;
+
+        // Mirror the sim's pollution formula for UI display. Matches CLAUDE.md §3.2:
+        // pollution output = max(0, POLLUTE_ENV_THRESHOLD - env) + max(0, gdp - POLLUTE_GDP_THRESHOLD)
+        // scaled to a 0-100 index for the HUD. No side effects on the sim.
+        float envShortfall = Mathf.Max(0f, SimulationConstants.POLLUTE_ENV_THRESHOLD - state.policyValues.environment);
+        float gdpExcess    = Mathf.Max(0f, state.gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
+        float raw          = envShortfall + gdpExcess;
+        // Raw max is 30 (env 0) + 60 (gdp 100) = 90. Map to 0-100 with a soft ceiling.
+        Pollution = Mathf.Clamp(raw * 100f / 90f, 0f, 100f);
 
         GreenGrantStreak = state.greenGrantStreak;
         TransitGrantStreak = state.transitGrantStreak;
@@ -287,6 +357,26 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         Notify(nameof(Efficiency));
         Notify(nameof(CrisisTotal));
         Notify(nameof(CrisisAvoidance));
+
+        // After the second call, deltas become meaningful. Before that, diffing against
+        // zero-initialized prev values would produce a huge fake spike on tick 0.
+        if (!_deltaSeedReady)
+        {
+            _deltaSeedReady = true;
+        }
+        else
+        {
+            Notify(nameof(GdpDelta));
+            Notify(nameof(HappinessDelta));
+            Notify(nameof(PopulationDelta));
+            Notify(nameof(InfrastructureDelta));
+            Notify(nameof(SustainabilityDelta));
+            Notify(nameof(DebtDelta));
+            Notify(nameof(ReserveDelta));
+            Notify(nameof(RevenueDelta));
+            Notify(nameof(BudgetSurplusDelta));
+            Notify(nameof(PollutionDelta));
+        }
     }
 
     // Button events

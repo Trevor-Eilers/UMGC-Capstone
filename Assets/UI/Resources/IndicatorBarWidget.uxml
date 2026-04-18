@@ -1,48 +1,60 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:VisualElement data-source-type="TopBarViewModel, Assembly-CSharp" style="flex-grow: 0; flex-direction: row; justify-content: center; align-self: stretch; align-items: center; background-color: rgba(10, 14, 26, 0); padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;">
         <ui:VisualElement name="VisualElement" style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start; padding-right: 0; margin-right: 0; border-right-width: 0; border-right-color: rgba(255, 255, 255, 0); border-top-width: 0; border-bottom-width: 0; border-left-width: 0; border-left-color: rgba(255, 255, 255, 0); border-top-color: rgba(255, 255, 255, 0); border-bottom-color: rgba(255, 255, 255, 0);">
-            <UI.IndicatorWidget title="GDP" name="gdp-indicator" data-source-type="TopBarViewModel, Assembly-CSharp" tooltip="Gross Domestic Product" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+            <UI.IndicatorWidget title="GDP" name="gdp-indicator" data-source-type="TopBarViewModel, Assembly-CSharp" tooltip="GDP — economic productivity, 0-100 index. Grows from education spending and infrastructure; hurt by high taxes and environmental regs." style="margin-left: 1px; margin-right: 1px; width: 56px; margin-top: 0; margin-bottom: 0;">
                 <Bindings>
-                    <ui:DataBinding property="Value" data-source-path="Gdp" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                    <ui:DataBinding property="Value" data-source-path="Gdp" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="GdpDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
                 </Bindings>
             </UI.IndicatorWidget>
-            <UI.IndicatorWidget title="Res" name="surp-indicator" tooltip="Reserve Funds" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+            <UI.IndicatorWidget title="Budget" name="surp-indicator" tooltip="Net budget this tick (revenue minus spending). Positive = surplus flows to reserve or pays debt. Negative = deficit drains reserve then accrues debt." style="margin-left: 1px; margin-right: 1px; width: 56px; margin-top: 0; margin-bottom: 0;">
                 <Bindings>
-                    <ui:DataBinding property="Value" data-source-path="BudgetSurplus" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                    <ui:DataBinding property="Value" data-source-path="BudgetSurplus" binding-mode="ToTarget" source-to-ui-converters="CurrencyFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="BudgetSurplusDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
                 </Bindings>
             </UI.IndicatorWidget>
-            <UI.IndicatorWidget title="Rev" name="rev-indicator" tooltip="Tax Revenue" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+            <UI.IndicatorWidget title="Revenue" name="rev-indicator" tooltip="Tax revenue this tick. Scales with tax rate × GDP × population. Higher GDP and population grow the tax base; higher tax rates hurt GDP over time." style="margin-left: 1px; margin-right: 1px; width: 56px; margin-top: 0; margin-bottom: 0;">
                 <Bindings>
-                    <ui:DataBinding property="Value" data-source-path="Revenue" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                    <ui:DataBinding property="Value" data-source-path="Revenue" binding-mode="ToTarget" source-to-ui-converters="CurrencyFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="RevenueDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
                 </Bindings>
             </UI.IndicatorWidget>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="width: 1px; height: 24px; background-color: rgb(64, 64, 77); margin-right: 5px; margin-left: 5px;"/>
         <ui:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start; padding-right: 0; margin-right: 0; border-right-width: 0; border-right-color: rgba(255, 255, 255, 0); border-top-width: 0; border-bottom-width: 0; border-left-width: 0; border-left-color: rgba(255, 255, 255, 0); border-top-color: rgba(255, 255, 255, 0); border-bottom-color: rgba(255, 255, 255, 0);">
-            <UI.IndicatorWidget title="Pop" name="pop-indicator" tooltip="Population" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+            <UI.IndicatorWidget title="Pop" name="pop-indicator" tooltip="Residents (in thousands). Grows via city reputation &amp; district attractiveness (housing, low tax). Shrinks when sustainability drops below 30. Population &gt; 300k unlocks the Federal Transit Grant." style="margin-left: 1px; margin-right: 1px; width: 54px; margin-top: 0; margin-bottom: 0;">
                 <Bindings>
-                    <ui:DataBinding property="Value" data-source-path="Population" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                    <ui:DataBinding property="Value" data-source-path="Population" binding-mode="ToTarget" source-to-ui-converters="PopulationFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="PopulationDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
                 </Bindings>
             </UI.IndicatorWidget>
-            <UI.IndicatorWidget title="Hap" name="happ-indicator" tooltip="Happiness" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+            <UI.IndicatorWidget title="Happiness" name="happ-indicator" tooltip="Resident satisfaction, 0-100 index. 60% district health (GDP/infra/sustainability/debt), 40% direct housing spending minus tax and debt stress. &gt; 75 unlocks Quality of Life Grant; &lt; 20 is a crisis." style="margin-left: 1px; margin-right: 1px; width: 54px; margin-top: 0; margin-bottom: 0;">
                 <Bindings>
-                    <ui:DataBinding property="Value" data-source-path="Happiness" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                    <ui:DataBinding property="Value" data-source-path="Happiness" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="HappinessDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
                 </Bindings>
             </UI.IndicatorWidget>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="width: 1px; height: 24px; background-color: rgb(64, 64, 77); margin-right: 5px; margin-left: 5px;"/>
         <ui:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: flex-start;">
-            <UI.IndicatorWidget title="Infra" name="infra-indicator" tooltip="District Infrastructure" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+            <UI.IndicatorWidget title="Infra" name="infra-indicator" tooltip="Physical infrastructure quality, 0-100 index. Grows from infra spending (diminishing returns past 50), decays without investment. &gt; 80 unlocks the Development Grant. Drives sustainability and GDP." style="margin-left: 1px; margin-right: 1px; width: 56px; margin-top: 0; margin-bottom: 0;">
                 <Bindings>
-                    <ui:DataBinding property="Value" data-source-path="Infrastructure" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                    <ui:DataBinding property="Value" data-source-path="Infrastructure" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="InfrastructureDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
                 </Bindings>
             </UI.IndicatorWidget>
-            <UI.IndicatorWidget title="Sus" name="sust-indicator" tooltip="Sustainability" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;">
+            <UI.IndicatorWidget title="Sustain" name="sust-indicator" tooltip="Long-term carrying capacity, 0-100 index. Driven by infrastructure and environment spending, drained by population pressure. &gt; 70 unlocks Green Grant; &lt; 30 triggers outmigration." style="margin-left: 1px; margin-right: 1px; width: 56px; margin-top: 0; margin-bottom: 0;">
                 <Bindings>
-                    <ui:DataBinding property="Value" data-source-path="Sustainability" binding-mode="ToTarget" source-to-ui-converters="OneDecimal"/>
+                    <ui:DataBinding property="Value" data-source-path="Sustainability" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="SustainabilityDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
                 </Bindings>
             </UI.IndicatorWidget>
-            <UI.IndicatorWidget title="Pol" name="poll-indicator" tooltip="Pollution" style="margin-left: 1px; margin-right: 1px; width: 40px; margin-top: 0; margin-bottom: 0;"/>
+            <UI.IndicatorWidget title="Pollution" name="poll-indicator" tooltip="Pollution index (0-100, UI estimate). Active when environment spending &lt; 30 and GDP &gt; 40. Damages your own and neighbors' sustainability and happiness. Raise environment spending or reduce industrial output to cut it." style="margin-left: 1px; margin-right: 1px; width: 54px; margin-top: 0; margin-bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Pollution" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                    <ui:DataBinding property="Delta" data-source-path="PollutionDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
+                </Bindings>
+            </UI.IndicatorWidget>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

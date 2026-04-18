@@ -9,9 +9,23 @@
         <ui:VisualElement style="flex-grow: 0; flex-direction: row; justify-content: center; align-content: flex-start;">
             <ui:Label text="City" style="color: rgba(255, 255, 255, 0.69); -unity-font-style: bold; margin-left: 0; margin-right: 0; width: 60px; -unity-text-align: middle-center;"/>
             <ui:VisualElement name="CityContainer" data-source-type="TopBarViewModel, Assembly-CSharp" style="flex-grow: 1; flex-direction: row; margin-left: 0; margin-right: 0; justify-content: flex-start; -unity-background-image-tint-color: rgb(25, 25, 36); background-color: rgb(25, 25, 36); border-left-color: rgb(38, 38, 49); border-right-color: rgb(38, 38, 49); border-top-color: rgb(38, 38, 49); border-bottom-color: rgb(38, 38, 49); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; height: 45px; align-self: center; align-items: center; flex-shrink: 0;">
-                <UI.IndicatorWidget title="Rep" value="--" tooltip="City Reputation" style="margin-left: 0; margin-right: 0; width: 60px;"/>
-                <UI.IndicatorWidget title="Infra" value="--" tooltip="City Infrastructure" style="width: 60px;"/>
-                <UI.IndicatorWidget title="Inflow" value="--" tooltip="Population Inflow" style="width: 60px;"/>
+                <UI.IndicatorWidget title="Reputation" tooltip="City Reputation (0-100). Weighted average of all districts' happiness, sustainability, infra, GDP, and fiscal health, minus an inequality penalty. Above 70 accelerates population inflow." style="margin-left: 0; margin-right: 0; width: 80px;">
+                    <Bindings>
+                        <ui:DataBinding property="Value" data-source-path="CityReputation" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                        <ui:DataBinding property="Delta" data-source-path="CityReputationDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
+                    </Bindings>
+                </UI.IndicatorWidget>
+                <UI.IndicatorWidget title="Infrastructure" tooltip="Shared metro infrastructure (0-100). Grows when players spend on City Contribution, decays without investment. Enables cross-district commuting once above 25." style="width: 80px;">
+                    <Bindings>
+                        <ui:DataBinding property="Value" data-source-path="SharedInfraQuality" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                        <ui:DataBinding property="Delta" data-source-path="SharedInfraQualityDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
+                    </Bindings>
+                </UI.IndicatorWidget>
+                <UI.IndicatorWidget title="Metro Inflow" tooltip="Population flow into the metro this tick (0-100 scale, 50 = neutral). Above 50 = residents arriving (reputation &gt; 50), below = leaving." style="width: 80px;">
+                    <Bindings>
+                        <ui:DataBinding property="Value" data-source-path="MetroInflowPercent" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                    </Bindings>
+                </UI.IndicatorWidget>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="width: 1px; height: 30px; background-color: rgb(64, 64, 77); margin-right: 24px; margin-left: 24px;"/>
