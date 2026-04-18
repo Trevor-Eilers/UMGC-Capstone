@@ -12,6 +12,12 @@ public class BuildingGenerator : MonoBehaviour
     private const int MAX_BUILDINGS_PER_DISTRICT = 50;
     private const int BUILDINGS_PER_TICK = 10;
 
+    // Placement tuning — all in world units. Reference: a single Forest Tile is
+    // roughly a 10-unit square in the LowPolyMegapolis map.
+    private const float SLOT_MIN_SPACING = 8f;       // Step 3: dedup Forest Tiles
+    private const float ROAD_BUFFER = 1.0f;          // Step 2: extra padding around roads
+    private const float MAX_BUILDING_FOOTPRINT = 12f; // Step 6: scale clamp
+
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly float[] ValidRotations = { 0f, 90f, 180f, 270f };
 
@@ -21,6 +27,7 @@ public class BuildingGenerator : MonoBehaviour
         public GameObject forestTile;
         public GameObject building;
         public bool hasBuilding;
+        public Bounds occupiedBounds; // world-space AABB of the placed building, if any
     }
 
     private List<BuildingSlot>[] _districtSlots;
@@ -31,6 +38,12 @@ public class BuildingGenerator : MonoBehaviour
     private List<Renderer>[] _districtRenderers;
     private float[] _lastHealth;
     private int[,] _lastTier;
+
+    // Step 2: cached prefab AABBs in LOCAL space (measured once at Awake).
+    private readonly Dictionary<GameObject, Bounds> _prefabLocalBounds = new();
+
+    private readonly List<Bounds> _roadBounds = new();
+    private Bounds _cityGridBounds;
 
     void Awake()
     {
@@ -54,9 +67,11 @@ public class BuildingGenerator : MonoBehaviour
         CreateGroundPlane();
         CollectSlots();
         SortSlotsByDistanceFromCenter();
+        CachePrefabBounds();
 
         for (int i = 0; i < 4; i++)
             Debug.Log($"BuildingGenerator District {i}: {_districtSlots[i].Count} slots, {_currentBuildingCount[i]} buildings");
+        Debug.Log($"BuildingGenerator: cached bounds for {_prefabLocalBounds.Count} prefabs, collected {_roadBounds.Count} road bounds, grid={_cityGridBounds}");
     }
 
     private void ComputeMapCenter()
@@ -76,7 +91,6 @@ public class BuildingGenerator : MonoBehaviour
 
     private void CreateGroundPlane()
     {
-        // Check if ground already exists
         _groundPlane = transform.Find("CityGround")?.gameObject;
         if (_groundPlane != null) return;
 
@@ -100,7 +114,6 @@ public class BuildingGenerator : MonoBehaviour
 
     void OnEnable()
     {
-        // In edit mode, just create the ground plane
         if (!Application.isPlaying)
         {
             ComputeMapCenter();
@@ -110,7 +123,6 @@ public class BuildingGenerator : MonoBehaviour
 
     void OnDisable()
     {
-        // Clean up in edit mode to avoid duplicates
         if (!Application.isPlaying)
         {
             var existing = transform.Find("CityGround")?.gameObject;
@@ -118,49 +130,48 @@ public class BuildingGenerator : MonoBehaviour
         }
     }
 
-    private List<Bounds> _roadBounds = new();
-    private Bounds _cityGridBounds;
-
     private void CollectSlots()
     {
-        // First collect existing buildings to determine valid city grid area
         CollectExistingBuildings(transform);
-
-        // Compute city grid bounds from existing building positions
         ComputeCityGridBounds();
-
-        // Collect road bounds for proximity filtering
         CollectRoadBounds(transform);
-        Debug.Log($"BuildingGenerator: collected {_roadBounds.Count} road bounds, grid={_cityGridBounds}");
-
-        // Collect Forest Tiles as available building slots (filtered by grid + road proximity)
         CollectForestTiles(transform);
     }
 
     private void ComputeCityGridBounds()
     {
-        // Use existing hand-placed building positions to define valid city area
         bool first = true;
         for (int d = 0; d < 4; d++)
         {
             foreach (var slot in _districtSlots[d])
             {
-                if (slot.hasBuilding)
+                if (!slot.hasBuilding) continue;
+                if (first)
                 {
-                    if (first)
-                    {
-                        _cityGridBounds = new Bounds(slot.position, Vector3.zero);
-                        first = false;
-                    }
-                    else
-                    {
-                        _cityGridBounds.Encapsulate(slot.position);
-                    }
+                    _cityGridBounds = new Bounds(slot.position, Vector3.zero);
+                    first = false;
+                }
+                else
+                {
+                    _cityGridBounds.Encapsulate(slot.position);
                 }
             }
         }
-        // Expand slightly to include nearby Forest Tiles
         _cityGridBounds.Expand(20f);
+    }
+
+    // Step 1: case-insensitive road-name match so "road stretch", "MobileRoad",
+    // "Intersection", "Sidewalk", "Crosswalk" all feed into _roadBounds.
+    private static bool IsRoadName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        string n = name.ToLowerInvariant();
+        return n.Contains("road") ||
+               n.Contains("mobileroad") ||
+               n.Contains("intersection") ||
+               n.Contains("sidewalk") ||
+               n.Contains("crosswalk") ||
+               n.Contains("street");
     }
 
     private void CollectRoadBounds(Transform parent)
@@ -170,15 +181,13 @@ public class BuildingGenerator : MonoBehaviour
             var child = parent.GetChild(i);
             string name = child.gameObject.name;
 
-            // Collect renderer bounds from road meshes
-            if (name.StartsWith("MobileRoad") || name.Contains("Road"))
+            if (IsRoadName(name))
             {
                 var renderers = child.GetComponentsInChildren<Renderer>(true);
                 foreach (var r in renderers)
                     _roadBounds.Add(r.bounds);
             }
 
-            // Recurse into any container that isn't a building/forest tile itself
             if (!IsBuilding(name) && !name.StartsWith("Forest Tile")
                 && !name.StartsWith("Plane") && !name.StartsWith("CityGround"))
                 CollectRoadBounds(child);
@@ -206,27 +215,42 @@ public class BuildingGenerator : MonoBehaviour
 
             if (name.StartsWith("Forest Tile"))
             {
-                // Skip tiles outside the city grid
                 if (!_cityGridBounds.Contains(child.position)) continue;
-
-                // Skip tiles that overlap with roads
                 if (IsTooCloseToRoad(child.position)) continue;
 
                 int district = GetDistrict(child.position);
+
+                // Step 3: skip tiles that are too close to a tile we already accepted
+                // for this district. Prevents dense clumps from producing overlapping
+                // buildings.
+                if (IsTooCloseToExistingSlot(child.position, district)) continue;
+
                 _districtSlots[district].Add(new BuildingSlot
                 {
                     position = child.position,
                     forestTile = child.gameObject,
                     building = null,
-                    hasBuilding = false
+                    hasBuilding = false,
+                    occupiedBounds = default
                 });
             }
             else if (!IsBuilding(name) && !name.StartsWith("Plane") && !name.StartsWith("CityGround"))
             {
-                // Recurse into any container (DistrictPlots, Plots, road stretch, etc.)
                 CollectForestTiles(child);
             }
         }
+    }
+
+    private bool IsTooCloseToExistingSlot(Vector3 pos, int district)
+    {
+        float sqrThreshold = SLOT_MIN_SPACING * SLOT_MIN_SPACING;
+        var slots = _districtSlots[district];
+        for (int i = 0; i < slots.Count; i++)
+        {
+            if ((slots[i].position - pos).sqrMagnitude < sqrThreshold)
+                return true;
+        }
+        return false;
     }
 
     private void CollectExistingBuildings(Transform parent)
@@ -239,12 +263,22 @@ public class BuildingGenerator : MonoBehaviour
             if (IsBuilding(name))
             {
                 int district = GetDistrict(child.position);
+                var rends = child.GetComponentsInChildren<Renderer>(true);
+                Bounds b = default;
+                bool hasBounds = false;
+                foreach (var r in rends)
+                {
+                    if (!hasBounds) { b = r.bounds; hasBounds = true; }
+                    else b.Encapsulate(r.bounds);
+                }
+
                 _districtSlots[district].Add(new BuildingSlot
                 {
                     position = child.position,
                     forestTile = null,
                     building = child.gameObject,
-                    hasBuilding = true
+                    hasBuilding = true,
+                    occupiedBounds = hasBounds ? b : new Bounds(child.position, Vector3.one * 5f)
                 });
                 _currentBuildingCount[district]++;
             }
@@ -314,6 +348,122 @@ public class BuildingGenerator : MonoBehaviour
         return 3;
     }
 
+    // Step 2: measure each prefab once so we can project a world AABB at any
+    // target position/rotation without instantiating first. Runs in Awake.
+    private void CachePrefabBounds()
+    {
+        if (prefabConfig == null) return;
+
+        foreach (BuildingCategory cat in System.Enum.GetValues(typeof(BuildingCategory)))
+        {
+            for (int tier = 0; tier < 3; tier++)
+            {
+                var pool = prefabConfig.GetTier(cat, tier);
+                if (pool == null) continue;
+                foreach (var prefab in pool)
+                {
+                    if (prefab == null || _prefabLocalBounds.ContainsKey(prefab)) continue;
+                    _prefabLocalBounds[prefab] = ComputePrefabLocalBounds(prefab);
+                }
+            }
+        }
+    }
+
+    private static Bounds ComputePrefabLocalBounds(GameObject prefab)
+    {
+        // Instantiate at origin with identity rotation so `renderer.bounds` is
+        // effectively the local/world AABB. Destroy immediately.
+        var temp = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+        temp.hideFlags = HideFlags.HideAndDontSave;
+
+        var rends = temp.GetComponentsInChildren<Renderer>(true);
+        Bounds b;
+        if (rends.Length == 0)
+        {
+            b = new Bounds(Vector3.zero, Vector3.one * 5f);
+        }
+        else
+        {
+            b = rends[0].bounds;
+            for (int i = 1; i < rends.Length; i++)
+                b.Encapsulate(rends[i].bounds);
+        }
+
+        DestroyImmediate(temp);
+        return b;
+    }
+
+    // Project a cached local-space AABB onto world space at a target position
+    // and 0/90/180/270 rotation. Since rotation is axis-aligned multiples of 90,
+    // we can just swap X and Z extents as needed.
+    private static Bounds ProjectAABB(Bounds local, Vector3 worldPos, Quaternion rot)
+    {
+        Vector3 size = local.size;
+        Vector3 center = local.center;
+
+        float yaw = rot.eulerAngles.y;
+        bool swapped = Mathf.Approximately(yaw % 180f, 90f);
+        Vector3 worldSize = swapped
+            ? new Vector3(size.z, size.y, size.x)
+            : size;
+
+        // After rotation around Y, the local center also rotates. For 90° multiples
+        // this is a simple swap/negate.
+        Vector3 rotatedCenter = rot * center;
+        return new Bounds(worldPos + rotatedCenter, worldSize);
+    }
+
+    private bool BoundsIntersectsRoad(Bounds aabb)
+    {
+        var expanded = aabb;
+        expanded.Expand(ROAD_BUFFER * 2f); // buffer on all sides
+        for (int i = 0; i < _roadBounds.Count; i++)
+        {
+            if (expanded.Intersects(_roadBounds[i]))
+                return true;
+        }
+        return false;
+    }
+
+    private bool BoundsIntersectsPlaced(Bounds aabb, int district, int skipSlotIndex)
+    {
+        var slots = _districtSlots[district];
+        for (int i = 0; i < slots.Count; i++)
+        {
+            if (i == skipSlotIndex) continue;
+            var s = slots[i];
+            if (!s.hasBuilding) continue;
+            if (s.occupiedBounds.size.sqrMagnitude < 0.01f) continue; // unknown bounds, skip
+            if (aabb.Intersects(s.occupiedBounds))
+                return true;
+        }
+        return false;
+    }
+
+    // Step 5: rotate +Z to face the nearest road edge so doorways point toward
+    // streets.
+    private float RotationFacingNearestRoad(Vector3 pos)
+    {
+        if (_roadBounds.Count == 0) return 0f;
+
+        Bounds nearest = _roadBounds[0];
+        float bestSqr = nearest.SqrDistance(pos);
+        for (int i = 1; i < _roadBounds.Count; i++)
+        {
+            float s = _roadBounds[i].SqrDistance(pos);
+            if (s < bestSqr) { bestSqr = s; nearest = _roadBounds[i]; }
+        }
+
+        Vector3 dir = nearest.ClosestPoint(pos) - pos;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.01f) return 0f;
+
+        // Snap to cardinal: +X, -X, +Z, -Z.
+        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.z))
+            return dir.x > 0f ? 90f : 270f;
+        return dir.z > 0f ? 0f : 180f;
+    }
+
     public void UpdateDistrict(int districtIndex, DistrictState district)
     {
         if (districtIndex < 0 || districtIndex >= 4) return;
@@ -329,7 +479,7 @@ public class BuildingGenerator : MonoBehaviour
         {
             int toSpawn = Mathf.Min(targetBuildings - current, BUILDINGS_PER_TICK);
             for (int s = 0; s < toSpawn; s++)
-                SpawnBuilding(districtIndex, district);
+                if (!SpawnBuilding(districtIndex, district)) break;
         }
         else if (targetBuildings < current)
         {
@@ -352,34 +502,100 @@ public class BuildingGenerator : MonoBehaviour
         ApplyTinting(districtIndex, district);
     }
 
-    private void SpawnBuilding(int districtIndex, DistrictState district)
+    private bool SpawnBuilding(int districtIndex, DistrictState district)
     {
         var slots = _districtSlots[districtIndex];
 
         for (int i = 0; i < slots.Count; i++)
         {
             var slot = slots[i];
-            if (!slot.hasBuilding)
-            {
-                // Hide forest tile if it exists
-                if (slot.forestTile != null)
-                    slot.forestTile.SetActive(false);
+            if (slot.hasBuilding) continue;
 
-                GameObject prefab = PickPrefab(i, district);
-                if (prefab == null) return;
+            var cat = CategoryForSlot(i);
+            int tier = SelectTier(cat, district);
+            var pool = prefabConfig.GetTier(cat, tier);
+            if (pool == null || pool.Length == 0) continue;
 
-                Quaternion rot = Quaternion.Euler(0, ValidRotations[i & 3], 0);
-                slot.building = Instantiate(prefab, slot.position, rot, transform);
-                slot.hasBuilding = true;
-                slots[i] = slot;
-                _currentBuildingCount[districtIndex]++;
-                _districtRenderers[districtIndex].AddRange(slot.building.GetComponentsInChildren<Renderer>());
-                _lastHealth[districtIndex] = -1f; // force tint update
-                return;
-            }
+            if (!TryPlacePrefab(slot.position, pool, i, districtIndex,
+                out GameObject placed, out Bounds placedBounds, out float placedRot))
+                continue;
+
+            if (slot.forestTile != null) slot.forestTile.SetActive(false);
+
+            slot.building = placed;
+            slot.hasBuilding = true;
+            slot.occupiedBounds = placedBounds;
+            slots[i] = slot;
+            _currentBuildingCount[districtIndex]++;
+            _districtRenderers[districtIndex].AddRange(placed.GetComponentsInChildren<Renderer>());
+            _lastHealth[districtIndex] = -1f;
+            return true;
         }
+        return false;
     }
 
+    private bool TryPlacePrefab(Vector3 pos, GameObject[] pool, int slotIndex, int districtIndex,
+        out GameObject placed, out Bounds placedBounds, out float rotationDeg)
+    {
+        placed = null;
+        placedBounds = default;
+        rotationDeg = 0f;
+        if (pool == null || pool.Length == 0) return false;
+
+        float preferredRot = RotationFacingNearestRoad(pos);
+
+        // Try up to 4 prefabs × 4 rotations, starting from slotIndex-derived pick.
+        int prefabTries = Mathf.Min(4, pool.Length);
+        for (int p = 0; p < prefabTries; p++)
+        {
+            var prefab = pool[(slotIndex + p) % pool.Length];
+            if (prefab == null) continue;
+            if (!_prefabLocalBounds.TryGetValue(prefab, out var localB))
+                localB = ComputePrefabLocalBounds(prefab);
+
+            for (int r = 0; r < 4; r++)
+            {
+                float yaw = Mathf.Repeat(preferredRot + r * 90f, 360f);
+                var rot = Quaternion.Euler(0f, yaw, 0f);
+                var worldAABB = ProjectAABB(localB, pos, rot);
+
+                if (BoundsIntersectsRoad(worldAABB)) continue;
+                if (BoundsIntersectsPlaced(worldAABB, districtIndex, slotIndex)) continue;
+
+                // Fits — instantiate and optionally scale down if oversized.
+                var instance = Instantiate(prefab, pos, rot, transform);
+                NormalizeScale(instance, localB);
+                placed = instance;
+                placedBounds = RecomputeBounds(instance);
+                rotationDeg = yaw;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Step 6: cap the largest XZ dimension of spawned prefabs. Only shrinks —
+    // never upscales — so small prefabs keep their natural size.
+    private static void NormalizeScale(GameObject instance, Bounds localBounds)
+    {
+        float largest = Mathf.Max(localBounds.size.x, localBounds.size.z);
+        if (largest <= MAX_BUILDING_FOOTPRINT) return;
+        float s = MAX_BUILDING_FOOTPRINT / largest;
+        instance.transform.localScale = instance.transform.localScale * s;
+    }
+
+    private static Bounds RecomputeBounds(GameObject instance)
+    {
+        var rends = instance.GetComponentsInChildren<Renderer>(true);
+        if (rends.Length == 0) return new Bounds(instance.transform.position, Vector3.one * 5f);
+        Bounds b = rends[0].bounds;
+        for (int i = 1; i < rends.Length; i++) b.Encapsulate(rends[i].bounds);
+        return b;
+    }
+
+    // Step 4: ReskinCategory only touches slots that originated from Forest Tiles.
+    // Pre-placed scene buildings (forestTile == null) are left alone so the
+    // level designer's arrangements stay intact.
     private void ReskinCategory(int districtIndex, BuildingCategory cat, int tier)
     {
         var pool = prefabConfig.GetTier(cat, tier);
@@ -390,18 +606,34 @@ public class BuildingGenerator : MonoBehaviour
         {
             var slot = slots[i];
             if (!slot.hasBuilding) continue;
+            if (slot.forestTile == null) continue; // protect pre-placed
             if (CategoryForSlot(i) != cat) continue;
             if (slot.building == null) continue;
 
             var oldRenderers = slot.building.GetComponentsInChildren<Renderer>();
             foreach (var r in oldRenderers) _districtRenderers[districtIndex].Remove(r);
             Destroy(slot.building);
-
-            var prefab = pool[i % pool.Length];
-            Quaternion rot = Quaternion.Euler(0, ValidRotations[i & 3], 0);
-            slot.building = Instantiate(prefab, slot.position, rot, transform);
+            slot.building = null;
+            slot.hasBuilding = false;
+            slot.occupiedBounds = default;
+            _currentBuildingCount[districtIndex]--;
             slots[i] = slot;
-            _districtRenderers[districtIndex].AddRange(slot.building.GetComponentsInChildren<Renderer>());
+
+            if (!TryPlacePrefab(slot.position, pool, i, districtIndex,
+                out GameObject placed, out Bounds placedBounds, out _))
+            {
+                // Couldn't fit the new tier — leave the slot empty and reactivate
+                // the forest tile as a placeholder.
+                if (slot.forestTile != null) slot.forestTile.SetActive(true);
+                continue;
+            }
+
+            slot.building = placed;
+            slot.hasBuilding = true;
+            slot.occupiedBounds = placedBounds;
+            _currentBuildingCount[districtIndex]++;
+            slots[i] = slot;
+            _districtRenderers[districtIndex].AddRange(placed.GetComponentsInChildren<Renderer>());
         }
         _lastHealth[districtIndex] = -1f;
     }
@@ -415,7 +647,6 @@ public class BuildingGenerator : MonoBehaviour
             var slot = slots[i];
             if (slot.hasBuilding && slot.forestTile != null && slot.building != null)
             {
-                // Remove cached renderers before destroying
                 var renderers = slot.building.GetComponentsInChildren<Renderer>();
                 foreach (var r in renderers)
                     _districtRenderers[districtIndex].Remove(r);
@@ -423,10 +654,11 @@ public class BuildingGenerator : MonoBehaviour
                 Destroy(slot.building);
                 slot.building = null;
                 slot.hasBuilding = false;
+                slot.occupiedBounds = default;
                 slot.forestTile.SetActive(true);
                 slots[i] = slot;
                 _currentBuildingCount[districtIndex]--;
-                _lastHealth[districtIndex] = -1f; // force tint update
+                _lastHealth[districtIndex] = -1f;
                 return;
             }
         }
@@ -434,15 +666,6 @@ public class BuildingGenerator : MonoBehaviour
 
     private static BuildingCategory CategoryForSlot(int slotIndex)
         => (BuildingCategory)(slotIndex & 3);
-
-    private GameObject PickPrefab(int slotIndex, DistrictState district)
-    {
-        var cat = CategoryForSlot(slotIndex);
-        int tier = SelectTier(cat, district);
-        var pool = prefabConfig.GetTier(cat, tier);
-        if (pool == null || pool.Length == 0) return null;
-        return pool[slotIndex % pool.Length];
-    }
 
     private static int SelectTier(BuildingCategory cat, DistrictState d) => cat switch
     {
@@ -465,7 +688,6 @@ public class BuildingGenerator : MonoBehaviour
         float health = (district.happiness + district.sustainability + district.infrastructure) / 3f;
         float roundedHealth = Mathf.Round(health);
 
-        // Skip if health hasn't changed materially
         if (Mathf.Approximately(roundedHealth, _lastHealth[districtIndex])) return;
         _lastHealth[districtIndex] = roundedHealth;
 
@@ -476,7 +698,7 @@ public class BuildingGenerator : MonoBehaviour
         for (int i = renderers.Count - 1; i >= 0; i--)
         {
             if (renderers[i] == null)
-                renderers.RemoveAt(i); // clean up destroyed renderers
+                renderers.RemoveAt(i);
             else
                 renderers[i].SetPropertyBlock(_propBlock);
         }
