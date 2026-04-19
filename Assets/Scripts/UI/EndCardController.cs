@@ -35,19 +35,10 @@ namespace UI
                 return;
             }
 
-            _root = _doc.rootVisualElement;
-
-            _overlay = _root.Q<VisualElement>("EndCardOverlay");
-            _finalScore = _root.Q<Label>("EndCardFinalScore");
-            _neighborhoodScore = _root.Q<Label>("EndCardNeighborhoodScore");
-            _cityScore = _root.Q<Label>("EndCardCityScore");
-            _districtSummary = _root.Q<Label>("EndCardDistrictSummary");
-            _returnBtn = _root.Q<Button>("EndCardReturnBtn");
-
-            if (_overlay != null) _overlay.style.display = DisplayStyle.None;
-
-            if (_returnBtn != null)
-                _returnBtn.clicked += ReturnToMenu;
+            // The UIDocument is intentionally disabled in the scene until the
+            // game ends, so its empty rootVisualElement doesn't compete with
+            // the HUD's UIDocuments on the same shared PanelSettings. We
+            // re-enable it in HandleTick once we have scores to show.
         }
 
         private void Update()
@@ -82,10 +73,23 @@ namespace UI
             var score = ScoringSystem.ComputeFinalScore(
                 district, cityMetrics, states, GameManager.Instance.NumActivePlayers);
 
-            if (_finalScore != null)          _finalScore.text          = score.finalScore.ToString("F1");
-            if (_neighborhoodScore != null)   _neighborhoodScore.text   = score.neighborhoodScore.ToString("F1");
-            if (_cityScore != null)           _cityScore.text           = score.cityContribScore.ToString("F1");
-            if (_districtSummary != null)     _districtSummary.text     = BuildDistrictSummary(district);
+            // Enable the UIDocument so it starts rendering, THEN populate. Before
+            // this moment the document has been disabled so the HUD UIDocuments
+            // could render without interference.
+            _doc.enabled = true;
+            _root = _doc.rootVisualElement;
+            _overlay = _root.Q<VisualElement>("EndCardOverlay");
+            _finalScore = _root.Q<Label>("EndCardFinalScore");
+            _neighborhoodScore = _root.Q<Label>("EndCardNeighborhoodScore");
+            _cityScore = _root.Q<Label>("EndCardCityScore");
+            _districtSummary = _root.Q<Label>("EndCardDistrictSummary");
+            _returnBtn = _root.Q<Button>("EndCardReturnBtn");
+            if (_returnBtn != null) _returnBtn.clicked += ReturnToMenu;
+
+            if (_finalScore != null)        _finalScore.text        = score.finalScore.ToString("F1");
+            if (_neighborhoodScore != null) _neighborhoodScore.text = score.neighborhoodScore.ToString("F1");
+            if (_cityScore != null)         _cityScore.text         = score.cityContribScore.ToString("F1");
+            if (_districtSummary != null)   _districtSummary.text   = BuildDistrictSummary(district);
 
             if (_overlay != null) _overlay.style.display = DisplayStyle.Flex;
             _displayed = true;
