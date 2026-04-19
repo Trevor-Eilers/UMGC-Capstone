@@ -78,8 +78,10 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         set => SetProperty(ref _currentTick, value);
     }
 
+    // Display as 1-indexed so the HUD reads "Month 1 / 48" at the start of
+    // the sim instead of "Month 0 / 48", which users read as "not started yet".
     [CreateProperty] public string MonthDisplay =>
-        $"Month {_currentMonth} / {SimulationConstants.TOTAL_MONTHS}";
+        $"Month {Mathf.Min(_currentMonth + 1, SimulationConstants.TOTAL_MONTHS)} / {SimulationConstants.TOTAL_MONTHS}";
 
     [CreateProperty] public string TickDisplay =>
         $"Tick {_currentTick} / {SimulationConstants.TOTAL_TICKS}";
@@ -398,11 +400,7 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         if (_speed1Btn != null) _speed1Btn.clicked += () => OnSpeedChangeRequested?.Invoke(1);
         if (_speed2Btn != null) _speed2Btn.clicked += () => OnSpeedChangeRequested?.Invoke(2);
         if (_speed3Btn != null) _speed3Btn.clicked += () => OnSpeedChangeRequested?.Invoke(3);
-        if (_pauseBtn  != null) _pauseBtn.clicked  += () =>
-        {
-            Debug.Log($"[TopBar] Pause button clicked — sending pause={!_isPaused} (currently _isPaused={_isPaused})");
-            OnPauseChangeRequested?.Invoke(!_isPaused);
-        };
+        if (_pauseBtn  != null) _pauseBtn.clicked  += () => OnPauseChangeRequested?.Invoke(!_isPaused);
         if (quit != null)   quit.clicked   += () => OnQuitRequested?.Invoke();
 
         RefreshSpeedButtons();

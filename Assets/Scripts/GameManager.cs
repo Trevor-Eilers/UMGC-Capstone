@@ -159,7 +159,7 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        Debug.Log($"Tick advancing — isPaused={GameState.Value.isPaused} gameSpeed={GameState.Value.gameSpeed}");
+        Debug.Log("Tick advancing");
 
         _tickReadyCounter = 0;
         _tickReady = false;
@@ -281,12 +281,10 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Authority)]
     public void RequestSetPauseRpc(bool paused)
     {
-        Debug.Log($"[GameManager] RequestSetPauseRpc({paused}) received on authority");
         var state = GameState.Value;
         state.isPaused = paused;
         GameState.Value = state;
         ApplyTimeScale();
-        Debug.Log($"[GameManager] GameState.Value.isPaused is now {GameState.Value.isPaused}");
     }
 
     // Hard visual pause: Time.timeScale = 0 halts all MonoBehaviour Update

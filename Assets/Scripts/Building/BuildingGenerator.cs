@@ -74,7 +74,20 @@ public class BuildingGenerator : MonoBehaviour
 
         ComputeMapCenter();
         CreateGroundPlane();
-        CollectPlots(transform);
+        // Find every Transform named "Plots (N)" anywhere in the scene. They
+        // live under NW_DistrictPlots / SW_DistrictPlots / etc. which are
+        // siblings of Map at the scene root, so recursing from `transform`
+        // (our own GameObject) would miss them. Only do this when actually
+        // playing so [ExecuteInEditMode] doesn't try to spawn in the editor.
+        if (Application.isPlaying)
+        {
+            foreach (var t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (t == null || !t.name.StartsWith("Plots")) continue;
+                var plot = MakePlot(t);
+                if (plot != null) _plots[plot.district].Add(plot);
+            }
+        }
 
         int totalPlots = 0, totalOccupied = 0;
         for (int d = 0; d < 4; d++)
@@ -235,8 +248,6 @@ public class BuildingGenerator : MonoBehaviour
         if (districtIndex < 0 || districtIndex >= 4) return;
         if (prefabConfig == null) return;
 
-        Debug.Log($"[BuildingGen] UpdateDistrict(d={districtIndex}) pop={state.population:F0}k gdp={state.gdp:F0}");
-
         var plots = _plots[districtIndex];
         int plotCount = plots.Count;
         if (plotCount == 0) return;
@@ -309,7 +320,6 @@ public class BuildingGenerator : MonoBehaviour
             var rot = Quaternion.Euler(0f, yaw, 0f);
             var instance = Instantiate(prefab, p.center, rot, transform);
             NormalizeScaleInPlace(instance);
-            Debug.Log($"[BuildingGen] spawned at plot d={districtIndex} idx={i} pos={p.center}");
 
             p.building = instance;
             p.buildingBounds = RecomputeBounds(instance);

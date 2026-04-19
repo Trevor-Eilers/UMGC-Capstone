@@ -1,0 +1,38 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="GameHUD.uss"/>
+    <ui:VisualElement name="EndCardOverlay" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(8, 8, 14, 0.85); align-items: center; justify-content: center; display: none;">
+        <ui:VisualElement name="EndCardPanel" style="width: 520px; background-color: rgb(25, 25, 36); border-left-color: rgb(64, 64, 77); border-right-color: rgb(64, 64, 77); border-top-color: rgb(64, 64, 77); border-bottom-color: rgb(64, 64, 77); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-right-radius: 10px; border-bottom-left-radius: 10px; padding-top: 24px; padding-right: 28px; padding-bottom: 24px; padding-left: 28px;">
+
+            <ui:Label text="GAME OVER" style="color: rgb(102, 204, 102); font-size: 22px; -unity-font-style: bold; -unity-text-align: middle-center; margin-bottom: 4px;"/>
+            <ui:Label text="48 months complete" name="EndCardSubheader" style="color: rgba(220, 220, 220, 0.7); font-size: 11px; -unity-text-align: middle-center; margin-bottom: 20px;"/>
+
+            <ui:VisualElement style="flex-direction: column; align-items: center; margin-bottom: 20px; padding-top: 12px; padding-bottom: 12px; background-color: rgb(19, 19, 27); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px;">
+                <ui:Label text="Final Score" style="color: rgba(220, 220, 220, 0.75); font-size: 12px; -unity-text-align: middle-center;"/>
+                <ui:Label text="--" name="EndCardFinalScore" style="color: rgb(102, 217, 102); font-size: 44px; -unity-font-style: bold; -unity-text-align: middle-center;"/>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="details-row">
+                <ui:VisualElement>
+                    <ui:Label text="Neighborhood Score" class="text-label"/>
+                    <ui:Label text="GDP · Happiness · Pop · Infra · Sust · Debt" class="text-dim"/>
+                </ui:VisualElement>
+                <ui:Label text="--" name="EndCardNeighborhoodScore" class="text-value"/>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="details-row">
+                <ui:VisualElement>
+                    <ui:Label text="City Contribution Score" class="text-label"/>
+                    <ui:Label text="Reputation · Shared Infra · Crisis-free ticks" class="text-dim"/>
+                </ui:VisualElement>
+                <ui:Label text="--" name="EndCardCityScore" class="text-value"/>
+            </ui:VisualElement>
+
+            <ui:VisualElement style="margin-top: 20px; margin-bottom: 8px; height: 1px; background-color: rgb(64, 64, 77);"/>
+
+            <ui:Label text="District Summary" style="color: rgba(220, 220, 220, 0.75); font-size: 12px; -unity-font-style: bold; margin-top: 8px; margin-bottom: 6px;"/>
+            <ui:Label text="--" name="EndCardDistrictSummary" style="color: rgb(230, 230, 230); font-size: 11px; white-space: normal; margin-bottom: 16px;"/>
+
+            <ui:Button text="Return to Menu" name="EndCardReturnBtn" style="height: 40px; background-color: rgb(48, 128, 48); color: rgb(240, 240, 240); font-size: 13px; -unity-font-style: bold; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
