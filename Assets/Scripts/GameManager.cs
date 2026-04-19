@@ -119,6 +119,11 @@ public class GameManager : NetworkBehaviour
         // "Rpc methods can only be invoked after starting the NetworkManager!".
         if (!IsSpawned) return;
 
+        // Respect pause before anything else. Previously the authority's
+        // tick-resolve block ran even while paused because this early-out
+        // came after it, so already-queued ticks kept firing on each frame.
+        if (GameState.Value.isPaused || _gameOver) return;
+
         if (HasAuthority)
         {
             if (_tickReadyCounter >= ExpectedPlayers)
@@ -128,7 +133,7 @@ public class GameManager : NetworkBehaviour
             }
         }
 
-        if (_tickReady || GameState.Value.isPaused || _gameOver) return;
+        if (_tickReady) return;
 
         _tickTimer += Time.deltaTime;
 
@@ -144,8 +149,18 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void ResolveTickRpc()
     {
-        Debug.Log("Tick advancing");
-        
+        // Hard pause gate: even if this RPC was dispatched before the user
+        // clicked pause, by the time it arrives locally the GameState may
+        // already be paused. Bail out — the queued tick must not resolve.
+        if (GameState.Value.isPaused || _gameOver)
+        {
+            _tickReadyCounter = 0;
+            _tickReady = false;
+            return;
+        }
+
+        Debug.Log($"Tick advancing — isPaused={GameState.Value.isPaused} gameSpeed={GameState.Value.gameSpeed}");
+
         _tickReadyCounter = 0;
         _tickReady = false;
         _resolvingTick = true;
@@ -183,6 +198,14 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
     {
+        // Second-level pause gate. Same rationale as ResolveTickRpc — an RPC
+        // in-flight when pause was clicked must not reach BuildingGenerator.
+        if (GameState.Value.isPaused || _gameOver)
+        {
+            _resolvingTick = false;
+            return;
+        }
+
         int localIndex = -1;
         for (int i = 0; i < _players.Count; i++)
         {
@@ -228,6 +251,9 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Authority)]
     private void SignalTickReadyRpc()
     {
+        // Drop ready signals received while paused — otherwise they'd pile up
+        // and trigger an instant tick the moment the game unpauses.
+        if (GameState.Value.isPaused || _gameOver) return;
         _tickReadyCounter++;
         Debug.Log($"Ready signals received: {_tickReadyCounter}");
     }
@@ -248,16 +274,31 @@ public class GameManager : NetworkBehaviour
         state.gameSpeed = speed;
         state.isPaused = false;
         GameState.Value = state;
+        ApplyTimeScale();
     }
 
     
     [Rpc(SendTo.Authority)]
     public void RequestSetPauseRpc(bool paused)
     {
+        Debug.Log($"[GameManager] RequestSetPauseRpc({paused}) received on authority");
         var state = GameState.Value;
         state.isPaused = paused;
-        if (paused) state.gameSpeed = 0;
         GameState.Value = state;
+        ApplyTimeScale();
+        Debug.Log($"[GameManager] GameState.Value.isPaused is now {GameState.Value.isPaused}");
+    }
+
+    // Hard visual pause: Time.timeScale = 0 halts all MonoBehaviour Update
+    // loops (Time.deltaTime becomes 0), physics, particles, animations, and
+    // any transform lerps — so there's zero ambiguity that the game is paused.
+    // UI still runs because UI Toolkit uses unscaled time by default.
+    // We intentionally keep timeScale at 1 for all play speeds — gameSpeed
+    // is applied by scaling _tickInterval in Update(), not via Time.timeScale,
+    // to avoid double-scaling everything in the project.
+    private void ApplyTimeScale()
+    {
+        Time.timeScale = GameState.Value.isPaused ? 0f : 1f;
     }
 
     
@@ -304,6 +345,10 @@ public class GameManager : NetworkBehaviour
     
     private async Task LeaveGame()
     {
+        // Release any paused-state Time.timeScale so the menu scene animates
+        // normally on return.
+        Time.timeScale = 1f;
+
         // Session.LeaveAsync() tears down the underlying NetworkManager for us —
         // calling Shutdown() afterward produces a "NetworkManager has been shutdown
         // outside of a session" warning and can leave dangling callbacks.

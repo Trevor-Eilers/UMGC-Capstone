@@ -306,6 +306,8 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         Notify(nameof(SharedInfraQualityDelta));
         Notify(nameof(MonthDisplay));
         Notify(nameof(TickDisplay));
+
+        RefreshSpeedButtons();
     }
 
     public void UpdateFromDistrictState(DistrictState state)
@@ -380,19 +382,57 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
     }
 
     // Button events
+    // Cached button refs so we can repaint their visual state when GameSpeed
+    // or IsPaused changes. Populated by BindToPanel.
+    private Button _speed1Btn, _speed2Btn, _speed3Btn, _pauseBtn;
+    private const string ACTIVE_CLASS = "speed-btn-active";
+
     public void BindToPanel(VisualElement root)
     {
-        var speed1 = root.Q<Button>("Speed1Btn");
-        var speed2 = root.Q<Button>("Speed2Btn");
-        var speed3 = root.Q<Button>("Speed3Btn");
-        var pause  = root.Q<Button>("PauseBtn");
+        _speed1Btn = root.Q<Button>("Speed1Btn");
+        _speed2Btn = root.Q<Button>("Speed2Btn");
+        _speed3Btn = root.Q<Button>("Speed3Btn");
+        _pauseBtn  = root.Q<Button>("PauseBtn");
         var quit   = root.Q<Button>("QuitButton");
 
-        if (speed1 != null) speed1.clicked += () => OnSpeedChangeRequested?.Invoke(1);
-        if (speed2 != null) speed2.clicked += () => OnSpeedChangeRequested?.Invoke(2);
-        if (speed3 != null) speed3.clicked += () => OnSpeedChangeRequested?.Invoke(3);
-        if (pause  != null) pause.clicked  += () => OnPauseChangeRequested?.Invoke(!_isPaused);
+        if (_speed1Btn != null) _speed1Btn.clicked += () => OnSpeedChangeRequested?.Invoke(1);
+        if (_speed2Btn != null) _speed2Btn.clicked += () => OnSpeedChangeRequested?.Invoke(2);
+        if (_speed3Btn != null) _speed3Btn.clicked += () => OnSpeedChangeRequested?.Invoke(3);
+        if (_pauseBtn  != null) _pauseBtn.clicked  += () =>
+        {
+            Debug.Log($"[TopBar] Pause button clicked — sending pause={!_isPaused} (currently _isPaused={_isPaused})");
+            OnPauseChangeRequested?.Invoke(!_isPaused);
+        };
         if (quit != null)   quit.clicked   += () => OnQuitRequested?.Invoke();
+
+        RefreshSpeedButtons();
+    }
+
+    // Highlight the active speed button and swap the pause button glyph
+    // between "||" (playing) and "▶" (paused). Called whenever the VM's
+    // speed / pause state changes so the UI reflects the current mode.
+    private void RefreshSpeedButtons()
+    {
+        void SetActive(Button b, bool active)
+        {
+            if (b == null) return;
+            if (active) b.AddToClassList(ACTIVE_CLASS);
+            else        b.RemoveFromClassList(ACTIVE_CLASS);
+        }
+
+        bool active1 = !_isPaused && _gameSpeed == 1;
+        bool active2 = !_isPaused && _gameSpeed == 2;
+        bool active3 = !_isPaused && _gameSpeed == 3;
+
+        SetActive(_speed1Btn, active1);
+        SetActive(_speed2Btn, active2);
+        SetActive(_speed3Btn, active3);
+
+        if (_pauseBtn != null)
+        {
+            _pauseBtn.text = _isPaused ? "\u25B6" : "||";
+            SetActive(_pauseBtn, _isPaused);
+        }
     }
 
 
