@@ -53,6 +53,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
         _topBar = ScriptableObject.CreateInstance<TopBarViewModel>();
         _root.dataSource = _topBar;
         _topBar.BindToPanel(_root);
+        BottomBarView.BindToPanel(_root, _topBar);
         
         _topBar.OnSpeedChangeRequested += speed => GameManager.Instance.RequestSetSpeedRpc(speed);
         _topBar.OnPauseChangeRequested += paused => GameManager.Instance.RequestSetPauseRpc(paused);

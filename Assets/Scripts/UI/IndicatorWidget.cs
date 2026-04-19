@@ -1,5 +1,4 @@
 using Unity.Properties;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -100,21 +99,23 @@ namespace UI
             var template = Resources.Load<VisualTreeAsset>("IndicatorWidget");
             template.CloneTree(this);
 
-            var tooltipController = new TooltipController(this);
-
-            RegisterCallback<GeometryChangedEvent>(_ =>
+            // Defer tooltip wiring until this widget has a panel, so we can
+            // find the UIDocument root and anchor the popup there (tooltips
+            // added to `this` clip to the widget's own bounds).
+            RegisterCallback<AttachToPanelEvent>(_ =>
             {
-                UnregisterCallback<MouseEnterEvent>(evt => RegisterCallbacks(evt, tooltipController));
-                RegisterCallback<MouseEnterEvent>(evt => RegisterCallbacks(evt, tooltipController));
+                var panelRoot = panel?.visualTree;
+                if (panelRoot == null) return;
+                var controller = new TooltipController(panelRoot);
+
+                RegisterCallback<MouseEnterEvent>(_ =>
+                {
+                    var rect = worldBound;
+                    var anchor = panelRoot.WorldToLocal(new Vector2(rect.xMin, rect.yMax));
+                    controller.Show(tooltip, anchor, new Vector2(0, 6));
+                });
+                RegisterCallback<MouseLeaveEvent>(_ => controller.Hide());
             });
-
-            RegisterCallback<MouseLeaveEvent>(_ => tooltipController.Hide());
-        }
-
-        public void RegisterCallbacks(MouseEnterEvent evt, TooltipController controller)
-        {
-            var pos = this.WorldToLocal(worldBound.center);
-            controller.Show(tooltip, pos, new Vector2(12, 20));
         }
     }
 }

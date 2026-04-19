@@ -35,27 +35,47 @@ namespace UI
         {
             _doc = GetComponent<UIDocument>();
             _root = _doc.rootVisualElement;
-            
+
             var taxSlider = _root.Q<Slider>("TaxSlider");
             var eduSlider = _root.Q<Slider>("EduSlider");
             var infraSlider = _root.Q<Slider>("InfraSlider");
             var housingSlider = _root.Q<Slider>("HousingSlider");
             var envSlider = _root.Q<Slider>("EnvSlider");
             var citySlider = _root.Q<Slider>("CitySlider");
-            
+
             taxSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             eduSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             infraSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             housingSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             envSlider.RegisterValueChangedCallback(OnSliderValueChanged);
             citySlider.RegisterValueChangedCallback(OnSliderValueChanged);
-            
+
             taxSlider.value = taxRate;
             eduSlider.value = education;
             infraSlider.value = infrastructure;
             housingSlider.value = housing;
             envSlider.value = environment;
             citySlider.value = cityContribution;
+
+            // Tooltip hover — each row has a small "i" icon next to its
+            // label. We hover the icon (not the whole row) so that sliding
+            // the slider doesn't pop a tooltip over the handle.
+            var tooltip = new TooltipController(_root);
+            foreach (var iconName in new[] { "TaxInfo", "EduInfo", "InfraInfo", "HousingInfo", "EnvInfo", "CityInfo" })
+            {
+                var icon = _root.Q<VisualElement>(iconName);
+                if (icon == null || string.IsNullOrEmpty(icon.tooltip)) continue;
+                var capturedIcon = icon;
+                icon.RegisterCallback<MouseEnterEvent>(_ =>
+                {
+                    // Pop the tooltip to the LEFT of the icon so it floats
+                    // over the map rather than covering the sliders below.
+                    var anchor = new Vector2(capturedIcon.worldBound.xMin, capturedIcon.worldBound.y);
+                    var pos = _root.WorldToLocal(anchor);
+                    tooltip.Show(capturedIcon.tooltip, pos, new Vector2(-290, 0));
+                });
+                icon.RegisterCallback<MouseLeaveEvent>(_ => tooltip.Hide());
+            }
 
             _dirty = true;
         }

@@ -186,12 +186,16 @@ public class GameManager : NetworkBehaviour
         gameState.currentMonth = gameState.currentTick / SimulationConstants.TICKS_PER_MONTH;
         GameState.Value = gameState;
 
+        // Resolve the final tick BEFORE flipping _gameOver — otherwise
+        // ResolveDistrictTickRpc's _gameOver guard short-circuits and
+        // OnDistrictStatesUpdated never fires for the closing tick, which
+        // the end-card listener needs to see.
+        ResolveDistrictTickRpc(districtStates, gameState.cityMetrics);
+
         if (gameState.currentTick >= SimulationConstants.TOTAL_TICKS)
         {
             _gameOver = true;
         }
-        
-        ResolveDistrictTickRpc(districtStates, gameState.cityMetrics);
     }
 
     

@@ -16,9 +16,16 @@ namespace UI
         private VisualElement _overlay;
 
         private Label _finalScore;
+        private Label _grade;
         private Label _neighborhoodScore;
         private Label _cityScore;
-        private Label _districtSummary;
+        private Label _statGdp;
+        private Label _statHappy;
+        private Label _statPop;
+        private Label _statInfra;
+        private Label _statSust;
+        private Label _statDebt;
+        private Label _crisisFree;
         private Button _returnBtn;
 
         private Player _localPlayer;
@@ -80,19 +87,51 @@ namespace UI
             _root = _doc.rootVisualElement;
             _overlay = _root.Q<VisualElement>("EndCardOverlay");
             _finalScore = _root.Q<Label>("EndCardFinalScore");
+            _grade = _root.Q<Label>("EndCardGrade");
             _neighborhoodScore = _root.Q<Label>("EndCardNeighborhoodScore");
             _cityScore = _root.Q<Label>("EndCardCityScore");
-            _districtSummary = _root.Q<Label>("EndCardDistrictSummary");
+            _statGdp = _root.Q<Label>("EndCardStatGDP");
+            _statHappy = _root.Q<Label>("EndCardStatHappy");
+            _statPop = _root.Q<Label>("EndCardStatPop");
+            _statInfra = _root.Q<Label>("EndCardStatInfra");
+            _statSust = _root.Q<Label>("EndCardStatSust");
+            _statDebt = _root.Q<Label>("EndCardStatDebt");
+            _crisisFree = _root.Q<Label>("EndCardCrisisFree");
             _returnBtn = _root.Q<Button>("EndCardReturnBtn");
             if (_returnBtn != null) _returnBtn.clicked += ReturnToMenu;
 
-            if (_finalScore != null)        _finalScore.text        = score.finalScore.ToString("F1");
+            if (_finalScore != null)
+            {
+                _finalScore.text = score.finalScore.ToString("F1");
+                _finalScore.style.color = ColorForScore(score.finalScore);
+            }
+            if (_grade != null) _grade.text = GradeForScore(score.finalScore);
             if (_neighborhoodScore != null) _neighborhoodScore.text = score.neighborhoodScore.ToString("F1");
             if (_cityScore != null)         _cityScore.text         = score.cityContribScore.ToString("F1");
-            if (_districtSummary != null)   _districtSummary.text   = BuildDistrictSummary(district);
+
+            if (_statGdp != null)   _statGdp.text   = $"{district.gdp:F0}";
+            if (_statHappy != null) _statHappy.text = $"{district.happiness:F0}";
+            if (_statPop != null)   _statPop.text   = $"{district.population:F0}k";
+            if (_statInfra != null) _statInfra.text = $"{district.infrastructure:F0}";
+            if (_statSust != null)  _statSust.text  = $"{district.sustainability:F0}";
+            if (_statDebt != null)  _statDebt.text  = $"{district.debt:F0}";
+
+            int crisisTicks = district.ticksAtDebtCap + district.ticksBelowHappiness20;
+            int crisisFree = SimulationConstants.TOTAL_TICKS - crisisTicks;
+            if (_crisisFree != null) _crisisFree.text = $"{crisisFree} / {SimulationConstants.TOTAL_TICKS}";
 
             if (_overlay != null) _overlay.style.display = DisplayStyle.Flex;
             _displayed = true;
+
+            // Hide the HUD UIDocuments so they don't bleed through the overlay.
+            // They share a PanelSettings with this document, so sortingOrder alone
+            // doesn't fully occlude them.
+            foreach (var other in FindObjectsByType<UIDocument>(FindObjectsSortMode.None))
+            {
+                if (other == _doc) continue;
+                var r = other.rootVisualElement;
+                if (r != null) r.style.display = DisplayStyle.None;
+            }
 
             // Stop listening once we've shown the card.
             if (_eventsHooked && GameManager.Instance != null)
@@ -117,13 +156,20 @@ namespace UI
             return -1;
         }
 
-        private static string BuildDistrictSummary(DistrictState d)
+        private static string GradeForScore(float s)
         {
-            int crisisTicks = d.ticksAtDebtCap + d.ticksBelowHappiness20;
-            int crisisFree = SimulationConstants.TOTAL_TICKS - crisisTicks;
-            return $"GDP {d.gdp:F0}  ·  Happiness {d.happiness:F0}  ·  Pop {d.population:F0}k\n"
-                 + $"Infra {d.infrastructure:F0}  ·  Sust {d.sustainability:F0}  ·  Debt {d.debt:F0}\n"
-                 + $"Crisis-free ticks: {crisisFree} / {SimulationConstants.TOTAL_TICKS}";
+            if (s >= 85) return "OUTSTANDING";
+            if (s >= 70) return "STRONG";
+            if (s >= 55) return "SOLID";
+            if (s >= 40) return "MIXED";
+            return "ROUGH";
+        }
+
+        private static Color ColorForScore(float s)
+        {
+            if (s >= 70) return new Color(0.47f, 0.86f, 0.47f);   // green
+            if (s >= 50) return new Color(0.90f, 0.78f, 0.31f);   // amber
+            return new Color(0.87f, 0.42f, 0.42f);                // red
         }
 
         private void ReturnToMenu()

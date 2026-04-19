@@ -106,7 +106,9 @@ public class SimulationHarness
         SimulationConstants.W_HAPPY_SUSTAIN = 0.25f;
         SimulationConstants.W_HAPPY_DEBT = 0.20f;
         SimulationConstants.K_BASELINE_WEIGHT = 0.60f;
-        SimulationConstants.K_HOUSING_TO_HAPPY = 0.08f;
+        // New formula is K * sqrt(housingCost / population); 6.5 matches
+        // SimulationConstants.cs default and the IntegrationTests harness.
+        SimulationConstants.K_HOUSING_TO_HAPPY = 6.5f;
         SimulationConstants.K_TAX_HAPPY_PENALTY = 5.0f;
         SimulationConstants.K_DEBT_STRESS = 0.3f;
         SimulationConstants.K_HAPPY_SMOOTHING = 1.0f;

@@ -123,7 +123,7 @@ public class LocalEffectCalculatorTests
     // ══════════════════════════════════════════════
 
     [Test]
-    public void GdpDelta_DiminishingReturns_AtGdp50_PositiveDeltaHalved()
+    public void GdpDelta_DiminishingReturns_AtGdp50_QuartersPositiveDelta()
     {
         // Isolate: only education growth, zero everything else
         SimulationConstants.K_EDU_TO_GDP = 1.0f;
@@ -139,13 +139,13 @@ public class LocalEffectCalculatorTests
 
         float delta = LocalEffectCalculator.ComputeGdpDelta(d, s);
 
-        // Raw growth = 10 * 1.0 = 10. Diminished: 10 * (1 - 50/100) = 5
-        Assert.AreEqual(5.0f, delta, 0.01f,
-            "At GDP 50, positive delta should be halved");
+        // Raw growth = 10 * 1.0 = 10. Diminished (squared): 10 * ((100-50)/100)^2 = 2.5
+        Assert.AreEqual(2.5f, delta, 0.01f,
+            "At GDP 50, positive delta should be quartered (squared DR)");
     }
 
     [Test]
-    public void GdpDelta_DiminishingReturns_AtGdp90_ReducedTo10Percent()
+    public void GdpDelta_DiminishingReturns_AtGdp90_ReducedToOnePercent()
     {
         SimulationConstants.K_EDU_TO_GDP = 1.0f;
         SimulationConstants.K_INFRA_TO_GDP = 0f;
@@ -160,9 +160,9 @@ public class LocalEffectCalculatorTests
 
         float delta = LocalEffectCalculator.ComputeGdpDelta(d, s);
 
-        // Raw growth = 10. Diminished: 10 * (1 - 90/100) = 1.0
-        Assert.AreEqual(1.0f, delta, 0.01f,
-            "At GDP 90, positive delta should be 10% of raw");
+        // Raw growth = 10. Diminished: 10 * ((100-90)/100)^2 = 10 * 0.01 = 0.1
+        Assert.AreEqual(0.1f, delta, 0.01f,
+            "At GDP 90, positive delta should be 1% of raw (squared DR)");
     }
 
     [Test]

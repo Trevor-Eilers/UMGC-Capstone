@@ -287,6 +287,96 @@
 .slider-city .unity-base-slider__dragger { background-color: rgb(140, 115, 230); }
 .slider-city .unity-base-slider__fill { background-color: rgb(140, 115, 230); }
 
+/* === Finance panel rows (left sidebar) === */
+.finance-row {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.finance-row-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    -unity-text-align: middle-left;
+    margin-top: 2px;
+    margin-bottom: 0;
+    padding: 0;
+}
+.finance-row-value {
+    font-size: 14px;
+    color: rgb(230, 230, 230);
+    -unity-font-style: bold;
+    margin: 0;
+    padding: 0;
+}
+.finance-row-delta {
+    font-size: 10px;
+    color: rgba(200, 200, 200, 0.7);
+    margin: 0;
+    padding: 0;
+}
+.status-ok {
+    color: rgb(120, 210, 120);
+}
+.status-crisis {
+    color: rgb(232, 96, 96);
+}
+.finance-info-icon {
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgba(255, 255, 255, 0.75);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+    border-bottom-right-radius: 7px;
+    margin: 0;
+    padding: 0;
+}
+
+/* === Grant badges === */
+.grant-badge {
+    width: 32px;
+    height: 22px;
+    -unity-text-align: middle-center;
+    font-size: 10px;
+    -unity-font-style: bold;
+    margin-left: 3px;
+    margin-right: 3px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    letter-spacing: 1px;
+}
+.grant-badge-off {
+    background-color: rgb(36, 36, 46);
+    color: rgba(200, 200, 200, 0.35);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-left-color: rgb(64, 64, 77);
+    border-right-color: rgb(64, 64, 77);
+    border-top-color: rgb(64, 64, 77);
+    border-bottom-color: rgb(64, 64, 77);
+}
+.grant-badge-on {
+    background-color: rgb(48, 120, 48);
+    color: rgb(230, 255, 230);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-left-color: rgb(120, 200, 120);
+    border-right-color: rgb(120, 200, 120);
+    border-top-color: rgb(120, 200, 120);
+    border-bottom-color: rgb(120, 200, 120);
+}
+
 /* Slider value text colors */
 .val-tax { color: rgb(242, 140, 51); }
 .val-edu { color: rgb(51, 166, 242); }

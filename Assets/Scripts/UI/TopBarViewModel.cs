@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Simulation;
+using UI;
 using Unity.Properties;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -396,12 +397,14 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         _speed3Btn = root.Q<Button>("Speed3Btn");
         _pauseBtn  = root.Q<Button>("PauseBtn");
         var quit   = root.Q<Button>("QuitButton");
+        var help   = root.Q<Button>("HelpButton");
 
         if (_speed1Btn != null) _speed1Btn.clicked += () => OnSpeedChangeRequested?.Invoke(1);
         if (_speed2Btn != null) _speed2Btn.clicked += () => OnSpeedChangeRequested?.Invoke(2);
         if (_speed3Btn != null) _speed3Btn.clicked += () => OnSpeedChangeRequested?.Invoke(3);
         if (_pauseBtn  != null) _pauseBtn.clicked  += () => OnPauseChangeRequested?.Invoke(!_isPaused);
         if (quit != null)   quit.clicked   += () => OnQuitRequested?.Invoke();
+        if (help != null)   help.clicked   += () => HelpOverlayController.Instance?.Toggle();
 
         RefreshSpeedButtons();
     }

@@ -37,9 +37,14 @@ namespace Simulation
                                   + gdpDrag_env
                                   - gdpDecay;
 
-            // Diminishing returns on POSITIVE growth only
+            // Diminishing returns on POSITIVE growth only. Squared so the
+            // top third of the 0-100 range is genuinely hard to reach: at
+            // GDP 80 positive growth runs at 4% effectiveness (was 20%).
             if (totalGdpDelta > 0f)
-                totalGdpDelta = totalGdpDelta * (1.0f - d.gdp / 100.0f);
+            {
+                float factor = (100.0f - d.gdp) / 100.0f;
+                totalGdpDelta *= factor * factor;
+            }
 
             return totalGdpDelta;
         }
@@ -60,7 +65,13 @@ namespace Simulation
                                    + inverseDebt * SimulationConstants.W_HAPPY_DEBT;
 
             // ── DIRECT EFFECTS ──
-            float happinessDelta_housing = s.actualHousingCost * SimulationConstants.K_HOUSING_TO_HAPPY;
+            // Housing effect is normalized by population and fed through a
+            // sqrt curve so doubling spend doesn't double happiness. Without
+            // this, the raw budget units (hundreds) would saturate happiness
+            // within a few ticks.
+            float housingPerCap = s.actualHousingCost / Math.Max(d.population, 1f);
+            float happinessDelta_housing = SimulationConstants.K_HOUSING_TO_HAPPY
+                                           * (float)Math.Sqrt(housingPerCap);
             float happinessDelta_tax = -(d.policyValues.taxRate / 100.0f)
                                        * SimulationConstants.K_TAX_HAPPY_PENALTY;
             float debtStress = Math.Max(0f, d.debt - 40f) * SimulationConstants.K_DEBT_STRESS;
@@ -86,8 +97,12 @@ namespace Simulation
         /// </summary>
         public static float ComputeInfrastructureDelta(DistrictState d, ScaledSpending s)
         {
-            float infraGrowth = s.actualInfraCost * SimulationConstants.K_INFRA_TO_INFRA
-                                                  * (1.0f - d.infrastructure / 100.0f);
+            // Linear diminishing returns. Squared DR (like on GDP) was too
+            // harsh here because infra has only one growth input, so the
+            // metric capped around 52 even at max slider — tier-2 industrial
+            // buildings and the development grant were unreachable.
+            float factor = (100.0f - d.infrastructure) / 100.0f;
+            float infraGrowth = s.actualInfraCost * SimulationConstants.K_INFRA_TO_INFRA * factor;
             float infraDecay = d.infrastructure * SimulationConstants.K_INFRA_DECAY;
 
             return infraGrowth - infraDecay;
@@ -109,6 +124,9 @@ namespace Simulation
             // ── DRAINS ──
             // Population field is already in thousands; spec's /1000 converts absolute
             // to thousands, so we use population directly (same convention as BudgetCalculator).
+            // Sustainability uses the drains (pop pressure + entropy) to bound
+            // its equilibrium — no DR factor, which was too aggressive and
+            // pushed sustain below the outmigration threshold at defaults.
             float popDrain = d.population * SimulationConstants.K_POP_SUSTAIN_DRAIN;
             float sustainDecay = d.sustainability * SimulationConstants.K_SUSTAIN_DECAY;
 
