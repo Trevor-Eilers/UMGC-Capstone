@@ -20,8 +20,8 @@ public static class SimulationConstants
     public static float K_POP_TO_GDP = 0.03f;
     public static float K_SUSTAIN_TO_GDP = 0.02f;
     public static float K_TAX_GDP_DRAG = 0.02f;
-    public static float K_ENV_GDP_DRAG = 0.0004f;
-    public static float K_GDP_DECAY = 0.01f;
+    public static float K_ENV_GDP_DRAG = 0.0015f;
+    public static float K_GDP_DECAY = 0.008f;
 
     // ── Happiness Constants ──
 
@@ -30,7 +30,7 @@ public static class SimulationConstants
     public static float W_HAPPY_SUSTAIN = 0.25f;
     public static float W_HAPPY_DEBT = 0.20f;
     public static float K_BASELINE_WEIGHT = 0.60f;
-    public static float K_HOUSING_TO_HAPPY = 0.1f;
+    public static float K_HOUSING_TO_HAPPY = 6.5f;
     public static float K_TAX_HAPPY_PENALTY = 15.0f;
     public static float K_DEBT_STRESS = 0.5f;
     public static float K_HAPPY_SMOOTHING = 1.0f;
@@ -82,18 +82,18 @@ public static class SimulationConstants
     // ── City Metrics Constants ──
 
     public static float K_VARIANCE_PENALTY = 0.5f;
-    public static float K_POP_INFLOW_HIGH = 1.5f;
-    public static float K_POP_INFLOW_NORMAL = 0.5f;
+    public static float K_POP_INFLOW_HIGH = 0.2f;
+    public static float K_POP_INFLOW_NORMAL = 0.06f;
     public static float K_POP_OUTFLOW = 0.3f;
     public static float K_SHARED_INFRA_GROWTH = 0.005f;
     public static float K_SHARED_INFRA_DECAY = 0.005f;
 
     // ── Federal Funding Constants ──
 
-    public static float GRANT_BASE_GREEN = 50.0f;
-    public static float GRANT_BASE_TRANSIT = 50.0f;
-    public static float GRANT_BASE_LIFE = 50.0f;
-    public static float GRANT_BASE_DEV = 50.0f;
+    public static float GRANT_BASE_GREEN = 20.0f;
+    public static float GRANT_BASE_TRANSIT = 20.0f;
+    public static float GRANT_BASE_LIFE = 20.0f;
+    public static float GRANT_BASE_DEV = 20.0f;
     public static float K_STABILIZATION_RATE = 1.5f;
 
     // ── Scoring Constants ──
