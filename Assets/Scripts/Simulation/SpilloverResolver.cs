@@ -6,17 +6,18 @@ using Simulation;
 /// <summary>
 /// Per-district spillover resolution for distributed authority.
 /// Each method computes effects ON a single district (districtIndex)
-/// by reading other districts from the snapshot. Only modifies d.
+/// by reading other districts from the snapshot and returns an updated
+/// DistrictState.
 /// </summary>
 public static class SpilloverResolver
 {
     /// <summary>
     /// Phase 3.1 — Gentrification effects ON districtIndex.
     /// For each pair containing this district, if GDP gap exceeds threshold,
-    /// applies wealthy-side or poor-side effects to d.
+    /// applies wealthy-side or poor-side effects. Returns the updated district.
     /// </summary>
-    public static void ApplyGentrification(
-        ref DistrictState d, int districtIndex,
+    public static DistrictState ApplyGentrification(
+        DistrictState d, int districtIndex,
         DistrictState[] snapshot, int numActivePlayers)
     {
         for (int i = 0; i < AdjacencyMap.AllPairs.Length; i++)
@@ -49,15 +50,17 @@ public static class SpilloverResolver
                 }
             }
         }
+        return d;
     }
 
     /// <summary>
     /// Phase 3.2 — Pollution effects ON districtIndex.
     /// Checks all districts in the snapshot for pollution sources.
-    /// Applies neighbor damage or self-damage as appropriate.
+    /// Applies neighbor damage or self-damage as appropriate and returns
+    /// the updated district.
     /// </summary>
-    public static void ApplyPollution(
-        ref DistrictState d, int districtIndex,
+    public static DistrictState ApplyPollution(
+        DistrictState d, int districtIndex,
         DistrictState[] snapshot, int numActivePlayers)
     {
         for (int src = 0; src < numActivePlayers; src++)
@@ -91,20 +94,22 @@ public static class SpilloverResolver
                 }
             }
         }
+        return d;
     }
 
     /// <summary>
     /// Phase 3.3 — Commuting effects ON districtIndex.
     /// For each pair containing this district, if GDP gap and shared infra
-    /// thresholds are met, applies work-side or home-side effects to d.
+    /// thresholds are met, applies work-side or home-side effects. Returns
+    /// the updated district.
     /// </summary>
-    public static void ApplyCommuting(
-        ref DistrictState d, int districtIndex,
+    public static DistrictState ApplyCommuting(
+        DistrictState d, int districtIndex,
         DistrictState[] snapshot, CityMetrics cityMetrics,
         int numActivePlayers)
     {
         if (cityMetrics.sharedInfraQuality <= SimulationConstants.COMMUTE_INFRA_THRESHOLD)
-            return;
+            return d;
 
         float infraFactor = cityMetrics.sharedInfraQuality / 100.0f;
 
@@ -139,5 +144,6 @@ public static class SpilloverResolver
                 }
             }
         }
+        return d;
     }
 }

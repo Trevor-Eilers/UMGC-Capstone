@@ -430,6 +430,7 @@ namespace Network
                 NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
             }
         }
+        
 
         private async void OnDestroy()
         {

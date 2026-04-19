@@ -2,21 +2,22 @@ using Simulation;
 using Unity.Netcode;
 using UnityEngine;
 
-public class District : NetworkBehaviour
+namespace Core
 {
-    public NetworkVariable<DistrictState> state = new();
-
-    public override void OnNetworkSpawn()
+    public class District : NetworkBehaviour
     {
-        if (!IsOwner) return;
+        public NetworkVariable<DistrictState> state = new();
 
-        state.Value = DistrictState.Default();
-
-        // Find our owning Player and register this district
-        foreach (var player in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        public override void OnNetworkSpawn()
         {
-            if (player.OwnerClientId == OwnerClientId)
+            if (!IsOwner) return;
+
+            state.Value = DistrictState.Default();
+        
+            foreach (var player in FindObjectsByType<Player>(FindObjectsSortMode.None))
             {
+                if (player.OwnerClientId != OwnerClientId) continue;
+                if (player.districtNetRef.Value.TryGet(out District _, NetworkManager.Singleton)) continue;
                 player.districtNetRef.Value = new NetworkBehaviourReference(this);
                 break;
             }

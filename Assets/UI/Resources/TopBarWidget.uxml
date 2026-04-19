@@ -8,7 +8,7 @@
         <ui:VisualElement name="Divider" style="width: 1px; height: 30px; background-color: rgb(64, 64, 77); margin-right: 24px; margin-left: 24px; align-self: auto; align-items: flex-end; justify-content: center; align-content: flex-start;"/>
         <ui:VisualElement style="flex-grow: 0; flex-direction: row; justify-content: center; align-content: flex-start;">
             <ui:Label text="City" style="color: rgba(255, 255, 255, 0.69); -unity-font-style: bold; margin-left: 0; margin-right: 0; width: 60px; -unity-text-align: middle-center;"/>
-            <ui:VisualElement name="CityContainer" data-source-type="TopBarViewModel, Assembly-CSharp" style="flex-grow: 1; flex-direction: row; margin-left: 0; margin-right: 0; justify-content: flex-start; -unity-background-image-tint-color: rgb(25, 25, 36); background-color: rgb(25, 25, 36); border-left-color: rgb(38, 38, 49); border-right-color: rgb(38, 38, 49); border-top-color: rgb(38, 38, 49); border-bottom-color: rgb(38, 38, 49); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; height: 45px; align-self: center; align-items: center; flex-shrink: 0;">
+            <ui:VisualElement name="CityContainer" data-source-type="TopBarViewModel, UIAssemblyDefinition" style="flex-grow: 1; flex-direction: row; margin-left: 0; margin-right: 0; justify-content: flex-start; -unity-background-image-tint-color: rgb(25, 25, 36); background-color: rgb(25, 25, 36); border-left-color: rgb(38, 38, 49); border-right-color: rgb(38, 38, 49); border-top-color: rgb(38, 38, 49); border-bottom-color: rgb(38, 38, 49); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; height: 45px; align-self: center; align-items: center; flex-shrink: 0;">
                 <UI.IndicatorWidget title="Rep" value="--" tooltip="City Reputation" style="margin-left: 0; margin-right: 0; width: 60px;">
                     <Bindings>
                         <ui:DataBinding property="Value" data-source-path="CityReputation" binding-mode="ToTarget"/>
@@ -35,7 +35,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="width: 1px; height: 30px; background-color: rgb(64, 64, 77); margin-right: 24px; margin-left: 24px;"/>
         <ui:VisualElement style="flex-grow: 0; justify-content: center; align-items: center; flex-direction: row; align-self: center;">
-            <ui:VisualElement name="TimeContainer" data-source-type="TopBarViewModel, Assembly-CSharp" style="margin-right: 8px; margin-left: 8px;">
+            <ui:VisualElement name="TimeContainer" data-source-type="TopBarViewModel, UIAssemblyDefinition" style="margin-right: 8px; margin-left: 8px;">
                 <ui:Label text="Month 0 / 48" name="MonthLabel" style="color: rgb(230, 230, 230); font-size: 12px; -unity-font-style: bold; margin-top: 2px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;">
                     <Bindings>
                         <ui:DataBinding property="text" data-source-path="MonthDisplay" binding-mode="ToTarget"/>

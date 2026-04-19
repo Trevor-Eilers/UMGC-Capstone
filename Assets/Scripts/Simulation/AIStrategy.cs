@@ -17,7 +17,8 @@ namespace Simulation
             EducationHeavy,
             InfraNeglect,
             HighTaxSaver,
-            FreeRider
+            FreeRider,
+            CrashNBurn
         }
 
         /// <summary>
@@ -36,6 +37,8 @@ namespace Simulation
                     return MakePolicies(25f, 30f, 30f, 30f, 30f, 25f);
                 case Profile.FreeRider:
                     return MakePolicies(15f, 60f, 60f, 60f, 60f, 0f);
+                case Profile.CrashNBurn:
+                    return MakePolicies(5f, 70f, 5f, 10f, 80f, 50f);
                 default:
                     return MakePolicies(15f, 50f, 50f, 50f, 50f, 25f);
             }

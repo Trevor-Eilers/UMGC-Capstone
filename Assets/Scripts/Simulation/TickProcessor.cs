@@ -14,8 +14,7 @@ namespace Simulation
     public static class TickProcessor
     {
         // Call once per tick before ResolveDistrictTick.
-        public static CityMetrics ResolveCityMetrics(
-            DistrictState[] snapshot, CityMetrics current)
+        public static CityMetrics ResolveCityMetrics(DistrictState[] snapshot, CityMetrics current)
         {
             CityMetrics cm = current;
             var numActivePlayers = snapshot.Length;
@@ -65,13 +64,10 @@ namespace Simulation
             d.scaleFactor = scaledSpending.scaleFactor;
             d.totalSpending = scaledSpending.actualTotalSpending;
 
-            float debt = d.debt;
-            float reserve = d.reserve;
-            BudgetCalculator.ComputeBudgetBalance(
-                d.revenue, scaledSpending.actualTotalSpending,
-                ref debt, ref reserve);
-            d.debt = debt;
-            d.reserve = reserve;
+            BudgetResult budget = BudgetCalculator.ComputeBudgetBalance(
+                d.revenue, scaledSpending.actualTotalSpending, d.debt, d.reserve);
+            d.debt = budget.debt;
+            d.reserve = budget.reserve;
 
             // ══════════════════════════════════════════
             // PHASE 2: Local Effects (local)
@@ -87,12 +83,12 @@ namespace Simulation
             // PHASE 3: Spillover (from snapshot)
             // ══════════════════════════════════════════
 
-            SpilloverResolver.ApplyGentrification(
-                ref d, districtIndex, snapshot, numActivePlayers);
-            SpilloverResolver.ApplyPollution(
-                ref d, districtIndex, snapshot, numActivePlayers);
-            SpilloverResolver.ApplyCommuting(
-                ref d, districtIndex, snapshot, cityMetrics, numActivePlayers);
+            d = SpilloverResolver.ApplyGentrification(
+                d, districtIndex, snapshot, numActivePlayers);
+            d = SpilloverResolver.ApplyPollution(
+                d, districtIndex, snapshot, numActivePlayers);
+            d = SpilloverResolver.ApplyCommuting(
+                d, districtIndex, snapshot, cityMetrics, numActivePlayers);
 
             // ══════════════════════════════════════════
             // PHASE 4: Per-district city effects
@@ -103,7 +99,7 @@ namespace Simulation
                 districtIndex, snapshot, cityMetrics, numActivePlayers);
 
             // 4.4 & 4.5 — Federal Funding (grants + stabilization)
-            CityMetricsManager.ResolveFederalFunding(ref d);
+            d = CityMetricsManager.ResolveFederalFunding(d);
 
             // ══════════════════════════════════════════
             // PHASE 5: Clamp and Commit
@@ -131,8 +127,7 @@ namespace Simulation
         /// Compute total city contribution spending across all districts from snapshot.
         /// Deterministic — all clients compute the same value.
         /// </summary>
-        private static float ComputeTotalCityCost(
-            DistrictState[] snapshot, int numActivePlayers)
+        private static float ComputeTotalCityCost(DistrictState[] snapshot, int numActivePlayers)
         {
             float total = 0f;
             for (int i = 0; i < numActivePlayers; i++)
@@ -152,8 +147,7 @@ namespace Simulation
         /// Test convenience: resolves a full tick for all districts simultaneously.
         /// Simulates all clients computing from the same snapshot.
         /// </summary>
-        public static void ResolveFullTick(
-            DistrictState[] districts, ref CityMetrics cityMetrics)
+        public static void ResolveFullTick(DistrictState[] districts, ref CityMetrics cityMetrics)
         {
             var numActivePlayers = districts.Length;
             var snapshot = (DistrictState[])districts.Clone();

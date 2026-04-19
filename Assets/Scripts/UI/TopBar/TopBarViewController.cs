@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using Core;
 using Network;
 using Simulation;
-using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UI
+namespace UI.TopBar
 {
     public class TopBarViewController : MonoBehaviour
     {

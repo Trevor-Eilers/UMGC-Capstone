@@ -23,6 +23,12 @@ public struct ScaledSpending
     public float scaleFactor;
 }
 
+public struct BudgetResult
+{
+    public float debt;
+    public float reserve;
+}
+
 public static class BudgetCalculator
 {
     /// <summary>
@@ -103,13 +109,14 @@ public static class BudgetCalculator
     /// Step 1.4 — Budget Balance → Reserve → Debt.
     /// Reserve decay applied first. Then surplus pays debt before reserve;
     /// deficit drains reserve before accruing debt. 3:1 asymmetry via K constants.
+    /// Returns new debt and reserve values as a BudgetResult.
     /// </summary>
-    public static void ComputeBudgetBalance(
+    public static BudgetResult ComputeBudgetBalance(
         float revenue, float actualTotalSpending,
-        ref float debt, ref float reserve)
+        float debt, float reserve)
     {
         // Reserve decay — applied each tick before budget balance
-        reserve = reserve * (1.0f - SimulationConstants.K_RESERVE_DECAY);
+        reserve *= (1.0f - SimulationConstants.K_RESERVE_DECAY);
 
         float budgetBalance = revenue - actualTotalSpending;
 
@@ -153,5 +160,7 @@ public static class BudgetCalculator
                 debt = Math.Min(Math.Max(debt + deficit * SimulationConstants.K_DEBT_ACCRUAL, 0f), 80f);
             }
         }
+
+        return new BudgetResult { debt = debt, reserve = reserve };
     }
 }

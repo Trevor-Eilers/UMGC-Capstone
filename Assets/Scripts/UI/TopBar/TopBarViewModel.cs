@@ -298,31 +298,11 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
         var pause  = root.Q<Button>("PauseBtn");
         var quit   = root.Q<Button>("QuitButton");
 
-        if (speed1 != null)
-        {
-            speed1.clicked += () => OnSpeedChangeRequested?.Invoke(1);
- 
-        }
-
-        if (speed2 != null)
-        {
-            speed2.clicked += () => OnSpeedChangeRequested?.Invoke(2);
-        }
-
-        if (speed3 != null)
-        {
-            speed3.clicked += () => OnSpeedChangeRequested?.Invoke(3);
-        }
-
-        if (pause != null)
-        {
-            pause.clicked  += () => OnPauseChangeRequested?.Invoke(!_isPaused);
-        }
-
-        if (quit != null)
-        {
-            quit.clicked   += () => OnQuitRequested?.Invoke();
-        }
+        if (speed1 != null) speed1.clicked += () => OnSpeedChangeRequested?.Invoke(1);
+        if (speed2 != null) speed2.clicked += () => OnSpeedChangeRequested?.Invoke(2);
+        if (speed3 != null) speed3.clicked += () => OnSpeedChangeRequested?.Invoke(3);
+        if (pause != null) pause.clicked  += () => OnPauseChangeRequested?.Invoke(!_isPaused);
+        if (quit != null) quit.clicked   += () => OnQuitRequested?.Invoke();
     }
 
     
