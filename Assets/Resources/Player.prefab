@@ -9,12 +9,15 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6764261549735280859}
-  - component: {fileID: 1932433236224124661}
-  - component: {fileID: 1393076259165708563}
   - component: {fileID: 5260697499263214044}
+  - component: {fileID: 1932433236224124661}
   - component: {fileID: -8335229693676605101}
+  - component: {fileID: 1393076259165708563}
   - component: {fileID: 4734055138338817720}
   - component: {fileID: 7836794108848751025}
+  - component: {fileID: -2650514141297927650}
+  - component: {fileID: -2205136886079657380}
+  - component: {fileID: 7498499343932552914}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -37,47 +40,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1932433236224124661
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 62406034207436435}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: 5323a01614644cd4b87a86d7c338a9fd, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: f342fd40408f6bc4fabd600aa65019b2, type: 3}
-  m_SortingOrder: 0
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &1393076259165708563
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 62406034207436435}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d14c4838cdd44084398bb74b2329223d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PolicyValues
-  taxRate: 15
-  education: 50
-  infrastructure: 50
-  housing: 50
-  environment: 50
-  cityContribution: 25
 --- !u!114 &5260697499263214044
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103,6 +65,29 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 0
   AllowOwnerToParent: 0
+--- !u!114 &1932433236224124661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62406034207436435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 5323a01614644cd4b87a86d7c338a9fd, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: f342fd40408f6bc4fabd600aa65019b2, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!114 &-8335229693676605101
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -116,6 +101,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
   ShowTopMostFoldoutHeaderGroup: 1
+  districtNetRef:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   playerName:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -188,10 +177,24 @@ MonoBehaviour:
         byte0059: 0
         byte0060: 0
         byte0061: 0
-  districtNetRef:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
+--- !u!114 &1393076259165708563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62406034207436435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d14c4838cdd44084398bb74b2329223d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PolicyValues
+  taxRate: 15
+  education: 50
+  infrastructure: 50
+  housing: 50
+  environment: 50
+  cityContribution: 25
 --- !u!114 &4734055138338817720
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -216,3 +219,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf3e6873933c9184fa5084d4f4142f00, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI.PlayerLabelController
+--- !u!114 &-2650514141297927650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62406034207436435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b38d5ea9f264c0d4aa9e318f72d6ab45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UI.HelpOverlayController
+--- !u!114 &-2205136886079657380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62406034207436435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e61e8b6d1d3a402ba843d23df5b7e621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UI.FinancePanelController
+--- !u!114 &7498499343932552914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62406034207436435}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bd25d2775bf8274b84c654cd2a2ef87, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UI.DetailsPanelController

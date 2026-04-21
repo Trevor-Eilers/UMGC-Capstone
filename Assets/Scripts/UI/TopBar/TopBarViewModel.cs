@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 [CreateAssetMenu(fileName = "TopBarViewModel", menuName = "TopBar View Model")]
-public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged
+public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged, IDistrictBoundViewModel
 {
     public event EventHandler<BindablePropertyChangedEventArgs> propertyChanged;
     public event Action<int> OnSpeedChangeRequested;

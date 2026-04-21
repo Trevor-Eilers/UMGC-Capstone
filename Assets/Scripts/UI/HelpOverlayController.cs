@@ -1,105 +1,52 @@
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace UI
 {
     // Shows a full-screen How-to-Play reference when the player clicks the ?
-    // button on the top bar. Rendered from its own UIDocument (disabled by
-    // default) so it sorts above the HUD; while visible, the other
-    // UIDocuments are hidden so the HUD can't bleed through.
-    public class HelpOverlayController : MonoBehaviour
+    // button on the top bar. Shares the Player's UIDocument; the overlay
+    // element is hidden via display:none until Toggle() is called.
+    public class HelpOverlayController : UIPresenterBase
     {
-        public static HelpOverlayController Instance { get; private set; }
-
-        private UIDocument _doc;
         private VisualElement _overlay;
         private Button _closeBtn;
-        private bool _built;
-        private bool _visible;
-        private readonly List<UIDocument> _hiddenWhileOpen = new();
 
-        private void Awake()
+        private void Start()
         {
-            Instance = this;
-            _doc = GetComponent<UIDocument>();
-            if (_doc == null)
-            {
-                Debug.LogError("HelpOverlayController: no UIDocument attached.");
-                enabled = false;
-                return;
-            }
-            // The document stays disabled until the first Toggle() so its
-            // empty root doesn't compete with the HUD's UIDocuments before
-            // the player ever opens help.
-            _doc.enabled = false;
+            StartCoroutine(Initialize());
         }
 
-        private void OnDestroy()
+        private IEnumerator Initialize()
         {
-            if (Instance == this) Instance = null;
-        }
-
-        public void Toggle()
-        {
-            if (_visible) Hide();
-            else Show();
+            yield return WaitForRoot();
+            Build();
+            if (_overlay != null) _overlay.style.display = DisplayStyle.None;
         }
 
         public void Show()
         {
-            if (_visible) return;
-            if (_doc == null) return;
-
-            _doc.enabled = true;
-            if (!_built) Build();
-
+            AcquireRoot();
+            if (root == null) return;
             if (_overlay != null) _overlay.style.display = DisplayStyle.Flex;
-            _visible = true;
-
-            // Hide other UIDocuments (HUD, policy panel, etc.) so they don't
-            // bleed through the overlay. Same trick EndCardController uses.
-            _hiddenWhileOpen.Clear();
-            foreach (var other in FindObjectsByType<UIDocument>(FindObjectsSortMode.None))
-            {
-                if (other == _doc) continue;
-                var r = other.rootVisualElement;
-                if (r != null && r.style.display != DisplayStyle.None)
-                {
-                    _hiddenWhileOpen.Add(other);
-                    r.style.display = DisplayStyle.None;
-                }
-            }
         }
 
         public void Hide()
         {
-            if (!_visible) return;
             if (_overlay != null) _overlay.style.display = DisplayStyle.None;
-            _visible = false;
-
-            // Restore the UIDocuments we hid on Show(). Guard on null in case
-            // any were destroyed while help was open (e.g. scene unload).
-            foreach (var other in _hiddenWhileOpen)
-            {
-                if (other != null && other.rootVisualElement != null)
-                    other.rootVisualElement.style.display = DisplayStyle.Flex;
-            }
-            _hiddenWhileOpen.Clear();
         }
 
         private void Build()
         {
-            var root = _doc.rootVisualElement;
             _overlay = root.Q<VisualElement>("HelpOverlay");
+            if (_overlay == null) return;
+
             _closeBtn = root.Q<Button>("HelpCloseBtn");
             if (_closeBtn != null) _closeBtn.clicked += Hide;
 
             PopulateSection(root.Q<VisualElement>("HelpPolicies"), HelpText.Policies);
             PopulateSection(root.Q<VisualElement>("HelpDistrict"), HelpText.District);
             PopulateSection(root.Q<VisualElement>("HelpCity"), HelpText.City);
-
-            _built = true;
         }
 
         private static void PopulateSection(VisualElement container, HelpText.Entry[] entries)

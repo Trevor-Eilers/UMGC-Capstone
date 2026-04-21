@@ -1,13 +1,15 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="BottomBarWidget" src="project://database/Assets/UI/Resources/BottomBarWidget.uxml?fileID=9197481963319205126&amp;guid=d59f2a81c474b0e4ab83c927c1f65d72&amp;type=3#BottomBarWidget"/>
+    <ui:Template name="HelpOverlay" src="project://database/Assets/UI/Resources/HelpOverlay.uxml?fileID=9197481963319205126&amp;guid=a7c4b5d2e18f4c349b2d8f15e73af291&amp;type=3#HelpOverlay"/>
     <ui:Template name="PolicyBarWidget" src="project://database/Assets/UI/Resources/PolicyBarWidget.uxml?fileID=9197481963319205126&amp;guid=51f2213a46e0da94b8132a8c5b4b9d6c&amp;type=3#PolicyBarWidget"/>
     <ui:Template name="TopBarWidget" src="project://database/Assets/UI/Resources/TopBarWidget.uxml?fileID=9197481963319205126&amp;guid=68d7a5bea012eb44895546d04f8f1a83&amp;type=3#TopBarWidget"/>
-    <ui:Template name="BottomBarWidget" src="BottomBarWidget.uxml"/>
     <ui:VisualElement style="flex-grow: 1; width: 100%; height: 100%; flex-direction: column; align-content: flex-start;">
         <ui:Instance template="TopBarWidget" style="align-self: stretch; flex-shrink: 0; scale: 1 1;"/>
-        <ui:VisualElement name="MidRow" style="flex-grow: 1; flex-direction: row; align-items: center; justify-content: space-between;">
+        <ui:VisualElement name="Overlay" style="flex-grow: 1; flex-direction: row; align-items: center; justify-content: space-between;">
             <ui:Instance template="BottomBarWidget" style="flex-shrink: 0; margin-top: 10%; margin-bottom: 10%;"/>
             <ui:VisualElement name="Spacer" style="flex-grow: 1;"/>
             <ui:Instance template="PolicyBarWidget" name="TemplateContainer" style="flex-shrink: 0; margin-top: 10%; margin-bottom: 10%;"/>
         </ui:VisualElement>
+        <ui:Instance template="HelpOverlay" name="TemplateContainer" picking-mode="Ignore" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; flex-shrink: 0; min-width: 100%; min-height: 100%; align-self: center;"/>
     </ui:VisualElement>
 </ui:UXML>

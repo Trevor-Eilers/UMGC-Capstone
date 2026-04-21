@@ -3,25 +3,8 @@ using UnityEngine.UIElements;
 
 namespace UI
 {
-    // Small view-side glue for the left-side Finance panel.
-    //
-    // Most values (Revenue, Spending, Budget, Reserve, Debt, deltas) bind
-    // themselves via the existing DataBinding + converter plumbing. This
-    // helper handles the two things that aren't a one-to-one binding:
-    //
-    //   1. Grant badges — CSS class toggle driven by whether each grant
-    //      streak is > 0 this tick.
-    //   2. Info-icon tooltips — (i) icons next to each row that pop a
-    //      dark popup to the RIGHT of the icon on hover, matching the
-    //      Policies panel pattern but mirrored (Finance is left of map).
-    //
-    // Called from Player.Start() once the UIDocument root is available.
-    public static class BottomBarView
+    public class FinancePanelController : DistrictBoundPresenter<TopBarViewModel>
     {
-        // (i) icons next to each row label + the four grant badges — all
-        // share the same hover-tooltip behaviour. The badges carry their
-        // own tooltip strings (what each grant does and how much it pays)
-        // so a player can see the rules without opening the Help screen.
         private static readonly string[] InfoIconNames =
         {
             "RevenueInfo", "SpendingInfo", "BudgetInfo", "ReserveInfo",
@@ -30,9 +13,10 @@ namespace UI
             "GrantLifeBadge", "GrantDevBadge"
         };
 
-        public static void BindToPanel(VisualElement root, TopBarViewModel vm)
+        protected override void OnViewModelBound(Player player)
         {
-            if (root == null || vm == null) return;
+            AcquireRoot();
+            viewModel.BindToPanel(root);
 
             var green   = root.Q<Label>("GrantGreenBadge");
             var transit = root.Q<Label>("GrantTransitBadge");
@@ -41,18 +25,15 @@ namespace UI
 
             void Refresh()
             {
-                SetBadge(green,   vm.GreenGrantStreak   > 0);
-                SetBadge(transit, vm.TransitGrantStreak > 0);
-                SetBadge(life,    vm.LifeGrantStreak    > 0);
-                SetBadge(dev,     vm.DevGrantStreak     > 0);
+                SetBadge(green,   viewModel.GreenGrantStreak   > 0);
+                SetBadge(transit, viewModel.TransitGrantStreak > 0);
+                SetBadge(life,    viewModel.LifeGrantStreak    > 0);
+                SetBadge(dev,     viewModel.DevGrantStreak     > 0);
             }
 
             Refresh();
-            vm.propertyChanged += (_, _) => Refresh();
+            viewModel.propertyChanged += (_, _) => Refresh();
 
-            // Info-icon hover tooltips. The tooltip pops to the RIGHT of the
-            // icon so it floats over the map rather than off-screen to the
-            // left of the Finance panel.
             var tooltip = new TooltipController(root);
             foreach (var iconName in InfoIconNames)
             {

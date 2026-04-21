@@ -29,7 +29,7 @@ namespace Core
     
         public readonly NetworkList<NetworkObjectReference> players = new();
     
-        private Player _localPlayer;
+        public Player localPlayer { get; private set; }
 
         public static GameManager Instance { get; private set; }
     
@@ -93,18 +93,18 @@ namespace Core
         {
             _connectionManager = FindFirstObjectByType<ConnectionManager>();
         
-            while (_localPlayer == null)
+            while (localPlayer == null)
             {
                 var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
                 foreach (var player in players)
                 {
-                    if (player.IsOwner) _localPlayer = player;
+                    if (player.IsOwner) localPlayer = player;
                 }
 
-                if (_localPlayer == null) yield return new WaitForSeconds(0.1f);
+                if (localPlayer == null) yield return new WaitForSeconds(0.1f);
             }
 
-            players.OnListChanged += _ => _localPlayer.OnPlayerListChanged();
+            players.OnListChanged += _ => localPlayer.OnPlayerListChanged();
             
             SignalInitializeRpc();
 
@@ -208,7 +208,16 @@ namespace Core
                           $"(Environment: {ai.CurrentPolicies.environment}) " +
                           $"(Housing: {ai.CurrentPolicies.housing}) " +
                           $"(City Contribution: {ai.CurrentPolicies.cityContribution})");
-                Debug.Log($"AI Metrics: (Infrastructure: {ai.GetComponent<Player>().District.state.Value.infrastructure})");
+                var aiPlayer = ai.GetComponent<Player>();
+                Debug.Log($"AI Metrics: (GDP: {aiPlayer.District.state.Value.gdp:F1}) " +
+                          $"(Happiness: {aiPlayer.District.state.Value.happiness:F1}) " +
+                          $"(Population: {aiPlayer.District.state.Value.population:F1}) " +
+                          $"(Infrastructure: {aiPlayer.District.state.Value.infrastructure:F1}) " +
+                          $"(Sustainability: {aiPlayer.District.state.Value.sustainability:F1}) " +
+                          $"(Debt: {aiPlayer.District.state.Value.debt:F1}) " +
+                          $"(Reserve: {aiPlayer.District.state.Value.reserve:F1}) " +
+                          $"(Revenue: {aiPlayer.District.state.Value.revenue:F1}) " +
+                          $"(Total Spending: {aiPlayer.District.state.Value.totalSpending:F1})");
             }
 
             // Host resolves city-wide metrics
@@ -231,15 +240,15 @@ namespace Core
         private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
         {
             var activePlayers = GetActivePlayers();
-            int localIndex = activePlayers.IndexOf(_localPlayer);
+            int localIndex = activePlayers.IndexOf(localPlayer);
 
             if (localIndex >= 0 && localIndex < districtStates.Length)
             {
-                districtStates[localIndex].policyValues = _localPlayer.CurrentPolicies;
+                districtStates[localIndex].policyValues = localPlayer.CurrentPolicies;
 
                 var result = TickProcessor.ResolveDistrictTick(
                     localIndex, districtStates, cityMetrics);
-                _localPlayer.District.state.Value = result;
+                localPlayer.District.state.Value = result;
             }
 
             if (HasAuthority)
@@ -260,9 +269,9 @@ namespace Core
     
         private void UpdatePolicies()
         {
-            var districtState = _localPlayer.District.state.Value;
-            districtState.policyValues = _localPlayer.CurrentPolicies;
-            _localPlayer.District.state.Value = districtState;
+            var districtState = localPlayer.District.state.Value;
+            districtState.policyValues = localPlayer.CurrentPolicies;
+            localPlayer.District.state.Value = districtState;
         }
 
     

@@ -34,6 +34,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
 
     public void OnPlayerListChanged()
     {
+        if (!IsOwner) return;
         _playerLabelController.viewModel.Update();
     }
 
@@ -43,7 +44,8 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
         {
             GetComponent<UIDocument>().enabled = false;
             GetComponent<PolicySliders>().enabled = false;
-            GetComponent<TopBarViewController>().enabled = false;
+            GetComponent<TopBarController>().enabled = false;
+            if (TryGetComponent<DetailsPanelController>(out var dp)) dp.enabled = false;
             return;
         }
 
@@ -61,7 +63,8 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
         {
             if (TryGetComponent<PolicySliders>(out var ps)) ps.enabled = false;
             if (TryGetComponent<UIDocument>(out var ui)) ui.enabled = false;
-            if (TryGetComponent<TopBarViewController>(out var tb)) tb.enabled = false;
+            if (TryGetComponent<TopBarController>(out var tb)) tb.enabled = false;
+            if (TryGetComponent<DetailsPanelController>(out var dp)) dp.enabled = false;
             CurrentPolicies = ai.CurrentPolicies;
             return;
         }
@@ -69,7 +72,8 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
         _policySliders = GetComponent<PolicySliders>();
         _policySliders.OnPolicyChanged += values => CurrentPolicies = values;
 
-        GetComponent<TopBarViewController>().Initialize(this);
+        GetComponent<TopBarController>().Initialize(this);
+        // GetComponent<DetailsPanelController>().Initialize(this);
     }
 
     public void SetPoliciesFromAI(PolicyValues values)
