@@ -22,6 +22,7 @@ namespace Core
         private readonly float _tickInterval = 2f;
 
         private ConnectionManager _connectionManager;
+        private BuildingGenerator _buildingGen;
     
         private int _tickReadyCounter = 0;
     
@@ -74,7 +75,7 @@ namespace Core
         }
 
 
-        private List<Player> GetActivePlayers()
+        private List<Player> GetPlayerList()
         {
             var active = new List<Player>(players.Count);
             for (int i = 0; i < players.Count; i++)
@@ -92,6 +93,7 @@ namespace Core
         private IEnumerator Initialize()
         {
             _connectionManager = FindFirstObjectByType<ConnectionManager>();
+            _buildingGen = FindFirstObjectByType<BuildingGenerator>();
         
             while (localPlayer == null)
             {
@@ -123,7 +125,7 @@ namespace Core
 
                     var districtObject = Instantiate(Resources.Load<GameObject>("District"));
                     var networkObject = districtObject.GetComponent<NetworkObject>();
-                    networkObject.SpawnWithOwnership(NetworkManager.Singleton.ConnectedClientsIds[i], true);
+                    networkObject.SpawnWithOwnership(players[i].OwnerClientId, true);
                 }
 
                 ulong hostId = NetworkManager.Singleton.LocalClientId;
@@ -188,7 +190,7 @@ namespace Core
 
             if (!HasAuthority) return;
 
-            var activePlayers = GetActivePlayers();
+            var activePlayers = GetPlayerList();
             var districtStates = new DistrictState[activePlayers.Count];
             for (int i = 0; i < activePlayers.Count; i++)
             {
@@ -226,11 +228,6 @@ namespace Core
             gameState.currentTick++;
             gameState.currentMonth = gameState.currentTick / SimulationConstants.TICKS_PER_MONTH;
             GameState.Value = gameState;
-
-            if (gameState.currentTick >= SimulationConstants.TOTAL_TICKS)
-            {
-                _gameOver = true;
-            }
         
             ResolveDistrictTickRpc(districtStates, gameState.cityMetrics);
         }
@@ -239,7 +236,7 @@ namespace Core
         [Rpc(SendTo.Everyone)]
         private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
         {
-            var activePlayers = GetActivePlayers();
+            var activePlayers = GetPlayerList();
             int localIndex = activePlayers.IndexOf(localPlayer);
 
             if (localIndex >= 0 && localIndex < districtStates.Length)
@@ -262,7 +259,15 @@ namespace Core
                     activePlayers[i].District.state.Value = aiResult;
                 }
             }
+            
+            if (_buildingGen != null)
+            {
+                for (int i = 0; i < districtStates.Length; i++)
+                    _buildingGen.UpdateDistrict(i, districtStates[i]);
+            }
 
+            if (GameState.Value.currentTick >= SimulationConstants.TOTAL_TICKS) _gameOver = true;
+            
             _resolvingTick = false;
         }
 
