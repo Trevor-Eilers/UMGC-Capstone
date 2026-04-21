@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/Resources/GameHUD.uss?fileID=7433441132597879392&amp;guid=7bc2dafd71b614848a143c8754ca89c1&amp;type=3#GameHUD"/>
-    <ui:VisualElement name="EndCardOverlay" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(8, 8, 14); align-items: center; justify-content: center; display: flex;">
+    <ui:VisualElement name="EndCardOverlay" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(8, 8, 14); align-items: center; justify-content: center; display: none;">
         <ui:VisualElement name="EndCardPanel" style="width: 600px; background-color: rgb(23, 23, 32); border-left-color: rgb(64, 64, 77); border-right-color: rgb(64, 64, 77); border-top-color: rgb(64, 64, 77); border-bottom-color: rgb(64, 64, 77); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; padding-top: 28px; padding-right: 32px; padding-bottom: 24px; padding-left: 32px;">
             <ui:Label text="GAME OVER" style="color: rgb(120, 220, 120); font-size: 28px; -unity-font-style: bold; -unity-text-align: middle-center; letter-spacing: 2px; margin-bottom: 2px;"/>
             <ui:Label text="48 months complete" style="color: rgba(180, 180, 180, 0.7); font-size: 11px; -unity-text-align: middle-center; margin-bottom: 24px;"/>
