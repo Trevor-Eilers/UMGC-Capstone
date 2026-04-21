@@ -106,7 +106,7 @@ namespace UI
             {
                 var panelRoot = panel?.visualTree;
                 if (panelRoot == null) return;
-                var controller = new TooltipController(panelRoot);
+                var controller = new Tooltip(panelRoot);
 
                 RegisterCallback<MouseEnterEvent>(_ =>
                 {

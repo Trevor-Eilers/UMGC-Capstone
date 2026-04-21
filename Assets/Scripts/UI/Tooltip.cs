@@ -3,14 +3,14 @@ using UnityEngine.UIElements;
 
 namespace UI
 {
-    public class TooltipController
+    public class Tooltip
     {
         private const float MaxWidth = 280f;
 
         private readonly VisualElement tooltip;
         private readonly Label label;
 
-        public TooltipController(VisualElement root)
+        public Tooltip(VisualElement root)
         {
             tooltip = new VisualElement
             {

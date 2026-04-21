@@ -57,7 +57,7 @@ namespace UI
             // Tooltip hover — each row has a small "i" icon next to its
             // label. We hover the icon (not the whole row) so that sliding
             // the slider doesn't pop a tooltip over the handle.
-            var tooltip = new TooltipController(root);
+            var tooltip = new Tooltip(root);
             foreach (var iconName in new[] { "TaxInfo", "EduInfo", "InfraInfo", "HousingInfo", "EnvInfo", "CityInfo" })
             {
                 var icon = root.Q<VisualElement>(iconName);

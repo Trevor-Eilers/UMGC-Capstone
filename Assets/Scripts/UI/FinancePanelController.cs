@@ -34,7 +34,7 @@ namespace UI
             Refresh();
             viewModel.propertyChanged += (_, _) => Refresh();
 
-            var tooltip = new TooltipController(root);
+            var tooltip = new Tooltip(root);
             foreach (var iconName in InfoIconNames)
             {
                 var icon = root.Q<VisualElement>(iconName);
