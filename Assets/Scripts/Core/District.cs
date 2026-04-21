@@ -1,3 +1,4 @@
+using Building;
 using Simulation;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,6 +8,15 @@ namespace Core
     public class District : NetworkBehaviour
     {
         public NetworkVariable<DistrictState> state = new();
+
+        public NetworkList<BuildingPlacement> placements;
+
+        public BuildingSystem BuildingSystem { get; set; }
+
+        private void Awake()
+        {
+            placements = new NetworkList<BuildingPlacement>();
+        }
 
         public override void OnNetworkSpawn()
         {

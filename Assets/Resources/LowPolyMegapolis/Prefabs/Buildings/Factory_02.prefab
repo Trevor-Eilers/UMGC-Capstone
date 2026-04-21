@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2634472394577309246}
   m_Layer: 0
   m_Name: Factory_02
-  m_TagString: Industrial_Mid
+  m_TagString: Industrial_Low
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

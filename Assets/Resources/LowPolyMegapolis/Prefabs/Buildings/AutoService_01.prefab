@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7747400807497003232}
   m_Layer: 0
   m_Name: AutoService_01
-  m_TagString: Commercial_Mid
+  m_TagString: Commercial_Low
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

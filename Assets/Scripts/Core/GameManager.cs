@@ -22,7 +22,6 @@ namespace Core
         private readonly float _tickInterval = 2f;
 
         private ConnectionManager _connectionManager;
-        private BuildingGenerator _buildingGen;
     
         private int _tickReadyCounter = 0;
     
@@ -33,7 +32,9 @@ namespace Core
         public Player localPlayer { get; private set; }
 
         public static GameManager Instance { get; private set; }
-    
+
+        [SerializeField] private Building.BuildingSystem[] quadrantBuildingSystems = new Building.BuildingSystem[4];
+
         public override void OnNetworkSpawn()
         {
             Instance = this;
@@ -93,8 +94,7 @@ namespace Core
         private IEnumerator Initialize()
         {
             _connectionManager = FindFirstObjectByType<ConnectionManager>();
-            _buildingGen = FindFirstObjectByType<BuildingGenerator>();
-        
+
             while (localPlayer == null)
             {
                 var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
@@ -236,9 +236,11 @@ namespace Core
         [Rpc(SendTo.Everyone)]
         private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
         {
+            UpdatePolicies();
+            
             var activePlayers = GetPlayerList();
             int localIndex = activePlayers.IndexOf(localPlayer);
-
+            
             if (localIndex >= 0 && localIndex < districtStates.Length)
             {
                 districtStates[localIndex].policyValues = localPlayer.CurrentPolicies;
@@ -260,10 +262,27 @@ namespace Core
                 }
             }
             
-            if (_buildingGen != null)
+            for (int i = 0; i < activePlayers.Count && i < quadrantBuildingSystems.Length; i++)
             {
-                for (int i = 0; i < districtStates.Length; i++)
-                    _buildingGen.UpdateDistrict(i, districtStates[i]);
+                var d = activePlayers[i].District;
+                if (d != null && d.BuildingSystem == null)
+                {
+                    d.BuildingSystem = quadrantBuildingSystems[i];
+                    d.BuildingSystem.District = d;
+                }
+            }
+
+            if (localIndex >= 0 && localIndex < districtStates.Length)
+                localPlayer.District?.BuildingSystem?.UpdateDistrict(districtStates[localIndex]);
+
+            if (HasAuthority)
+            {
+                for (int i = 0; i < activePlayers.Count; i++)
+                {
+                    var ai = activePlayers[i].GetComponent<AIController>();
+                    if (ai == null) continue;
+                    activePlayers[i].District?.BuildingSystem?.UpdateDistrict(districtStates[i]);
+                }
             }
 
             if (GameState.Value.currentTick >= SimulationConstants.TOTAL_TICKS) _gameOver = true;
