@@ -8622,7 +8622,7 @@ GameObject:
   - component: {fileID: 84201249}
   m_Layer: 0
   m_Name: Plots (12)
-  m_TagString: Untagged
+  m_TagString: Civic
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -70775,7 +70775,7 @@ GameObject:
   - component: {fileID: 692391465}
   m_Layer: 0
   m_Name: Plots (15)
-  m_TagString: Untagged
+  m_TagString: Civic
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -129528,7 +129528,7 @@ GameObject:
   - component: {fileID: 1228035668}
   m_Layer: 0
   m_Name: Plots (18)
-  m_TagString: Untagged
+  m_TagString: Civic
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -197399,7 +197399,7 @@ GameObject:
   - component: {fileID: 1818176135}
   m_Layer: 0
   m_Name: Plots (21)
-  m_TagString: Untagged
+  m_TagString: Civic
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -219874,7 +219874,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2017558362}
-  - component: {fileID: 2017558363}
+  - component: {fileID: 2017558365}
   - component: {fileID: 2017558364}
   m_Layer: 0
   m_Name: C_DistrictPlots
@@ -219902,19 +219902,6 @@ Transform:
   - {fileID: 1228035667}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2017558363
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2017558361}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a3d39ae4d4539a441bc88d7fb63de14f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Building.BuildingSystem
-  spawner: {fileID: 0}
 --- !u!114 &2017558364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219927,6 +219914,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 902492bc69ee49b4ebc2653ecf12a5f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Building.BuildingSpawner
+--- !u!114 &2017558365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017558361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d463fa009bbea984fb277fa23c63622d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Building.CivicBuildingSystem
+  spawner: {fileID: 2017558364}
 --- !u!1001 &2018641496
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -235417,6 +235417,14 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6999511554177800963, guid: 74c2154808d310e47bb0381e60fa5845, type: 3}
+      propertyPath: centerBuildingSystem
+      value: 
+      objectReference: {fileID: 2017558365}
+    - target: {fileID: 6999511554177800963, guid: 74c2154808d310e47bb0381e60fa5845, type: 3}
+      propertyPath: quadrantBuildingSystems.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6999511554177800963, guid: 74c2154808d310e47bb0381e60fa5845, type: 3}
       propertyPath: 'quadrantBuildingSystems.Array.data[0]'
       value: 
       objectReference: {fileID: 87932134}
@@ -235430,6 +235438,10 @@ PrefabInstance:
       objectReference: {fileID: 136098091}
     - target: {fileID: 6999511554177800963, guid: 74c2154808d310e47bb0381e60fa5845, type: 3}
       propertyPath: 'quadrantBuildingSystems.Array.data[3]'
+      value: 
+      objectReference: {fileID: 1928325227}
+    - target: {fileID: 6999511554177800963, guid: 74c2154808d310e47bb0381e60fa5845, type: 3}
+      propertyPath: 'quadrantBuildingSystems.Array.data[4]'
       value: 
       objectReference: {fileID: 1928325227}
     - target: {fileID: 9044369310789579222, guid: 74c2154808d310e47bb0381e60fa5845, type: 3}

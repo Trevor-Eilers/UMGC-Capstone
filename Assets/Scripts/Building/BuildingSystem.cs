@@ -101,7 +101,7 @@ namespace Building
                 for (int s = 0; s < toSpawn; s++)
                 {
                     var type = NextType(s);
-                    if (!spawner.TrySpawnRandom(_district, type, SelectTier(type, state))) break;
+                    if (!spawner.TrySpawnRandom(_district.placements, type, SelectTier(type, state))) break;
                 }
             }
             else if (currentOccupied > targetOccupied)
@@ -109,7 +109,7 @@ namespace Building
                 var max = Random.Range(1, MaxBuildingsPerTick);
                 int toRemove = Mathf.Min(currentOccupied - targetOccupied, MaxBuildingsPerTick);
                 for (int s = 0; s < toRemove; s++)
-                    if (!spawner.TryRemoveRandom(_district)) break;
+                    if (!spawner.TryRemoveRandom(_district.placements)) break;
             }
         }
 

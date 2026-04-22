@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Core;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Building
@@ -12,6 +13,7 @@ namespace Building
         private readonly List<DistrictSquare> _residentialSquares = new();
         private readonly List<DistrictSquare> _commercialSquares = new();
         private readonly List<DistrictSquare> _industrialSquares = new();
+        private readonly List<DistrictSquare> _civicSquares = new();
 
         private void Start()
         {
@@ -28,13 +30,16 @@ namespace Building
                     case "Industrial":
                         _industrialSquares.Add(transform.GetChild(i).GetComponent<DistrictSquare>());
                         break;
+                    case "Civic":
+                        _civicSquares.Add(transform.GetChild(i).GetComponent<DistrictSquare>());
+                        break;
                 }
             }
         }
 
-        public bool TrySpawnRandom(District district, BuildingType type, BuildingTier tier)
+        public bool TrySpawnRandom(NetworkList<BuildingPlacement> placements, BuildingType type, BuildingTier tier)
         {
-            if (district == null) return false;
+            if (placements == null) return false;
 
             var squares = SquaresFor(type);
             if (squares.Count == 0) return false;
@@ -52,7 +57,7 @@ namespace Building
                     Random.Range(0, square.UnoccupiedIndices.Count));
                 int prefabIndex = Random.Range(0, prefabCount);
 
-                district.placements.Add(new BuildingPlacement
+                placements.Add(new BuildingPlacement
                 {
                     typeId = type.Id,
                     tierId = tier.Id,
@@ -65,11 +70,11 @@ namespace Building
             return false;
         }
 
-        public bool TryRemoveRandom(District district)
+        public bool TryRemoveRandom(NetworkList<BuildingPlacement> placements)
         {
-            if (district == null || district.placements.Count == 0) return false;
-            int victim = Random.Range(0, district.placements.Count);
-            district.placements.RemoveAt(victim);
+            if (placements == null || placements.Count == 0) return false;
+            int victim = Random.Range(0, placements.Count);
+            placements.RemoveAt(victim);
             return true;
         }
 
@@ -100,6 +105,7 @@ namespace Building
             foreach (var s in _residentialSquares) total += s.PlotCount;
             foreach (var s in _commercialSquares) total += s.PlotCount;
             foreach (var s in _industrialSquares) total += s.PlotCount;
+            foreach (var s in _civicSquares) total += s.PlotCount;
             return total;
         }
 
@@ -109,6 +115,7 @@ namespace Building
             foreach (var s in _residentialSquares) total += s.OccupiedCount;
             foreach (var s in _commercialSquares) total += s.OccupiedCount;
             foreach (var s in _industrialSquares) total += s.OccupiedCount;
+            foreach (var s in _civicSquares) total += s.OccupiedCount;
             return total;
         }
 
@@ -116,6 +123,7 @@ namespace Building
         {
             if (type.Equals(BuildingType.Residential)) return _residentialSquares;
             if (type.Equals(BuildingType.Commercial)) return _commercialSquares;
+            if (type.Equals(BuildingType.Civic)) return _civicSquares;
             return _industrialSquares;
         }
     }

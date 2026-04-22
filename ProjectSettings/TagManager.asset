@@ -19,6 +19,7 @@ TagManager:
   - Residential
   - Commercial
   - Industrial
+  - Civic
   layers:
   - Default
   - TransparentFX

@@ -14,6 +14,7 @@ namespace Building
         public static BuildingType Residential = new BuildingType("Residential");
         public static BuildingType Commercial = new BuildingType("Commercial");
         public static BuildingType Industrial = new BuildingType("Industrial");
+        public static BuildingType Civic = new BuildingType("Civic");
 
         private BuildingType(string type) => _type = type;
 
@@ -24,6 +25,7 @@ namespace Building
             "Residential" => 0,
             "Commercial" => 1,
             "Industrial" => 2,
+            "Civic" => 3,
             _ => 255,
         };
 
@@ -32,6 +34,7 @@ namespace Building
             0 => Residential,
             1 => Commercial,
             2 => Industrial,
+            3 => Civic,
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown BuildingType id"),
         };
 

@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Building;
 using Network;
 using Simulation;
 using Unity.Collections;
@@ -28,12 +29,16 @@ namespace Core
         private int _initializationCounter = 0;
     
         public readonly NetworkList<NetworkObjectReference> players = new();
-    
+
+        public readonly NetworkList<BuildingPlacement> civicPlacements = new();
+
         public Player localPlayer { get; private set; }
 
         public static GameManager Instance { get; private set; }
 
         [SerializeField] private Building.BuildingSystem[] quadrantBuildingSystems = new Building.BuildingSystem[4];
+
+        [SerializeField] private Building.CivicBuildingSystem centerBuildingSystem;
 
         public override void OnNetworkSpawn()
         {
@@ -236,8 +241,6 @@ namespace Core
         [Rpc(SendTo.Everyone)]
         private void ResolveDistrictTickRpc(DistrictState[] districtStates, CityMetrics cityMetrics)
         {
-            UpdatePolicies();
-            
             var activePlayers = GetPlayerList();
             int localIndex = activePlayers.IndexOf(localPlayer);
             
@@ -272,6 +275,9 @@ namespace Core
                 }
             }
 
+            if (centerBuildingSystem != null && centerBuildingSystem.Placements == null)
+                centerBuildingSystem.Placements = civicPlacements;
+
             if (localIndex >= 0 && localIndex < districtStates.Length)
                 localPlayer.District?.BuildingSystem?.UpdateDistrict(districtStates[localIndex]);
 
@@ -284,6 +290,9 @@ namespace Core
                     activePlayers[i].District?.BuildingSystem?.UpdateDistrict(districtStates[i]);
                 }
             }
+
+            if (HasAuthority && centerBuildingSystem != null)
+                centerBuildingSystem.UpdateCenter(districtStates);
 
             if (GameState.Value.currentTick >= SimulationConstants.TOTAL_TICKS) _gameOver = true;
             
