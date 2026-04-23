@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Core;
 using Unity.Collections;
@@ -23,17 +24,23 @@ namespace UI
         }
         
 
-        public void Update()
+        public IEnumerator Update()
         {
             _values.Clear();
+
             foreach (var player in GameManager.Instance.players)
             {
-                player.TryGet(out NetworkObject networkObject, NetworkManager.Singleton);
-                if (networkObject == null) return;
-                var name = networkObject.GetComponent<Player>().playerName.Value;
-                _values.Add(name);
+                NetworkObject networkObject = null;
+                while (!player.TryGet(out networkObject, NetworkManager.Singleton))
+                    yield return null;
+
+                var playerComp = networkObject.GetComponent<Player>();
+                if (playerComp.playerName.Value.IsEmpty)
+                    yield return new WaitUntil(() => !playerComp.playerName.Value.IsEmpty);
+
+                _values.Add(playerComp.playerName.Value);
             }
-            
+
             OnTextChanged?.Invoke(_values);
         }
     }

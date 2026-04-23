@@ -10,7 +10,7 @@ namespace UI
         public readonly PlayerLabelViewModel viewModel = new();
 
         private Label[] _labels;
-
+        
         void Start()
         {
             viewModel.OnTextChanged += OnTextChanged;
