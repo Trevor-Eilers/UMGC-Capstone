@@ -36,9 +36,9 @@ namespace Core
 
         public static GameManager Instance { get; private set; }
 
-        [SerializeField] private Building.BuildingSystem[] quadrantBuildingSystems = new Building.BuildingSystem[4];
+        [SerializeField] private BuildingSystem[] quadrantBuildingSystems = new BuildingSystem[4];
 
-        [SerializeField] private Building.CivicBuildingSystem centerBuildingSystem;
+        [SerializeField] private CivicBuildingSystem centerBuildingSystem;
 
         public override void OnNetworkSpawn()
         {
@@ -52,7 +52,6 @@ namespace Core
 
                 NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
             }
-
         
             StartCoroutine(Initialize());
         }
@@ -110,7 +109,7 @@ namespace Core
 
                 if (localPlayer == null) yield return new WaitForSeconds(0.1f);
             }
-
+            
             players.OnListChanged += _ => localPlayer.OnPlayerListChanged();
             
             SignalInitializeRpc();

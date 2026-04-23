@@ -7,6 +7,7 @@ using UI.TopBar;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Multiplayer;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
@@ -18,8 +19,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
 
     private InputSystem_Actions _actions;
     private InputSystem_Actions.KeyboardActions _keyboardActions;
-
-
+    
     public NetworkVariable<NetworkBehaviourReference> districtNetRef = new(writePerm: NetworkVariableWritePermission.Owner);
     public NetworkVariable<FixedString64Bytes> playerName = new(writePerm: NetworkVariableWritePermission.Owner);
 
@@ -35,7 +35,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     public void OnPlayerListChanged()
     {
         if (!IsOwner) return;
-        _playerLabelController.viewModel.Update();
+        StartCoroutine(_playerLabelController.viewModel.Update());
     }
 
     public override void OnNetworkSpawn()
@@ -48,6 +48,8 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
             if (TryGetComponent<DetailsPanelController>(out var dp)) dp.enabled = false;
             return;
         }
+
+        if (GetComponent<AIController>() != null) return;
 
         playerName.Value = new FixedString64Bytes(ConnectionManager.Instance.ProfileName);
     }
