@@ -105,3 +105,5 @@ bin/TemplateData/webmemd-icon.png
 Assets/.claude/settings.local.json
 Assets/.claude/settings.local.json
 Assets/.claude/settings.local.json
+*.md
+Assets/.claude/settings.local.json

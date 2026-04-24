@@ -99,9 +99,7 @@ namespace UI
             var template = Resources.Load<VisualTreeAsset>("IndicatorWidget");
             template.CloneTree(this);
 
-            // Defer tooltip wiring until this widget has a panel, so we can
-            // find the UIDocument root and anchor the popup there (tooltips
-            // added to `this` clip to the widget's own bounds).
+            // Defer tooltip wiring until this widget has a panel.
             RegisterCallback<AttachToPanelEvent>(_ =>
             {
                 var panelRoot = panel?.visualTree;

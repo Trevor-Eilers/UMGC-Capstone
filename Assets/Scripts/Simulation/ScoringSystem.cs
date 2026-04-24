@@ -18,7 +18,7 @@ public static class ScoringSystem
     /// </summary>
     public static FinalScore ComputeFinalScore(
         DistrictState district, CityMetrics cityMetrics,
-        DistrictState[] allDistricts, int numActivePlayers)
+        DistrictState[] allDistricts, int numPlayers)
     {
         // ── NEIGHBORHOOD SCORE (60%) ──
 
@@ -43,14 +43,16 @@ public static class ScoringSystem
 
         // Shared Infrastructure Contribution — relative measure
         float totalAllCitySpending = 0f;
-        for (int i = 0; i < numActivePlayers; i++)
+        for (int i = 0; i < numPlayers; i++)
+        {
             totalAllCitySpending += allDistricts[i].totalCitySpending;
+        }
 
         float sharedInfraContrib;
         if (totalAllCitySpending > 0f)
             sharedInfraContrib = (district.totalCitySpending / totalAllCitySpending) * 100.0f;
         else
-            sharedInfraContrib = 100.0f / numActivePlayers;
+            sharedInfraContrib = 100.0f / numPlayers;
 
         // Crisis Avoidance
         int crisisTicks = district.ticksAtDebtCap + district.ticksBelowHappiness20;

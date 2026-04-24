@@ -16,6 +16,7 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
 
     private PolicySliders _policySliders;
     private PlayerLabelController _playerLabelController;
+    private Coroutine _labelUpdateCoroutine;
 
     private InputSystem_Actions _actions;
     private InputSystem_Actions.KeyboardActions _keyboardActions;
@@ -35,7 +36,8 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     public void OnPlayerListChanged()
     {
         if (!IsOwner) return;
-        StartCoroutine(_playerLabelController.viewModel.Update());
+        if (_labelUpdateCoroutine != null) StopCoroutine(_labelUpdateCoroutine);
+        _labelUpdateCoroutine = StartCoroutine(_playerLabelController.viewModel.Update());
     }
 
     public override void OnNetworkSpawn()

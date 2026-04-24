@@ -337,14 +337,7 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged,
         TotalSpending = state.totalSpending;
         ScaleFactor = state.scaleFactor;
 
-        // Mirror the sim's pollution formula for UI display. Matches CLAUDE.md §3.2:
-        // pollution output = max(0, POLLUTE_ENV_THRESHOLD - env) + max(0, gdp - POLLUTE_GDP_THRESHOLD)
-        // scaled to a 0-100 index for the HUD. No side effects on the sim.
-        float envShortfall = Mathf.Max(0f, SimulationConstants.POLLUTE_ENV_THRESHOLD - state.policyValues.environment);
-        float gdpExcess    = Mathf.Max(0f, state.gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
-        float raw          = envShortfall + gdpExcess;
-        // Raw max is 30 (env 0) + 60 (gdp 100) = 90. Map to 0-100 with a soft ceiling.
-        Pollution = Mathf.Clamp(raw * 100f / 90f, 0f, 100f);
+        Pollution = state.pollution;
 
         GreenGrantStreak = state.greenGrantStreak;
         TransitGrantStreak = state.transitGrantStreak;

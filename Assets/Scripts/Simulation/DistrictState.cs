@@ -13,6 +13,7 @@ namespace Simulation
         public float happiness;
         public float sustainability;
         public float infrastructure;
+        public float pollution;
         
         // ── Fiscal ──
         public float gdp;
@@ -42,6 +43,7 @@ namespace Simulation
             serializer.SerializeValue(ref happiness);
             serializer.SerializeValue(ref sustainability);
             serializer.SerializeValue(ref infrastructure);
+            serializer.SerializeValue(ref pollution);
             serializer.SerializeValue(ref gdp);
             serializer.SerializeValue(ref debt);
             serializer.SerializeValue(ref reserve);
@@ -68,6 +70,7 @@ namespace Simulation
                 population = SimulationConstants.POPULATION_START,
                 infrastructure = SimulationConstants.INFRASTRUCTURE_START,
                 sustainability = SimulationConstants.SUSTAINABILITY_START,
+                pollution = 0f,
                 debt = SimulationConstants.DEBT_START,
                 reserve = SimulationConstants.RESERVE_START,
                 revenue = 0f,

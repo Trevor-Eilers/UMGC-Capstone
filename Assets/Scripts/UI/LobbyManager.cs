@@ -42,7 +42,7 @@ namespace Network
         private float _heartbeatTimer;
         private float _pollTimer;
         private const float HeartbeatInterval = 15f;
-        private const float PollInterval = 3f;
+        private const float PollInterval = 2.5f;
 
         private int _synchronizedClients = 1;
 
@@ -203,7 +203,12 @@ namespace Network
             {
                 await LobbyService.Instance.SendHeartbeatPingAsync(_lobby.Id);
             }
-            catch (LobbyServiceException e)
+            catch (LobbyServiceException e) when (e.Reason == LobbyExceptionReason.LobbyNotFound)
+            {
+                Debug.LogWarning("Heartbeat: lobby no longer exists, clearing local state.");
+                _lobby = null;
+            }
+            catch (Exception e)
             {
                 Debug.LogWarning($"Heartbeat failed: {e.Message}");
             }
@@ -265,9 +270,10 @@ namespace Network
                 {
                     Debug.LogError("Failed to establish Netcode session.");
                     _gameStarting = false;
+                    await connectionManager.DisconnectAsync();
                     return;
                 }
-                
+
                 _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
                 
                 var netcodeSessionId = connectionManager.Session.Id;
@@ -286,6 +292,7 @@ namespace Network
             catch (Exception e)
             {
                 _gameStarting = false;
+                await connectionManager.DisconnectAsync();
                 Debug.LogException(e);
             }
         }
@@ -346,6 +353,9 @@ namespace Network
             }
             finally
             {
+                if (connectionManager != null && connectionManager.State != ConnectionState.Disconnected)
+                    await connectionManager.DisconnectAsync();
+
                 _lobby = null;
                 isHost = false;
                 _gameStarting = false;
@@ -382,13 +392,14 @@ namespace Network
                 {
                     Debug.LogError("Failed to establish Netcode session.");
                     _gameStarting = false;
+                    await connectionManager.DisconnectAsync();
                     return;
                 }
-
-
             }
             catch (Exception e)
             {
+                _gameStarting = false;
+                await connectionManager.DisconnectAsync();
                 Debug.LogException(e);
             }
         }
@@ -404,6 +415,7 @@ namespace Network
                 {
                     Debug.LogError($"Timed out waiting for clients to connect ({connectionManager.Session.PlayerCount}/{_lobby.Players.Count}).");
                     _gameStarting = false;
+                    _ = connectionManager.DisconnectAsync();
                     yield break;
                 }
                 Debug.Log("Not all clients have connected. Delaying...");
@@ -411,12 +423,14 @@ namespace Network
                 elapsed += 1f;
             }
 
+            elapsed = 0f;
             while (_synchronizedClients != _lobby.Players.Count)
             {
                 if (elapsed >= maxWaitSeconds)
                 {
                     Debug.LogError($"Timed out waiting for clients to synchronize ({_synchronizedClients}/{_lobby.Players.Count}).");
                     _gameStarting = false;
+                    _ = connectionManager.DisconnectAsync();
                     yield break;
                 }
                 Debug.Log("Not all clients have synchronized. Delaying...");

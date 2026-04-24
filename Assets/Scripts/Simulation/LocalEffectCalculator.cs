@@ -148,5 +148,19 @@ namespace Simulation
             }
             return 0f;
         }
+
+        /// <summary>
+        /// Phase 2.5 — Pollution Index (0-100 display metric).
+        /// Mirrors the §3.2 spillover formula scaled for HUD readability.
+        /// Returns 0 when env >= 30 or GDP <= 40 (shortfalls zero out naturally).
+        /// </summary>
+        public static float ComputePollutionIndex(DistrictState d)
+        {
+            float envShortfall = Math.Max(0f, SimulationConstants.POLLUTE_ENV_THRESHOLD - d.policyValues.environment);
+            float gdpExcess    = Math.Max(0f, d.gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
+            float raw          = envShortfall + gdpExcess;
+            // Raw max ≈ 90 (env at 0 → 30, GDP at 100 → 60). Map to 0-100.
+            return Math.Min(Math.Max(raw * 100f / 90f, 0f), 100f);
+        }
     }
 }

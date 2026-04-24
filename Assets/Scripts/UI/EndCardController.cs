@@ -52,8 +52,11 @@ namespace UI
             if (_overlay != null)   _overlay.style.display = DisplayStyle.None;
         }
 
-        public void Show(DistrictState district, FinalScore score)
+        public void Show(FinalScore score)
         {
+            var player = GetComponent<Player>();
+            var district = player.District.state.Value;
+            
             if (_overlay != null) _overlay.style.display = DisplayStyle.Flex;
 
             if (_finalScore != null)

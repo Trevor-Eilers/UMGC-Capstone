@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: -2650514141297927650}
   - component: {fileID: -2205136886079657380}
   - component: {fileID: 7498499343932552914}
+  - component: {fileID: 6640459612732949274}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -61,7 +62,7 @@ MonoBehaviour:
   ActiveSceneSynchronization: 1
   SceneMigrationSynchronization: 1
   SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
+  DontDestroyWithOwner: 1
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 0
   AllowOwnerToParent: 0
@@ -255,3 +256,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bd25d2775bf8274b84c654cd2a2ef87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI.DetailsPanelController
+--- !u!114 &6640459612732949274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62406034207436435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31d3a59b36ba063458324732ddf661f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UI.EndCardController

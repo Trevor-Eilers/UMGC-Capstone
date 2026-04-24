@@ -3,10 +3,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Building;
 using Network;
 using Simulation;
+using UI;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -95,6 +97,21 @@ namespace Core
         }
 
 
+        public DistrictState[] GetDistrictStates()
+        {
+            var districtStates = new DistrictState[players.Count];
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (!players[i].TryGet(out NetworkObject networkObject)) continue;
+                if (networkObject == null) continue;
+                var district = networkObject.GetComponent<District>();
+                if (district == null) continue;
+                districtStates[i] = district.state.Value;
+            }
+            return districtStates;
+        }
+
+
         private IEnumerator Initialize()
         {
             _connectionManager = FindFirstObjectByType<ConnectionManager>();
@@ -179,8 +196,8 @@ namespace Core
                 SignalTickReadyRpc();
             }
         }
-
-    
+        
+        
         [Rpc(SendTo.Everyone)]
         private void ResolveTickRpc()
         {
@@ -293,7 +310,11 @@ namespace Core
             if (HasAuthority && centerBuildingSystem != null)
                 centerBuildingSystem.UpdateCenter(districtStates);
 
-            if (GameState.Value.currentTick >= SimulationConstants.TOTAL_TICKS) _gameOver = true;
+            if (GameState.Value.currentTick >= SimulationConstants.TOTAL_TICKS)
+            {
+                _gameOver = true;
+                if (HasAuthority) EndGameRpc();
+            }
             
             _resolvingTick = false;
         }
@@ -307,6 +328,24 @@ namespace Core
         }
 
     
+        [Rpc(SendTo.Everyone)]
+        private void EndGameRpc()
+        {
+            if (localPlayer.GetComponent<AIController>() != null) return;
+            
+            var controller = localPlayer.GetComponent<EndCardController>();
+            var district = localPlayer.District;
+            var districtState = district.state.Value;
+            var cityMetrics = GameState.Value.cityMetrics;
+            FinalScore score = ScoringSystem.ComputeFinalScore(
+                districtState,
+                cityMetrics,
+                GetDistrictStates(),
+                4);
+            controller.Show(score);
+        }
+        
+        
         [Rpc(SendTo.Authority)]
         private void SignalTickReadyRpc()
         {

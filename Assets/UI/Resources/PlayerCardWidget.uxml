@@ -1,0 +1,38 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement data-source-type="PlayerCardViewModel, Assembly-CSharp" style="flex-grow: 0; background-color: rgb(19, 19, 27); width: auto; padding-top: 6px; padding-bottom: 6px; padding-left: 6px; padding-right: 14px; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; align-self: center; justify-content: space-evenly; align-items: stretch; border-left-color: rgb(19, 19, 27); border-right-color: rgb(19, 19, 27); border-top-color: rgb(19, 19, 27); border-bottom-color: rgb(19, 19, 27);">
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row; border-left-color: rgb(25, 25, 36); border-right-color: rgb(25, 25, 36); border-top-color: rgb(25, 25, 36); border-bottom-color: rgb(25, 25, 36); align-self: center; justify-content: space-evenly; align-items: stretch;">
+            <UI.IndicatorWidget title="GDP" name="card-gdp" value="--" style="margin: 1px; width: 62px;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Gdp" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Happiness" name="card-happy" value="--" style="margin: 1px; width: 62px;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Happiness" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Residents" name="card-pop" value="--" style="margin: 1px; width: 62px;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Population" binding-mode="ToTarget" source-to-ui-converters="PopulationFormat"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row; border-left-color: rgb(25, 25, 36); border-right-color: rgb(25, 25, 36); border-top-color: rgb(25, 25, 36); border-bottom-color: rgb(25, 25, 36); align-self: center; justify-content: space-evenly; align-items: stretch;">
+            <UI.IndicatorWidget title="Infra" name="card-infra" value="--" style="margin: 1px; width: 62px;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Infrastructure" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Sustain" name="card-sust" value="--" style="margin: 1px; width: 62px;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Sustainability" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+            <UI.IndicatorWidget title="Pollution" name="card-pollution" value="--" style="margin: 1px; width: 62px;">
+                <Bindings>
+                    <ui:DataBinding property="Value" data-source-path="Pollution" binding-mode="ToTarget" source-to-ui-converters="IndexFormat" data-source-type="UI.PlayerCardViewModel, Assembly-CSharp"/>
+                </Bindings>
+            </UI.IndicatorWidget>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

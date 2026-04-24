@@ -78,6 +78,7 @@ namespace Simulation
             d.infrastructure += LocalEffectCalculator.ComputeInfrastructureDelta(d, scaledSpending);
             d.sustainability += LocalEffectCalculator.ComputeSustainabilityDelta(d, scaledSpending);
             d.population -= LocalEffectCalculator.ComputeOutmigration(d);
+            d.pollution   = LocalEffectCalculator.ComputePollutionIndex(d);
 
             // ══════════════════════════════════════════
             // PHASE 3: Spillover (from snapshot)

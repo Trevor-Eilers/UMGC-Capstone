@@ -187,6 +187,12 @@ namespace Network
             Debug.LogError("JoinSessionByIdDirectAsync: all retry attempts exhausted.");
         }
 
+        public async Task DisconnectAsync()
+        {
+            State = ConnectionState.Disconnected;
+            await CleanupPartialSessionAsync();
+        }
+
         private async Task CleanupPartialSessionAsync()
         {
             if (Session != null)
