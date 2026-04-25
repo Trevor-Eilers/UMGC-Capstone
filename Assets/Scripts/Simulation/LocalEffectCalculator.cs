@@ -82,11 +82,14 @@ namespace Simulation
                                     + happinessDelta_tax
                                     - debtStress;
 
-            // Smoothing: K_HAPPY_SMOOTHING=1.0 means instant (no smoothing)
+            // Smoothing: K_HAPPY_SMOOTHING=1.0 means instant (no smoothing).
+            // No clamp here — Phase 5 owns clamping. Returning unclamped lets dev see
+            // overshoots; spillover (Phase 3) may still drive the value out of range
+            // before commit.
             float happiness = d.happiness
                               + (targetHappiness - d.happiness) * SimulationConstants.K_HAPPY_SMOOTHING;
 
-            return Math.Min(Math.Max(happiness, 0f), 100f);
+            return happiness;
         }
 
         /// <summary>

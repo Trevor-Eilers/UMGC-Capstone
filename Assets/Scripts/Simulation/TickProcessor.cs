@@ -65,7 +65,7 @@ namespace Simulation
             d.totalSpending = scaledSpending.actualTotalSpending;
 
             BudgetResult budget = BudgetCalculator.ComputeBudgetBalance(
-                d.revenue, scaledSpending.actualTotalSpending, d.debt, d.reserve);
+                d.revenue, spending.totalSpending, d.debt, d.reserve);
             d.debt = budget.debt;
             d.reserve = budget.reserve;
 
