@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4576809806010892004}
   m_Layer: 0
   m_Name: ParkingBox_01
-  m_TagString: Industrial_Low
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

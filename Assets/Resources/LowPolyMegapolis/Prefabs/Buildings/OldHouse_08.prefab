@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6888845244981182218}
   m_Layer: 0
   m_Name: OldHouse_08
-  m_TagString: Residential_Low
+  m_TagString: Residential_Mid
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

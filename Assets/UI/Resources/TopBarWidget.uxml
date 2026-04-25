@@ -9,7 +9,7 @@
         <ui:VisualElement style="flex-grow: 0; flex-direction: row; justify-content: center; align-content: flex-start;">
             <ui:Label text="Metro" style="color: rgba(255, 255, 255, 0.69); -unity-font-style: bold; margin-left: 0; margin-right: 0; width: 60px; -unity-text-align: middle-center;"/>
             <ui:VisualElement name="CityContainer" data-source-type="TopBarViewModel, Assembly-CSharp" style="flex-grow: 1; flex-direction: row; margin-left: 0; margin-right: 0; justify-content: flex-start; -unity-background-image-tint-color: rgb(25, 25, 36); background-color: rgb(25, 25, 36); border-left-color: rgb(38, 38, 49); border-right-color: rgb(38, 38, 49); border-top-color: rgb(38, 38, 49); border-bottom-color: rgb(38, 38, 49); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; height: 45px; align-self: center; align-items: center; flex-shrink: 0;">
-                <UI.IndicatorWidget title="Reputation" tooltip="City Reputation (0-100). Weighted average of all districts' happiness, sustainability, infra, GDP, and fiscal health, minus an inequality penalty. Above 70 accelerates population inflow." style="margin-left: 0; margin-right: 0; width: 80px;">
+                <UI.IndicatorWidget title="Reputation" tooltip="City Reputation (0-100). Weighted average of all districts&apos; happiness, sustainability, infra, GDP, and fiscal health, minus an inequality penalty. Above 70 accelerates population inflow." style="margin-left: 0; margin-right: 0; width: 80px;">
                     <Bindings>
                         <ui:DataBinding property="Value" data-source-path="CityReputation" binding-mode="ToTarget" source-to-ui-converters="IndexFormat"/>
                         <ui:DataBinding property="Delta" data-source-path="CityReputationDelta" binding-mode="ToTarget" source-to-ui-converters="DeltaFormat"/>
@@ -50,7 +50,7 @@
                 </ui:Label>
             </ui:VisualElement>
             <ui:VisualElement name="TimeControlsContainer" tooltip="Game Speed" style="flex-direction: row; align-items: center; scale: 1 1; margin-left: 8px; margin-right: 0;">
-                <ui:Button text="1x" name="Speed1Btn" class="speed-btn speed-btn-active" style="width: 30px; height: 30px; font-size: 9px;"/>
+                <ui:Button text="1x" name="Speed1Btn" class="speed-btn" style="width: 30px; height: 30px; font-size: 9px;"/>
                 <ui:Button text="2x" name="Speed2Btn" class="speed-btn" style="width: 30px; height: 30px; font-size: 9px;"/>
                 <ui:Button text="3x" name="Speed3Btn" class="speed-btn" style="width: 30px; height: 30px; font-size: 9px;"/>
                 <ui:Button text="||" name="PauseBtn" class="speed-btn" style="width: 30px; height: 30px; font-size: 9px;"/>

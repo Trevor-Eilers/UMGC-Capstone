@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3367441861667727119}
   m_Layer: 0
   m_Name: SuburbHouse_01
-  m_TagString: Residential_High
+  m_TagString: Residential_Low
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

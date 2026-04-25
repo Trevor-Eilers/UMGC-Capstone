@@ -315,6 +315,19 @@
     margin: 0;
     padding: 0;
 }
+.finance-row-sublabel {
+    font-size: 10px;
+    color: rgba(200, 200, 200, 0.45);
+    -unity-font-style: italic;
+    margin-left: 8px;
+    padding: 0;
+}
+.finance-row-subvalue {
+    font-size: 10px;
+    color: rgba(200, 200, 200, 0.55);
+    margin: 0;
+    padding: 0;
+}
 .status-ok {
     color: rgb(120, 210, 120);
 }
