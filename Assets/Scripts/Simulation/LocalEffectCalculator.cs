@@ -1,6 +1,7 @@
 // Author: Malcolm Bramble
 
 using System;
+using UnityEngine;
 
 namespace Simulation
 {
@@ -159,11 +160,14 @@ namespace Simulation
         /// </summary>
         public static float ComputePollutionIndex(DistrictState d)
         {
-            float envShortfall = Math.Max(0f, SimulationConstants.POLLUTE_ENV_THRESHOLD - d.policyValues.environment);
-            float gdpExcess    = Math.Max(0f, d.gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
-            float raw          = envShortfall + gdpExcess;
-            // Raw max ≈ 90 (env at 0 → 30, GDP at 100 → 60). Map to 0-100.
-            return Math.Min(Math.Max(raw * 100f / 90f, 0f), 100f);
+            bool pollutionActive = d.policyValues.environment < SimulationConstants.POLLUTE_ENV_THRESHOLD
+                                   && d.gdp > SimulationConstants.POLLUTE_GDP_THRESHOLD;
+            if (!pollutionActive) return 0f;
+            
+            float envShortfall = SimulationConstants.POLLUTE_ENV_THRESHOLD - d.policyValues.environment;
+            float gdpExcess    = d.gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD;
+            // Raw max is 30 (env 0) + 60 (gdp 100) = 90. Map to 0-100.
+            return Mathf.Clamp((envShortfall + gdpExcess) * 100f / 90f, 0f, 100f);
         }
     }
 }
