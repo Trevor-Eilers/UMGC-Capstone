@@ -195,9 +195,27 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged,
         set => SetProperty(ref _scaleFactor, value);
     }
 
+    // _totalSpending holds the DELIVERED amount (post-debt-cap-scaling). The COMMITTED
+    // amount (what the player's sliders demanded before throttling) is recovered via
+    // delivered / scaleFactor. When scaleFactor == 1 (not throttled) the two are equal.
+    [CreateProperty] public float DeliveredSpending => _totalSpending;
+    [CreateProperty] public float CommittedSpending =>
+        _scaleFactor > 0.0001f ? _totalSpending / _scaleFactor : _totalSpending;
+
+    // BudgetSurplus = revenue - delivered. Always ~0 once at the debt cap (because the
+    // cap throttles delivered to match revenue) — kept for back-compat with other readers.
     [CreateProperty] public float BudgetSurplus => _revenue - _totalSpending;
 
+    // Cash flow = revenue - committed. The TRUE per-tick fiscal pressure: matches what
+    // BudgetCalculator.ComputeBudgetBalance uses to accrue debt. This is what the player
+    // should be looking at; the older BudgetSurplus reads ~0 at the cap and lies.
+    [CreateProperty] public float CashFlow => _revenue - CommittedSpending;
+
     [CreateProperty] public float Efficiency => _scaleFactor * 100f;
+    [CreateProperty] public bool IsThrottled => _scaleFactor < 0.999f;
+
+    [CreateProperty] public float ReserveDecayPerTick =>
+        _reserve * SimulationConstants.K_RESERVE_DECAY;
 
     [CreateProperty] public float Pollution
     {
@@ -338,13 +356,21 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged,
         ScaleFactor = state.scaleFactor;
 
         // Mirror the sim's pollution formula for UI display. Matches CLAUDE.md §3.2:
-        // pollution output = max(0, POLLUTE_ENV_THRESHOLD - env) + max(0, gdp - POLLUTE_GDP_THRESHOLD)
-        // scaled to a 0-100 index for the HUD. No side effects on the sim.
-        float envShortfall = Mathf.Max(0f, SimulationConstants.POLLUTE_ENV_THRESHOLD - state.policyValues.environment);
-        float gdpExcess    = Mathf.Max(0f, state.gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
-        float raw          = envShortfall + gdpExcess;
-        // Raw max is 30 (env 0) + 60 (gdp 100) = 90. Map to 0-100 with a soft ceiling.
-        Pollution = Mathf.Clamp(raw * 100f / 90f, 0f, 100f);
+        // pollution fires only when env < POLLUTE_ENV_THRESHOLD AND gdp > POLLUTE_GDP_THRESHOLD.
+        // Without the AND-gate the HUD would show non-zero pollution at env=100 whenever GDP > 40.
+        bool pollutionActive = state.policyValues.environment < SimulationConstants.POLLUTE_ENV_THRESHOLD
+                            && state.gdp > SimulationConstants.POLLUTE_GDP_THRESHOLD;
+        if (pollutionActive)
+        {
+            float envShortfall = SimulationConstants.POLLUTE_ENV_THRESHOLD - state.policyValues.environment;
+            float gdpExcess    = state.gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD;
+            // Raw max is 30 (env 0) + 60 (gdp 100) = 90. Map to 0-100.
+            Pollution = Mathf.Clamp((envShortfall + gdpExcess) * 100f / 90f, 0f, 100f);
+        }
+        else
+        {
+            Pollution = 0f;
+        }
 
         GreenGrantStreak = state.greenGrantStreak;
         TransitGrantStreak = state.transitGrantStreak;
@@ -357,7 +383,12 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged,
         TotalCitySpending = state.totalCitySpending;
 
         Notify(nameof(BudgetSurplus));
+        Notify(nameof(DeliveredSpending));
+        Notify(nameof(CommittedSpending));
+        Notify(nameof(CashFlow));
         Notify(nameof(Efficiency));
+        Notify(nameof(IsThrottled));
+        Notify(nameof(ReserveDecayPerTick));
         Notify(nameof(CrisisTotal));
         Notify(nameof(CrisisAvoidance));
 
