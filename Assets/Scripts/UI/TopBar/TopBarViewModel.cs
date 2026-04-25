@@ -195,9 +195,27 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged,
         set => SetProperty(ref _scaleFactor, value);
     }
 
+    // _totalSpending holds the DELIVERED amount (post-debt-cap-scaling). The COMMITTED
+    // amount (what the player's sliders demanded before throttling) is recovered via
+    // delivered / scaleFactor. When scaleFactor == 1 (not throttled) the two are equal.
+    [CreateProperty] public float DeliveredSpending => _totalSpending;
+    [CreateProperty] public float CommittedSpending =>
+        _scaleFactor > 0.0001f ? _totalSpending / _scaleFactor : _totalSpending;
+
+    // BudgetSurplus = revenue - delivered. Always ~0 once at the debt cap (because the
+    // cap throttles delivered to match revenue) — kept for back-compat with other readers.
     [CreateProperty] public float BudgetSurplus => _revenue - _totalSpending;
 
+    // Cash flow = revenue - committed. The TRUE per-tick fiscal pressure: matches what
+    // BudgetCalculator.ComputeBudgetBalance uses to accrue debt. This is what the player
+    // should be looking at; the older BudgetSurplus reads ~0 at the cap and lies.
+    [CreateProperty] public float CashFlow => _revenue - CommittedSpending;
+
     [CreateProperty] public float Efficiency => _scaleFactor * 100f;
+    [CreateProperty] public bool IsThrottled => _scaleFactor < 0.999f;
+
+    [CreateProperty] public float ReserveDecayPerTick =>
+        _reserve * SimulationConstants.K_RESERVE_DECAY;
 
     [CreateProperty] public float Pollution
     {
@@ -350,7 +368,12 @@ public class TopBarViewModel : ScriptableObject, INotifyBindablePropertyChanged,
         TotalCitySpending = state.totalCitySpending;
 
         Notify(nameof(BudgetSurplus));
+        Notify(nameof(DeliveredSpending));
+        Notify(nameof(CommittedSpending));
+        Notify(nameof(CashFlow));
         Notify(nameof(Efficiency));
+        Notify(nameof(IsThrottled));
+        Notify(nameof(ReserveDecayPerTick));
         Notify(nameof(CrisisTotal));
         Notify(nameof(CrisisAvoidance));
 

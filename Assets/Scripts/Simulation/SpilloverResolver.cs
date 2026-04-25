@@ -40,7 +40,12 @@ public static class SpilloverResolver
 
                 if (weAreWealthy)
                 {
-                    d.gdp += magnitude * SimulationConstants.K_GENTRIFY_GDP_GAIN;
+                    // DR cap matches LocalEffectCalculator.cs:104 convention so
+                    // spillover GDP can't push a wealthy district past 100 when
+                    // a peer crashes (uncapped, three pairs of +5/tick saturated
+                    // healthy districts in ~6 ticks).
+                    float gentryDrFactor = Math.Max(0f, (100f - d.gdp) / 100f);
+                    d.gdp += magnitude * SimulationConstants.K_GENTRIFY_GDP_GAIN * gentryDrFactor;
                     d.happiness -= magnitude * SimulationConstants.K_GENTRIFY_WEALTHY_HAPPY;
                 }
                 else
@@ -134,7 +139,8 @@ public static class SpilloverResolver
 
                 if (weAreWork)
                 {
-                    d.gdp += commuters * SimulationConstants.K_COMMUTE_GDP_GAIN;
+                    float commuteDrFactor = Math.Max(0f, (100f - d.gdp) / 100f);
+                    d.gdp += commuters * SimulationConstants.K_COMMUTE_GDP_GAIN * commuteDrFactor;
                     d.happiness -= commuters * SimulationConstants.K_COMMUTE_CONGESTION;
                 }
                 else

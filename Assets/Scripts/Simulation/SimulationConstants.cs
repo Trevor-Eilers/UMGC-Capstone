@@ -8,7 +8,11 @@ public static class SimulationConstants
     public static float K_SPEND = 3.0f;
     public static float K_CITY_WEIGHT = 1.0f;
     public static float K_DEBT_ACCRUAL = 0.02f;
-    public static float K_DEBT_RECOVERY = K_DEBT_ACCRUAL / 3.0f;
+    // Fraction of surplus that goes to debt service (vs. reserve fill).
+    // 0.33 = one-third pays debt, two-thirds fills reserve. Combined with K_DEBT_ACCRUAL
+    // this preserves the design's roughly-3:1 debt-accrues-faster-than-it-recovers
+    // asymmetry while leaving reserve fillable during recovery ticks.
+    public static float K_DEBT_RECOVERY = 0.33f;
     public static float K_RESERVE_DECAY = 0.005f;
     public static float DEBT_CAP = 60f;
     public static float RESERVE_CAP = 22500f;
@@ -17,8 +21,8 @@ public static class SimulationConstants
 
     public static float K_EDU_TO_GDP = 0.002f;
     public static float K_INFRA_TO_GDP = 0.02f;
-    public static float K_POP_TO_GDP = 0.03f;
-    public static float K_SUSTAIN_TO_GDP = 0.02f;
+    public static float K_POP_TO_GDP = 0.10f;
+    public static float K_SUSTAIN_TO_GDP = 0.008f;
     public static float K_TAX_GDP_DRAG = 0.02f;
     public static float K_ENV_GDP_DRAG = 0.0015f;
     public static float K_GDP_DECAY = 0.008f;
@@ -38,17 +42,17 @@ public static class SimulationConstants
     // ── Infrastructure Constants ──
 
     public static float K_INFRA_TO_INFRA = 0.005f;
-    public static float K_INFRA_DECAY = 0.01f;
+    public static float K_INFRA_DECAY = 0.005f;
 
     // ── Sustainability Constants ──
 
     public static float K_INFRA_TO_SUSTAIN = 0.01f;
     public static float K_ENV_TO_SUSTAIN = 0.003f;
-    public static float K_POP_SUSTAIN_DRAIN = 0.002f;
-    public static float K_SUSTAIN_DECAY = 0.005f;
+    public static float K_POP_SUSTAIN_DRAIN = 0.006f;
+    public static float K_SUSTAIN_DECAY = 0.010f;
     public static float SUSTAIN_MIGRATION_THRESHOLD = 30f;
     public static float K_MIGRATION_RATE = 0.5f;
-    public static float MIN_POPULATION = 1.0f;
+    public static float MIN_POPULATION = 5.0f;
     public static float MAX_POPULATION = 1000.0f;
 
     // ── Spillover: Gentrification ──
@@ -85,8 +89,8 @@ public static class SimulationConstants
     public static float K_POP_INFLOW_HIGH = 0.2f;
     public static float K_POP_INFLOW_NORMAL = 0.06f;
     public static float K_POP_OUTFLOW = 0.3f;
-    public static float K_SHARED_INFRA_GROWTH = 0.005f;
-    public static float K_SHARED_INFRA_DECAY = 0.005f;
+    public static float K_SHARED_INFRA_GROWTH = 0.00145f;
+    public static float K_SHARED_INFRA_DECAY = 0.02f;
 
     // ── Federal Funding Constants ──
 
@@ -94,7 +98,7 @@ public static class SimulationConstants
     public static float GRANT_BASE_TRANSIT = 20.0f;
     public static float GRANT_BASE_LIFE = 20.0f;
     public static float GRANT_BASE_DEV = 20.0f;
-    public static float K_STABILIZATION_RATE = 1.5f;
+    public static float K_STABILIZATION_RATE = 2.5f;
 
     // ── Scoring Constants ──
 

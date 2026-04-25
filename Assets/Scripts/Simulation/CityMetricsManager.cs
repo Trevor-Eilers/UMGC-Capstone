@@ -88,11 +88,19 @@ namespace Simulation
         /// </summary>
         public static float ComputeMetroPopulationPool(float cityReputation)
         {
+            // Continuous piecewise — no discontinuity at the rep=70 boundary.
+            // Above 70: the normal-band slope continues, plus an additional
+            //   (K_POP_INFLOW_HIGH - K_POP_INFLOW_NORMAL) slope on top.
+            // 30-70: linear inflow centered at rep=50.
+            // Below 30: outflow, anchored to the value at rep=30.
             if (cityReputation > 70f)
-                return (cityReputation - 70f) * SimulationConstants.K_POP_INFLOW_HIGH;
+                return (cityReputation - 50f) * SimulationConstants.K_POP_INFLOW_NORMAL
+                     + (cityReputation - 70f) *
+                       (SimulationConstants.K_POP_INFLOW_HIGH - SimulationConstants.K_POP_INFLOW_NORMAL);
             if (cityReputation >= 30f)
                 return (cityReputation - 50f) * SimulationConstants.K_POP_INFLOW_NORMAL;
-            return (cityReputation - 30f) * SimulationConstants.K_POP_OUTFLOW;
+            return (cityReputation - 30f) * SimulationConstants.K_POP_OUTFLOW
+                 + (30f - 50f) * SimulationConstants.K_POP_INFLOW_NORMAL;
         }
 
         /// <summary>
@@ -121,7 +129,25 @@ namespace Simulation
             }
 
             if (totalAttractiveness > 0f)
-                return newResidents * (myAttractiveness / totalAttractiveness);
+            {
+                float share;
+                if (newResidents >= 0f)
+                {
+                    // Inflow: most attractive district gets the largest share.
+                    share = myAttractiveness / totalAttractiveness;
+                }
+                else
+                {
+                    // Outflow: least attractive district bleeds most. Invert the share
+                    // so a struggling district loses more population than a thriving one.
+                    if (numActivePlayers > 1)
+                        share = (totalAttractiveness - myAttractiveness)
+                                / ((numActivePlayers - 1) * totalAttractiveness);
+                    else
+                        share = 1.0f;
+                }
+                return newResidents * share;
+            }
             return newResidents / numActivePlayers;
         }
 
@@ -148,17 +174,21 @@ namespace Simulation
         /// </summary>
         public static DistrictState ResolveFederalFunding(DistrictState d)
         {
-            // ── 4.5 — Stabilization Transfers (check first, sets grantsEligible) ──
+            // ── 4.5 — Stabilization Transfers ──
+            // Full rate at debt >= 70 (crisis); half rate in the 60-69 recovery band so
+            // a district climbing from debt 75 → 65 is not stranded between the
+            // stabilization threshold and the grant threshold.
             if (d.debt >= 70f)
             {
                 d.debt -= SimulationConstants.K_STABILIZATION_RATE;
-                d.grantsEligible = false;
             }
-            else
+            else if (d.debt >= SimulationConstants.DEBT_CAP)
             {
-                if (d.debt < SimulationConstants.DEBT_CAP)
-                    d.grantsEligible = true;
+                d.debt -= SimulationConstants.K_STABILIZATION_RATE * 0.5f;
             }
+
+            // Grants enable once debt drops below the cap.
+            d.grantsEligible = (d.debt < SimulationConstants.DEBT_CAP);
 
             // ── 4.4 — Competitive Grants ──
             float grantRevenue = 0f;

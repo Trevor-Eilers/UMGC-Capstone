@@ -25,6 +25,18 @@ namespace UI
 
             OnViewModelBound(player);
 
+            // Subscribe immediately if districtNetRef is already populated (e.g. for
+            // late-joining clients or when this presenter is added after the network
+            // value has already been set). Otherwise OnValueChanged would never fire
+            // for an already-set value and this presenter would silently never receive
+            // tick updates.
+            var existingDistrict = player.District;
+            if (existingDistrict != null)
+            {
+                existingDistrict.state.OnValueChanged -= OnDistrictStateChanged;
+                existingDistrict.state.OnValueChanged += OnDistrictStateChanged;
+            }
+
             player.districtNetRef.OnValueChanged += (_, _) =>
             {
                 var district = player.District;

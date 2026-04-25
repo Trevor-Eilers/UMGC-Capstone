@@ -7,7 +7,7 @@ namespace UI
     {
         private static readonly string[] InfoIconNames =
         {
-            "RevenueInfo", "SpendingInfo", "BudgetInfo", "ReserveInfo",
+            "RevenueInfo", "SpendingInfo", "CashFlowInfo", "ReserveInfo",
             "DebtInfo", "GrantsInfo",
             "GrantGreenBadge", "GrantTransitBadge",
             "GrantLifeBadge", "GrantDevBadge"
@@ -25,10 +25,14 @@ namespace UI
 
             void Refresh()
             {
-                SetBadge(green,   viewModel.GreenGrantStreak   > 0);
-                SetBadge(transit, viewModel.TransitGrantStreak > 0);
-                SetBadge(life,    viewModel.LifeGrantStreak    > 0);
-                SetBadge(dev,     viewModel.DevGrantStreak     > 0);
+                // A streak > 0 alone is not enough — during stabilization (debt >= 70)
+                // grantsEligible is false and no grant pays out even if the threshold
+                // condition is met. Gate on both so the badge reflects actual revenue.
+                bool eligible = viewModel.GrantsEligible;
+                SetBadge(green,   eligible && viewModel.GreenGrantStreak   > 0);
+                SetBadge(transit, eligible && viewModel.TransitGrantStreak > 0);
+                SetBadge(life,    eligible && viewModel.LifeGrantStreak    > 0);
+                SetBadge(dev,     eligible && viewModel.DevGrantStreak     > 0);
             }
 
             Refresh();

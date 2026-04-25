@@ -112,27 +112,32 @@ public static class BudgetCalculator
     /// Returns new debt and reserve values as a BudgetResult.
     /// </summary>
     public static BudgetResult ComputeBudgetBalance(
-        float revenue, float actualTotalSpending,
+        float revenue, float totalSpending,
         float debt, float reserve)
     {
         // Reserve decay — applied each tick before budget balance
         reserve *= (1.0f - SimulationConstants.K_RESERVE_DECAY);
 
-        float budgetBalance = revenue - actualTotalSpending;
+        // Use the UNSCALED commitment (totalSpending), not actualTotalSpending. The debt cap
+        // throttles delivered effect, but the player still owes what they tried to spend, so
+        // debt accrues unboundedly past the cap. Without this, deficit collapses to ~0 the
+        // moment debt hits 60 and the player is permanently throttled-but-not-punished.
+        float budgetBalance = revenue - totalSpending;
 
         if (budgetBalance >= 0f)
         {
             // ── SURPLUS ──
             if (debt > 0f)
             {
-                // Pay down debt first
-                float maxDebtReduction = budgetBalance * SimulationConstants.K_DEBT_RECOVERY;
-                float debtReduction = Math.Min(maxDebtReduction, debt);
+                // K_DEBT_RECOVERY is the FRACTION of surplus going to debt service.
+                // The remaining (1 - K_DEBT_RECOVERY) fills reserve. Clean 1:1 dollar
+                // accounting — the previous formulation cancelled itself out and left
+                // reserve empty whenever the player carried any debt.
+                float debtServiceShare = budgetBalance * SimulationConstants.K_DEBT_RECOVERY;
+                float debtReduction = Math.Min(debtServiceShare, debt);
                 debt -= debtReduction;
 
-                // Whatever surplus remains after debt service fills the reserve
-                float surplusUsedForDebt = debtReduction / SimulationConstants.K_DEBT_RECOVERY;
-                float surplusRemaining = budgetBalance - surplusUsedForDebt;
+                float surplusRemaining = budgetBalance - debtReduction;
                 reserve = Math.Min(reserve + surplusRemaining, SimulationConstants.RESERVE_CAP);
             }
             else
@@ -156,8 +161,9 @@ public static class BudgetCalculator
 
             if (deficit > 0f)
             {
-                // Remaining deficit accrues as debt
-                debt = Math.Min(Math.Max(debt + deficit * SimulationConstants.K_DEBT_ACCRUAL, 0f), 80f);
+                // Remaining deficit accrues as debt. Clamp belongs to Phase 5; just
+                // accumulate here so upstream overshoots remain visible during dev.
+                debt += deficit * SimulationConstants.K_DEBT_ACCRUAL;
             }
         }
 
