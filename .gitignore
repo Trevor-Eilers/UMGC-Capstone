@@ -73,15 +73,8 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
-Assets/.claude/worktrees/adoring-albattani/
 Assets/_Recovery/0 (2).unity.meta
 Assets/_Recovery/0 (2).unity
-Assets/.claude/worktrees/youthful-turing/
-Assets/.claude/worktrees/peaceful-napier/
-Assets/.claude/worktrees/lucid-robinson/
-Assets/.claude/worktrees/epic-kare/
-Assets/.claude/worktrees/charming-merkle/
-Assets/.claude/worktrees/amazing-herschel/
 bin/Build/bin.data
 bin/Build/bin.framework.js
 bin/Build/bin.loader.js
@@ -102,8 +95,5 @@ bin/TemplateData/unity-logo-light.png
 bin/TemplateData/unity-logo-title-footer.png
 bin/TemplateData/webmemd-icon.png
 /.idea
-Assets/.claude/settings.local.json
-Assets/.claude/settings.local.json
-Assets/.claude/settings.local.json
 *.md
-Assets/.claude/settings.local.json
+/.claude
