@@ -94,9 +94,9 @@ namespace Building
                 Mathf.RoundToInt(state.population / PopPerPlot), 0, totalPlots);
             int currentOccupied = _district.placements.Count;
 
+            var max = Random.Range(1, MaxBuildingsPerTick);
             if (currentOccupied < targetOccupied)
             {
-                var max = Random.Range(1, MaxBuildingsPerTick);
                 int toSpawn = Mathf.Min(targetOccupied - currentOccupied, max);
                 for (int s = 0; s < toSpawn; s++)
                 {
@@ -106,8 +106,8 @@ namespace Building
             }
             else if (currentOccupied > targetOccupied)
             {
-                var max = Random.Range(1, MaxBuildingsPerTick);
-                int toRemove = Mathf.Min(currentOccupied - targetOccupied, MaxBuildingsPerTick);
+                
+                int toRemove = Mathf.Min(currentOccupied - targetOccupied, max);
                 for (int s = 0; s < toRemove; s++)
                     if (!spawner.TryRemoveRandom(_district.placements)) break;
             }
