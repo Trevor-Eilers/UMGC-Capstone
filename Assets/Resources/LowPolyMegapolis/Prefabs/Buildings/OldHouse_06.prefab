@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 4306603636934486787}
   - component: {fileID: 4306603636933716771}
   - component: {fileID: 4306603636932717027}
-  - component: {fileID: 3680995247620174846}
   m_Layer: 0
   m_Name: OldHouse_06
   m_TagString: Residential_Mid
@@ -91,25 +90,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &3680995247620174846
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4306603636934653731}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 68ffa00511aa5ae4a9654b3305187624, type: 3}

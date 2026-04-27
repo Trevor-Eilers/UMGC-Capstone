@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 603548571547888051}
   - component: {fileID: 603548571550755219}
   - component: {fileID: 603548571549789011}
-  - component: {fileID: 5099730859817863997}
   m_Layer: 0
   m_Name: Supermarket_03
   m_TagString: Commercial_Mid
@@ -91,25 +90,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &5099730859817863997
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 603548571547596179}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 364ca0883b750ce4492979f2a76269ae, type: 3}

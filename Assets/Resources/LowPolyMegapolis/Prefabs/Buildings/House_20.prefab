@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 2461812408265158021}
   - component: {fileID: 2461812408268582309}
   - component: {fileID: 2461812408267452261}
-  - component: {fileID: 7706186009714214752}
   m_Layer: 0
   m_Name: House_20
   m_TagString: Residential_Mid
@@ -91,25 +90,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &7706186009714214752
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2461812408265257381}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: f4e0daae4681477429e398ccd4810d6b, type: 3}

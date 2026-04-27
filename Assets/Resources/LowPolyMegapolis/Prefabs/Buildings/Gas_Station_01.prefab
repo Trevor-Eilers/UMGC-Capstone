@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 2355340177554134392}
   - component: {fileID: 2355340177555428696}
   - component: {fileID: 2355340177556428696}
-  - component: {fileID: 7077076061548143940}
   m_Layer: 0
   m_Name: Gas_Station_01
   m_TagString: Commercial_Low
@@ -91,25 +90,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &7077076061548143940
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2355340177554426200}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: a4f1b51de8a450646addcfd29e9b5514, type: 3}

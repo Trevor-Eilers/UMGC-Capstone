@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 118783203917120189}
   - component: {fileID: 118783203920511645}
   - component: {fileID: 118783203919413341}
-  - component: {fileID: 2127264934997532067}
   m_Layer: 0
   m_Name: House_44
   m_TagString: Commercial_High
@@ -91,25 +90,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &2127264934997532067
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 118783203917225629}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 4f1b7313363b1c948b8cfcf40f596a16, type: 3}

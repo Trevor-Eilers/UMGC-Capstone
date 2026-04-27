@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 8511418704271644273}
   - component: {fileID: 8511418704268777041}
   - component: {fileID: 8511418704269874321}
-  - component: {fileID: 1192198987475947744}
   m_Layer: 0
   m_Name: FireStation_01
   m_TagString: Civic_Mid
@@ -93,28 +92,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &1192198987475947744
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8511418704271870545}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 2065f2ec9d9953e48bdf881e596ca943, type: 3}
 --- !u!1001 &2615390360764057680
 PrefabInstance:
   m_ObjectHideFlags: 0

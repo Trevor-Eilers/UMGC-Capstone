@@ -48,13 +48,13 @@ MonoBehaviour:
   GlobalObjectIdHash: 829251195
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
-  Ownership: 1
+  Ownership: 3
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
+  DontDestroyWithOwner: 1
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 0
   AllowOwnerToParent: 0
@@ -87,6 +87,7 @@ MonoBehaviour:
       happiness: 0
       sustainability: 0
       infrastructure: 0
+      pollution: 0
       gdp: 0
       debt: 0
       reserve: 0
@@ -101,3 +102,7 @@ MonoBehaviour:
       ticksAtDebtCap: 0
       ticksBelowHappiness20: 0
       totalCitySpending: 0
+  placements:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0

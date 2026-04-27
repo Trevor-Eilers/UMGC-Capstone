@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 8351047236245165836}
   - component: {fileID: 8351047236243871532}
   - component: {fileID: 8351047236242871788}
-  - component: {fileID: 8351047236244769905}
   m_Layer: 0
   m_Name: SmallHouse_15
   m_TagString: Commercial_Low
@@ -93,28 +92,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &8351047236244769905
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8351047236244802348}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 4e9e1eaeecd85ec49acb9070525039b1, type: 3}
 --- !u!1001 &8351047236648679002
 PrefabInstance:
   m_ObjectHideFlags: 0
