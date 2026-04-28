@@ -195,8 +195,8 @@ namespace Simulation
 
             if (d.debt < SimulationConstants.DEBT_CAP && d.grantsEligible)
             {
-                // Green Infrastructure Grant — sustainability > 70
-                if (d.sustainability > 70f)
+                // Green Infrastructure Grant — sustainability above threshold
+                if (d.sustainability > SimulationConstants.GRANT_GREEN_THRESHOLD)
                 {
                     float multiplier = Math.Max(0.30f,
                         1.0f - d.greenGrantStreak * 0.15f);
@@ -208,8 +208,8 @@ namespace Simulation
                     d.greenGrantStreak = 0;
                 }
 
-                // Federal Transit Grant — population > 300k
-                if (d.population > 300.0f)
+                // Federal Transit Grant — population above threshold
+                if (d.population > SimulationConstants.GRANT_TRANSIT_THRESHOLD)
                 {
                     float multiplier = Math.Max(0.30f,
                         1.0f - d.transitGrantStreak * 0.15f);
@@ -221,8 +221,8 @@ namespace Simulation
                     d.transitGrantStreak = 0;
                 }
 
-                // Quality of Life Grant — happiness > 75
-                if (d.happiness > 75f)
+                // Quality of Life Grant — happiness above threshold
+                if (d.happiness > SimulationConstants.GRANT_LIFE_THRESHOLD)
                 {
                     float multiplier = Math.Max(0.30f,
                         1.0f - d.lifeGrantStreak * 0.15f);
@@ -234,8 +234,8 @@ namespace Simulation
                     d.lifeGrantStreak = 0;
                 }
 
-                // Development Grant — infrastructure > 80
-                if (d.infrastructure > 80f)
+                // Development Grant — infrastructure above threshold
+                if (d.infrastructure > SimulationConstants.GRANT_DEV_THRESHOLD)
                 {
                     float multiplier = Math.Max(0.30f,
                         1.0f - d.devGrantStreak * 0.15f);
@@ -248,7 +248,27 @@ namespace Simulation
                 }
             }
 
-            d.revenue += grantRevenue;
+            // Route grant revenue: visible on the revenue HUD chip for this tick,
+            // then pay down debt first and fill reserve with the remainder. Without
+            // this routing the grant is wiped next tick when ComputeRevenue overwrites
+            // d.revenue, so grants would have no lasting financial impact.
+            if (grantRevenue > 0f)
+            {
+                d.revenue += grantRevenue;
+
+                if (d.debt > 0f)
+                {
+                    float debtReduction = Math.Min(grantRevenue, d.debt);
+                    d.debt -= debtReduction;
+                    grantRevenue -= debtReduction;
+                }
+
+                if (grantRevenue > 0f)
+                {
+                    d.reserve = Math.Min(d.reserve + grantRevenue,
+                                         SimulationConstants.RESERVE_CAP);
+                }
+            }
             return d;
         }
     }

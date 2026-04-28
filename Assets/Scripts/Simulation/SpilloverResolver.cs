@@ -70,16 +70,34 @@ public static class SpilloverResolver
     {
         for (int src = 0; src < numActivePlayers; src++)
         {
-            if (snapshot[src].policyValues.environment >= SimulationConstants.POLLUTE_ENV_THRESHOLD
-                || snapshot[src].gdp <= SimulationConstants.POLLUTE_GDP_THRESHOLD)
-                continue;
+            float srcEnv = snapshot[src].policyValues.environment;
+            float srcGdp = snapshot[src].gdp;
 
-            float envShortfall = Math.Max(0f,
-                SimulationConstants.POLLUTE_ENV_THRESHOLD - snapshot[src].policyValues.environment);
-            float gdpExcess = Math.Max(0f,
-                snapshot[src].gdp - SimulationConstants.POLLUTE_GDP_THRESHOLD);
-            float pollutionOutput = (envShortfall + gdpExcess)
-                                    * SimulationConstants.K_POLLUTION_GENERATE;
+            // Path 1: low-environment pollution (existing model — unregulated industry).
+            float lowEnvOutput = 0f;
+            if (srcEnv < SimulationConstants.POLLUTE_ENV_THRESHOLD
+                && srcGdp > SimulationConstants.POLLUTE_GDP_THRESHOLD)
+            {
+                float envShortfall = SimulationConstants.POLLUTE_ENV_THRESHOLD - srcEnv;
+                float gdpExcess = srcGdp - SimulationConstants.POLLUTE_GDP_THRESHOLD;
+                lowEnvOutput = (envShortfall + gdpExcess)
+                               * SimulationConstants.K_POLLUTION_GENERATE;
+            }
+
+            // Path 2: high-GDP pollution (sheer scale produces emissions that env
+            // spending mitigates but cannot fully shield at extreme GDP).
+            float highGdpOutput = 0f;
+            if (srcGdp > SimulationConstants.POLLUTE_GDP_HIGH_THRESHOLD)
+            {
+                float gdpExcess = srcGdp - SimulationConstants.POLLUTE_GDP_HIGH_THRESHOLD;
+                float envOffset = Math.Max(0f, srcEnv - SimulationConstants.POLLUTE_ENV_THRESHOLD)
+                                  * SimulationConstants.K_POLLUTE_ENV_OFFSET;
+                highGdpOutput = Math.Max(0f, gdpExcess - envOffset)
+                                * SimulationConstants.K_POLLUTION_GENERATE;
+            }
+
+            float pollutionOutput = Math.Max(lowEnvOutput, highGdpOutput);
+            if (pollutionOutput <= 0f) continue;
 
             if (src == districtIndex)
             {

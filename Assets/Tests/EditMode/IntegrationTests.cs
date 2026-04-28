@@ -88,6 +88,29 @@ public class IntegrationTests
             SimulationConstants.K_STABILIZATION_RATE,
             SimulationConstants.POP_MAX_SCORE,
             SimulationConstants.K_CRISIS_PENALTY,
+            SimulationConstants.K_BASE,
+            SimulationConstants.K_HOUSING_CAP,
+            SimulationConstants.K_INFRA_CAP,
+            SimulationConstants.K_ENV_CAP,
+            SimulationConstants.K_SHARED_CAP,
+            SimulationConstants.K_REPUTATION_CAP,
+            SimulationConstants.K_OVERSHOOT_LINEAR,
+            SimulationConstants.K_OVERSHOOT_QUAD,
+            SimulationConstants.SUSTAIN_COLLAPSE_THRESHOLD,
+            SimulationConstants.K_SUSTAIN_COLLAPSE_RATE,
+            SimulationConstants.GRANT_GREEN_THRESHOLD,
+            SimulationConstants.GRANT_TRANSIT_THRESHOLD,
+            SimulationConstants.GRANT_LIFE_THRESHOLD,
+            SimulationConstants.GRANT_DEV_THRESHOLD,
+            SimulationConstants.GDP_MAINTAIN_THRESHOLD,
+            SimulationConstants.K_GDP_MAINTAIN,
+            SimulationConstants.HAPPINESS_COLLAPSE_THRESHOLD,
+            SimulationConstants.K_HAPPINESS_COLLAPSE_RATE,
+            SimulationConstants.POLLUTE_GDP_HIGH_THRESHOLD,
+            SimulationConstants.K_POLLUTE_ENV_OFFSET,
+            SimulationConstants.REPUTATION_PENALTY_THRESHOLD,
+            SimulationConstants.K_REPUTATION_PENALTY_FLOOR,
+            SimulationConstants.K_DEBT_CAP_MIN_SCALE,
         };
 
         // ── Set calibrated constants for steady-state test ──
@@ -238,6 +261,29 @@ public class IntegrationTests
         SimulationConstants.K_STABILIZATION_RATE = savedConstants[63];
         SimulationConstants.POP_MAX_SCORE = savedConstants[64];
         SimulationConstants.K_CRISIS_PENALTY = savedConstants[65];
+        SimulationConstants.K_BASE = savedConstants[66];
+        SimulationConstants.K_HOUSING_CAP = savedConstants[67];
+        SimulationConstants.K_INFRA_CAP = savedConstants[68];
+        SimulationConstants.K_ENV_CAP = savedConstants[69];
+        SimulationConstants.K_SHARED_CAP = savedConstants[70];
+        SimulationConstants.K_REPUTATION_CAP = savedConstants[71];
+        SimulationConstants.K_OVERSHOOT_LINEAR = savedConstants[72];
+        SimulationConstants.K_OVERSHOOT_QUAD = savedConstants[73];
+        SimulationConstants.SUSTAIN_COLLAPSE_THRESHOLD = savedConstants[74];
+        SimulationConstants.K_SUSTAIN_COLLAPSE_RATE = savedConstants[75];
+        SimulationConstants.GRANT_GREEN_THRESHOLD = savedConstants[76];
+        SimulationConstants.GRANT_TRANSIT_THRESHOLD = savedConstants[77];
+        SimulationConstants.GRANT_LIFE_THRESHOLD = savedConstants[78];
+        SimulationConstants.GRANT_DEV_THRESHOLD = savedConstants[79];
+        SimulationConstants.GDP_MAINTAIN_THRESHOLD = savedConstants[80];
+        SimulationConstants.K_GDP_MAINTAIN = savedConstants[81];
+        SimulationConstants.HAPPINESS_COLLAPSE_THRESHOLD = savedConstants[82];
+        SimulationConstants.K_HAPPINESS_COLLAPSE_RATE = savedConstants[83];
+        SimulationConstants.POLLUTE_GDP_HIGH_THRESHOLD = savedConstants[84];
+        SimulationConstants.K_POLLUTE_ENV_OFFSET = savedConstants[85];
+        SimulationConstants.REPUTATION_PENALTY_THRESHOLD = savedConstants[86];
+        SimulationConstants.K_REPUTATION_PENALTY_FLOOR = savedConstants[87];
+        SimulationConstants.K_DEBT_CAP_MIN_SCALE = savedConstants[88];
     }
 
     // ══════════════════════════════════════════════

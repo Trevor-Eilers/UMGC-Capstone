@@ -56,8 +56,19 @@ namespace Simulation
             d.revenue = BudgetCalculator.ComputeRevenue(
                 d.policyValues.taxRate, d.gdp, d.population);
 
+            // Reputation penalty: low city reputation erodes revenue (investor
+            // confidence collapse). Reads last-tick cityMetrics — stable, not
+            // self-referential. Floor prevents an unrecoverable death spiral.
+            if (cityMetrics.cityReputation < SimulationConstants.REPUTATION_PENALTY_THRESHOLD)
+            {
+                float repFactor = Math.Max(
+                    SimulationConstants.K_REPUTATION_PENALTY_FLOOR,
+                    cityMetrics.cityReputation / SimulationConstants.REPUTATION_PENALTY_THRESHOLD);
+                d.revenue *= repFactor;
+            }
+
             SpendingBreakdown spending = BudgetCalculator.ComputeSpendingDemand(
-                d.policyValues, d.population);
+                d.policyValues, d.population, d.gdp);
 
             ScaledSpending scaledSpending = BudgetCalculator.ComputeDebtCapScaling(
                 spending, d.revenue, d.debt);
@@ -77,7 +88,7 @@ namespace Simulation
             d.happiness = LocalEffectCalculator.ComputeHappiness(d, scaledSpending);
             d.infrastructure += LocalEffectCalculator.ComputeInfrastructureDelta(d, scaledSpending);
             d.sustainability += LocalEffectCalculator.ComputeSustainabilityDelta(d, scaledSpending);
-            d.population -= LocalEffectCalculator.ComputeOutmigration(d);
+            d.population -= LocalEffectCalculator.ComputeOutmigration(d, scaledSpending, cityMetrics);
             d.pollution   = LocalEffectCalculator.ComputePollutionIndex(d);
 
             // ══════════════════════════════════════════
@@ -134,7 +145,7 @@ namespace Simulation
             for (int i = 0; i < numActivePlayers; i++)
             {
                 SpendingBreakdown spending = BudgetCalculator.ComputeSpendingDemand(
-                    snapshot[i].policyValues, snapshot[i].population);
+                    snapshot[i].policyValues, snapshot[i].population, snapshot[i].gdp);
                 float revenue = BudgetCalculator.ComputeRevenue(
                     snapshot[i].policyValues.taxRate, snapshot[i].gdp, snapshot[i].population);
                 ScaledSpending scaled = BudgetCalculator.ComputeDebtCapScaling(

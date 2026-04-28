@@ -23,6 +23,11 @@ public class LocalEffectCalculatorTests
     private float saved_K_INFRA_TO_SUSTAIN, saved_K_ENV_TO_SUSTAIN;
     private float saved_K_POP_SUSTAIN_DRAIN, saved_K_SUSTAIN_DECAY;
     private float saved_SUSTAIN_MIGRATION_THRESHOLD, saved_K_MIGRATION_RATE;
+    private float saved_K_BASE, saved_K_HOUSING_CAP, saved_K_INFRA_CAP, saved_K_ENV_CAP;
+    private float saved_K_SHARED_CAP, saved_K_REPUTATION_CAP;
+    private float saved_K_OVERSHOOT_LINEAR, saved_K_OVERSHOOT_QUAD;
+    private float saved_SUSTAIN_COLLAPSE_THRESHOLD, saved_K_SUSTAIN_COLLAPSE_RATE;
+    private float saved_HAPPINESS_COLLAPSE_THRESHOLD, saved_K_HAPPINESS_COLLAPSE_RATE;
 
     [SetUp]
     public void SaveConstants()
@@ -51,6 +56,18 @@ public class LocalEffectCalculatorTests
         saved_K_SUSTAIN_DECAY = SimulationConstants.K_SUSTAIN_DECAY;
         saved_SUSTAIN_MIGRATION_THRESHOLD = SimulationConstants.SUSTAIN_MIGRATION_THRESHOLD;
         saved_K_MIGRATION_RATE = SimulationConstants.K_MIGRATION_RATE;
+        saved_K_BASE = SimulationConstants.K_BASE;
+        saved_K_HOUSING_CAP = SimulationConstants.K_HOUSING_CAP;
+        saved_K_INFRA_CAP = SimulationConstants.K_INFRA_CAP;
+        saved_K_ENV_CAP = SimulationConstants.K_ENV_CAP;
+        saved_K_SHARED_CAP = SimulationConstants.K_SHARED_CAP;
+        saved_K_REPUTATION_CAP = SimulationConstants.K_REPUTATION_CAP;
+        saved_K_OVERSHOOT_LINEAR = SimulationConstants.K_OVERSHOOT_LINEAR;
+        saved_K_OVERSHOOT_QUAD = SimulationConstants.K_OVERSHOOT_QUAD;
+        saved_SUSTAIN_COLLAPSE_THRESHOLD = SimulationConstants.SUSTAIN_COLLAPSE_THRESHOLD;
+        saved_K_SUSTAIN_COLLAPSE_RATE = SimulationConstants.K_SUSTAIN_COLLAPSE_RATE;
+        saved_HAPPINESS_COLLAPSE_THRESHOLD = SimulationConstants.HAPPINESS_COLLAPSE_THRESHOLD;
+        saved_K_HAPPINESS_COLLAPSE_RATE = SimulationConstants.K_HAPPINESS_COLLAPSE_RATE;
     }
 
     [TearDown]
@@ -80,6 +97,18 @@ public class LocalEffectCalculatorTests
         SimulationConstants.K_SUSTAIN_DECAY = saved_K_SUSTAIN_DECAY;
         SimulationConstants.SUSTAIN_MIGRATION_THRESHOLD = saved_SUSTAIN_MIGRATION_THRESHOLD;
         SimulationConstants.K_MIGRATION_RATE = saved_K_MIGRATION_RATE;
+        SimulationConstants.K_BASE = saved_K_BASE;
+        SimulationConstants.K_HOUSING_CAP = saved_K_HOUSING_CAP;
+        SimulationConstants.K_INFRA_CAP = saved_K_INFRA_CAP;
+        SimulationConstants.K_ENV_CAP = saved_K_ENV_CAP;
+        SimulationConstants.K_SHARED_CAP = saved_K_SHARED_CAP;
+        SimulationConstants.K_REPUTATION_CAP = saved_K_REPUTATION_CAP;
+        SimulationConstants.K_OVERSHOOT_LINEAR = saved_K_OVERSHOOT_LINEAR;
+        SimulationConstants.K_OVERSHOOT_QUAD = saved_K_OVERSHOOT_QUAD;
+        SimulationConstants.SUSTAIN_COLLAPSE_THRESHOLD = saved_SUSTAIN_COLLAPSE_THRESHOLD;
+        SimulationConstants.K_SUSTAIN_COLLAPSE_RATE = saved_K_SUSTAIN_COLLAPSE_RATE;
+        SimulationConstants.HAPPINESS_COLLAPSE_THRESHOLD = saved_HAPPINESS_COLLAPSE_THRESHOLD;
+        SimulationConstants.K_HAPPINESS_COLLAPSE_RATE = saved_K_HAPPINESS_COLLAPSE_RATE;
     }
 
     // ──────────────────────────────────────────────
@@ -233,49 +262,151 @@ public class LocalEffectCalculatorTests
     }
 
     // ══════════════════════════════════════════════
-    // SUSTAINABILITY OUTMIGRATION
+    // CARRYING-CAPACITY OUTMIGRATION
     // ══════════════════════════════════════════════
 
-    [Test]
-    public void Outmigration_AtThreshold30_NoMigration()
+    private static CityMetrics MakeCity(float reputation = 0f, float sharedInfra = 0f)
     {
-        var d = MakeDistrict(sustainability: 30f);
-        float loss = LocalEffectCalculator.ComputeOutmigration(d);
-        Assert.AreEqual(0f, loss, 0.001f,
-            "No outmigration at exactly the threshold");
+        return new CityMetrics
+        {
+            cityReputation = reputation,
+            sharedInfraQuality = sharedInfra,
+            metroPopulationPool = 0f
+        };
     }
 
     [Test]
-    public void Outmigration_AboveThreshold_NoMigration()
+    public void Capacity_ZeroInvestment_FloorAtKBase()
     {
+        var d = MakeDistrict(infrastructure: 0f, sustainability: 55f, population: 5f);
+        var s = MakeSpending();
+        var cm = MakeCity();
+
+        float K = LocalEffectCalculator.ComputeCarryingCapacity(d, s, cm);
+
+        // Only K_BASE contributes when everything is zero.
+        Assert.AreEqual(SimulationConstants.K_BASE, K, 0.01f,
+            "K should collapse to K_BASE when all inputs are zero");
+    }
+
+    [Test]
+    public void Capacity_DefaultDistrict_InMidBand()
+    {
+        // Defaults: housing=50, env=50, infra-metric=50, shared=50, rep=50, pop=150.
+        // With K_SPEND=3.0: actualHousingCost = 0.5 * 150 * 3 = 225, sqrt = 15.
+        // K = 5 + 4*15 + 1.5*50 + 1.5*15 + 1.5*50 + 1.0*50
+        //   = 5 + 60 + 75 + 22.5 + 75 + 50 = 287.5
+        var d = MakeDistrict(infrastructure: 50f, sustainability: 55f, population: 150f);
+        var s = MakeSpending(housing: 225f, env: 225f);
+        var cm = MakeCity(reputation: 50f, sharedInfra: 50f);
+
+        float K = LocalEffectCalculator.ComputeCarryingCapacity(d, s, cm);
+
+        Assert.AreEqual(287.5f, K, 1.0f,
+            "Default mid-game district K should land near 287");
+        // pop=150 well below K=287.5 → no outmigration.
+        float loss = LocalEffectCalculator.ComputeOutmigration(d, s, cm);
+        Assert.AreEqual(0f, loss, 0.001f, "No outmigration when below capacity");
+    }
+
+    [Test]
+    public void Capacity_MaxInvestment_HitsTargetBand()
+    {
+        // Max sliders, max city signals, pop=500.
+        // actualHousingCost = 1.0 * 500 * 3 = 1500, sqrt ≈ 38.73, *4 = 154.9
+        // K = 5 + 154.9 + 150 + 58.1 + 150 + 100 = ~618
+        var d = MakeDistrict(infrastructure: 100f, sustainability: 70f, population: 500f);
+        var s = MakeSpending(housing: 1500f, env: 1500f);
+        var cm = MakeCity(reputation: 100f, sharedInfra: 100f);
+
+        float K = LocalEffectCalculator.ComputeCarryingCapacity(d, s, cm);
+
+        Assert.Greater(K, 600f,
+            "Max-invested district should support 600k+ residents");
+        Assert.Less(K, 700f,
+            "Max-invested district K should land in 600-700 band, not unbounded");
+        float loss = LocalEffectCalculator.ComputeOutmigration(d, s, cm);
+        Assert.AreEqual(0f, loss, 0.001f, "pop=500 well below K — no outmigration");
+    }
+
+    [Test]
+    public void Outmigration_OvershootRampsQuadratically()
+    {
+        // Pin K to a known value: K_BASE only (5) and pop driven to overshoot.
+        SimulationConstants.K_HOUSING_CAP = 0f;
+        SimulationConstants.K_INFRA_CAP = 0f;
+        SimulationConstants.K_ENV_CAP = 0f;
+        SimulationConstants.K_SHARED_CAP = 0f;
+        SimulationConstants.K_REPUTATION_CAP = 0f;
+        // K = K_BASE = 5. Sustain=55 (above collapse threshold).
         var d = MakeDistrict(sustainability: 55f);
-        float loss = LocalEffectCalculator.ComputeOutmigration(d);
-        Assert.AreEqual(0f, loss, 0.001f);
+        var s = MakeSpending();
+        var cm = MakeCity();
+
+        d.population = 5f + 10f;
+        float loss10 = LocalEffectCalculator.ComputeOutmigration(d, s, cm);
+        d.population = 5f + 50f;
+        float loss50 = LocalEffectCalculator.ComputeOutmigration(d, s, cm);
+        d.population = 5f + 150f;
+        float loss150 = LocalEffectCalculator.ComputeOutmigration(d, s, cm);
+
+        // Linear: 0.05 * o; Quad: 0.0015 * o^2.
+        // o=10: 0.5 + 0.15 = 0.65
+        // o=50: 2.5 + 3.75 = 6.25
+        // o=150: 7.5 + 33.75 = 41.25
+        Assert.AreEqual(0.65f, loss10, 0.01f);
+        Assert.AreEqual(6.25f, loss50, 0.01f);
+        Assert.AreEqual(41.25f, loss150, 0.01f);
+        // Super-linear ramp: ratio at higher overshoot grows faster than linear.
+        Assert.Greater(loss150 / loss50, loss50 / loss10,
+            "Outmigration should ramp super-linearly with overshoot");
     }
 
     [Test]
-    public void Outmigration_BelowThreshold_ScalesLinearly()
+    public void Outmigration_DebtThrottled_CapacityCollapses()
     {
-        SimulationConstants.K_MIGRATION_RATE = 2.0f;
+        // scaleFactor=0 means BudgetCalculator delivers actualHousingCost = 0,
+        // so the housing/env capacity terms drop out entirely.
+        var d = MakeDistrict(infrastructure: 100f, sustainability: 55f, population: 200f);
+        var s = MakeSpending(housing: 0f, env: 0f);
+        s.scaleFactor = 0f;
+        var cm = MakeCity(reputation: 100f, sharedInfra: 100f);
 
-        var d = MakeDistrict(sustainability: 20f);
-        float loss = LocalEffectCalculator.ComputeOutmigration(d);
-
-        // (30 - 20) * 2.0 = 20.0
-        Assert.AreEqual(20.0f, loss, 0.01f,
-            "Outmigration should be (threshold - sustainability) * K_MIGRATION_RATE");
+        float K = LocalEffectCalculator.ComputeCarryingCapacity(d, s, cm);
+        // K = 5 + 0 + 150 + 0 + 150 + 100 = 405. Pop=200 still below.
+        // The point is: housing/env contributions go to zero with scaleFactor=0.
+        Assert.AreEqual(405f, K, 1.0f,
+            "Debt-throttled district loses its housing/env capacity bonus");
     }
 
     [Test]
-    public void Outmigration_AtZeroSustainability_MaximumLoss()
+    public void Outmigration_SustainCollapseFloorTriggers()
     {
-        SimulationConstants.K_MIGRATION_RATE = 1.0f;
+        // High capacity, but sustain=0 → collapse floor still evicts.
+        var d = MakeDistrict(infrastructure: 100f, sustainability: 0f, population: 100f);
+        var s = MakeSpending(housing: 1000f, env: 1000f);
+        var cm = MakeCity(reputation: 100f, sharedInfra: 100f);
 
-        var d = MakeDistrict(sustainability: 0f);
-        float loss = LocalEffectCalculator.ComputeOutmigration(d);
+        float loss = LocalEffectCalculator.ComputeOutmigration(d, s, cm);
 
-        // (30 - 0) * 1.0 = 30
-        Assert.AreEqual(30.0f, loss, 0.01f);
+        // Capacity term is zero (pop well below K). Sustain term:
+        // (15 - 0) * 0.5 = 7.5
+        Assert.AreEqual(7.5f, loss, 0.01f,
+            "Sustain collapse below 15 should evict regardless of capacity");
+    }
+
+    [Test]
+    public void Outmigration_SustainAt15_NoCollapseTerm()
+    {
+        // Sustain at the boundary — no collapse term, pop below capacity.
+        var d = MakeDistrict(infrastructure: 100f, sustainability: 15f, population: 100f);
+        var s = MakeSpending(housing: 1000f, env: 1000f);
+        var cm = MakeCity(reputation: 100f, sharedInfra: 100f);
+
+        float loss = LocalEffectCalculator.ComputeOutmigration(d, s, cm);
+
+        Assert.AreEqual(0f, loss, 0.001f,
+            "At sustain=15 (boundary), only capacity term active and pop is below K");
     }
 
     // ══════════════════════════════════════════════
@@ -434,6 +565,30 @@ public class LocalEffectCalculatorTests
 
         // (30 - 50) * 1.0 = -20
         Assert.AreEqual(-20f, delta, 0.01f);
+    }
+
+    // ══════════════════════════════════════════════
+    // POPULATION FLOOR REGRESSION
+    // The bug being fixed: with production constants, population always
+    // collapsed to MIN_POPULATION=5 regardless of player investment.
+    // ══════════════════════════════════════════════
+
+    [Test]
+    public void Population_EscapesMinFloor_DefaultDistrict()
+    {
+        const int numPlayers = 4;
+        var districts = new DistrictState[numPlayers];
+        for (int i = 0; i < numPlayers; i++) districts[i] = DistrictState.Default();
+        var cityMetrics = CityMetrics.Default();
+
+        for (int tick = 0; tick < SimulationConstants.TOTAL_TICKS; tick++)
+            TickProcessor.ResolveFullTick(districts, ref cityMetrics);
+
+        for (int i = 0; i < numPlayers; i++)
+        {
+            Assert.Greater(districts[i].population, SimulationConstants.MIN_POPULATION + 20f,
+                $"District {i} should not collapse to floor (got {districts[i].population:F1})");
+        }
     }
 }
 

@@ -138,19 +138,56 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Phase 2.4 (continued) — Outmigration.
-        /// When sustainability drops below threshold 30, residents leave.
-        /// Returns population loss as a positive number (caller subtracts and clamps).
-        /// Returns 0 if sustainability is at or above threshold.
+        /// Phase 2.4 (continued) — Carrying capacity.
+        /// Returns the population (in thousands) the district can support given its
+        /// investments (housing/env/infra), local infrastructure quality, and the
+        /// city-wide signals (shared infra, reputation). Used by ComputeOutmigration
+        /// and exposed for tests and UI tooltips.
+        ///
+        /// actualHousingCost and actualEnvCost are already debt-cap-scaled by
+        /// BudgetCalculator.ComputeDebtCapScaling, so this formula does NOT multiply
+        /// by scaleFactor again — debt throttling naturally collapses these terms.
         /// </summary>
-        public static float ComputeOutmigration(DistrictState d)
+        public static float ComputeCarryingCapacity(DistrictState d, ScaledSpending s, in CityMetrics cm)
         {
-            if (d.sustainability < SimulationConstants.SUSTAIN_MIGRATION_THRESHOLD)
+            return SimulationConstants.K_BASE
+                 + SimulationConstants.K_HOUSING_CAP    * (float)Math.Sqrt(Math.Max(0f, s.actualHousingCost))
+                 + SimulationConstants.K_INFRA_CAP      * d.infrastructure
+                 + SimulationConstants.K_ENV_CAP        * (float)Math.Sqrt(Math.Max(0f, s.actualEnvCost))
+                 + SimulationConstants.K_SHARED_CAP     * cm.sharedInfraQuality
+                 + SimulationConstants.K_REPUTATION_CAP * cm.cityReputation;
+        }
+
+        /// <summary>
+        /// Phase 2.4 (continued) — Outmigration.
+        /// Two channels: (1) capacity overshoot (linear + quadratic ramp) when
+        /// population exceeds the carrying capacity K(d); (2) a sustain-collapse
+        /// floor that still evicts residents when sustainability drops below 15
+        /// even if capacity is fine — prevents "high-housing slum with zero
+        /// environment" from being a stable strategy.
+        /// Returns population loss as a positive number (caller subtracts and clamps).
+        /// </summary>
+        public static float ComputeOutmigration(DistrictState d, ScaledSpending s, in CityMetrics cm)
+        {
+            float K = ComputeCarryingCapacity(d, s, cm);
+            float overshoot = Math.Max(0f, d.population - K);
+            float outmig = SimulationConstants.K_OVERSHOOT_LINEAR * overshoot
+                         + SimulationConstants.K_OVERSHOOT_QUAD   * overshoot * overshoot;
+
+            if (d.sustainability < SimulationConstants.SUSTAIN_COLLAPSE_THRESHOLD)
             {
-                return (SimulationConstants.SUSTAIN_MIGRATION_THRESHOLD - d.sustainability)
-                       * SimulationConstants.K_MIGRATION_RATE;
+                outmig += (SimulationConstants.SUSTAIN_COLLAPSE_THRESHOLD - d.sustainability)
+                        * SimulationConstants.K_SUSTAIN_COLLAPSE_RATE;
             }
-            return 0f;
+            // Mirror channel: happiness collapse drives residents out even when
+            // capacity and sustainability are fine. Prevents "max-tax + cheap
+            // housing slum" from being viable.
+            if (d.happiness < SimulationConstants.HAPPINESS_COLLAPSE_THRESHOLD)
+            {
+                outmig += (SimulationConstants.HAPPINESS_COLLAPSE_THRESHOLD - d.happiness)
+                        * SimulationConstants.K_HAPPINESS_COLLAPSE_RATE;
+            }
+            return outmig;
         }
 
         /// <summary>

@@ -48,13 +48,13 @@ namespace UI
                 "Resident satisfaction, 0–100. About 60% of it comes from your district's overall health (GDP, infra, sustainability, low debt); the other 40% is direct effects from housing spending (up) and tax rate (down). Stay above 20 — below that, ticks count toward a crisis penalty on your final score."),
 
             new("Population",
-                "Residents in thousands (e.g. 150k). You don't set this directly. New residents arrive each tick based on city reputation and how attractive your district is (happiness, housing spending, low taxes). If your sustainability drops below 30, existing residents start leaving."),
+                "Residents in thousands (e.g. 150k). You don't set this directly. New residents arrive each tick based on city reputation and how attractive your district is (happiness, housing spending, low taxes). If your district grows past what its housing, infrastructure, and services can support, residents start leaving."),
 
             new("Infrastructure",
                 "Quality of your physical infrastructure, 0–100. Grows from infrastructure spending with diminishing returns above 50, decays naturally every tick. Drives your GDP and sustainability."),
 
             new("Sustainability",
-                "Long-term carrying capacity of your district, 0–100. Driven mostly by your infrastructure level and environment spending, drained by population pressure. If it falls below 30, residents start leaving — and fewer residents make the problem worse."),
+                "Long-term environmental and quality-of-life index, 0–100. Driven mostly by your infrastructure level and environment spending, drained by population pressure. Feeds happiness, GDP, and city reputation. If it collapses below 15, residents abandon the district even when housing is plentiful."),
 
             new("Debt",
                 "How far underwater you are, 0–80. Accrues when you deficit-spend, pays down when you surplus. At 40, residents start getting stressed (happiness penalty). At 60 (the debt cap), the game starts scaling down your effective spending until you get back in the black. At 70, federal stabilization kicks in but you lose access to grants."),

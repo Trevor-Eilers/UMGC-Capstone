@@ -9,6 +9,7 @@ public struct SpendingBreakdown
     public float housingCost;
     public float envCost;
     public float cityCost;
+    public float maintenanceCost;
     public float totalSpending;
 }
 
@@ -19,6 +20,7 @@ public struct ScaledSpending
     public float actualHousingCost;
     public float actualEnvCost;
     public float actualCityCost;
+    public float actualMaintenanceCost;
     public float actualTotalSpending;
     public float scaleFactor;
 }
@@ -50,8 +52,14 @@ public static class BudgetCalculator
     /// City contribution divides by 50 (its max) instead of 100.
     /// Population field is already in thousands — used directly (see ComputeRevenue).
     /// At defaults: (0.5+0.5+0.5+0.5)*150*3.0 + (25/50)*150*3.0*1.0 = 900+225 = 1125
+    ///
+    /// Maintenance cost scales with GDP above GDP_MAINTAIN_THRESHOLD so prosperous
+    /// cities pay more to keep running. Below the threshold (early game) it's zero.
+    /// This closes the "revenue scales with GDP, spending doesn't" loophole that
+    /// made max-everything strategies dominant.
     /// </summary>
-    public static SpendingBreakdown ComputeSpendingDemand(PolicyValues values, float population)
+    public static SpendingBreakdown ComputeSpendingDemand(
+        PolicyValues values, float population, float gdp)
     {
         float eduCost = (values.education / 100f) * population * SimulationConstants.K_SPEND;
         float infraCost = (values.infrastructure / 100f) * population * SimulationConstants.K_SPEND;
@@ -60,6 +68,11 @@ public static class BudgetCalculator
         float cityCost = (values.cityContribution / 50f) * population
                          * SimulationConstants.K_SPEND * SimulationConstants.K_CITY_WEIGHT;
 
+        float gdpExcess = Math.Max(0f, gdp - SimulationConstants.GDP_MAINTAIN_THRESHOLD);
+        float maintenanceCost = (gdpExcess / 100f) * population
+                                * SimulationConstants.K_SPEND
+                                * SimulationConstants.K_GDP_MAINTAIN;
+
         return new SpendingBreakdown
         {
             eduCost = eduCost,
@@ -67,7 +80,8 @@ public static class BudgetCalculator
             housingCost = housingCost,
             envCost = envCost,
             cityCost = cityCost,
-            totalSpending = eduCost + infraCost + housingCost + envCost + cityCost
+            maintenanceCost = maintenanceCost,
+            totalSpending = eduCost + infraCost + housingCost + envCost + cityCost + maintenanceCost
         };
     }
 
@@ -84,9 +98,20 @@ public static class BudgetCalculator
         if (debt >= SimulationConstants.DEBT_CAP)
         {
             if (spending.totalSpending > revenue && spending.totalSpending > 0f)
-                scaleFactor = revenue / spending.totalSpending;
+            {
+                // Floor the throttle: even at revenue=0 with debt at cap, deliver
+                // K_DEBT_CAP_MIN_SCALE of demanded spending so GDP/infra/sustain
+                // can recover. Debt continues to accrue at the full unscaled
+                // deficit via ComputeBudgetBalance, so the punishment side is
+                // unchanged — the player just isn't permanently locked out.
+                scaleFactor = Math.Max(
+                    SimulationConstants.K_DEBT_CAP_MIN_SCALE,
+                    revenue / spending.totalSpending);
+            }
             else
+            {
                 scaleFactor = 1.0f;
+            }
         }
         else
         {
@@ -100,6 +125,7 @@ public static class BudgetCalculator
             actualHousingCost = spending.housingCost * scaleFactor,
             actualEnvCost = spending.envCost * scaleFactor,
             actualCityCost = spending.cityCost * scaleFactor,
+            actualMaintenanceCost = spending.maintenanceCost * scaleFactor,
             actualTotalSpending = spending.totalSpending * scaleFactor,
             scaleFactor = scaleFactor
         };
