@@ -15,8 +15,6 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     public PolicyValues CurrentPolicies { get; private set; } = PolicyValues.Default();
 
     private PolicySliders _policySliders;
-    private PlayerLabelController _playerLabelController;
-    private Coroutine _labelUpdateCoroutine;
 
     private InputSystem_Actions _actions;
     private InputSystem_Actions.KeyboardActions _keyboardActions;
@@ -31,13 +29,6 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
             districtNetRef.Value.TryGet(out District d, NetworkManager.Singleton);
             return d;
         }
-    }
-
-    public void OnPlayerListChanged()
-    {
-        if (!IsOwner) return;
-        if (_labelUpdateCoroutine != null) StopCoroutine(_labelUpdateCoroutine);
-        _labelUpdateCoroutine = StartCoroutine(_playerLabelController.viewModel.Update());
     }
 
     public override void OnNetworkSpawn()
@@ -59,8 +50,6 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     protected void Start()
     {
         if (!IsOwner) return;
-
-        _playerLabelController = GetComponent<PlayerLabelController>();
 
         var ai = GetComponent<AIController>();
         if (ai != null)

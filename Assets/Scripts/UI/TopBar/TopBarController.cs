@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Core;
 using Network;
+using Unity.Netcode;
 using UnityEngine.UIElements;
 
 namespace UI.TopBar
@@ -25,10 +26,10 @@ namespace UI.TopBar
             _pauseButton = root.Q<Button>("PauseBtn");
             _helpButton = root.Q<Button>("HelpButton");
 
-            StartCoroutine(InitializeControlsWhenReady());
+            StartCoroutine(InitializeWhenReady());
         }
 
-        private IEnumerator InitializeControlsWhenReady()
+        private IEnumerator InitializeWhenReady()
         {
             while (ConnectionManager.Instance == null || ConnectionManager.Instance.Session == null)
                 yield return null;
@@ -62,7 +63,11 @@ namespace UI.TopBar
 
             viewModel.OnSpeedChangeRequested += speed => GameManager.Instance.RequestSetSpeedRpc(speed);
             viewModel.OnPauseChangeRequested += paused => GameManager.Instance.RequestSetPauseRpc(paused);
-            viewModel.OnQuitRequested += () => GameManager.Instance.RequestQuitRpc(player.NetworkObjectId);
+            viewModel.OnQuitRequested += () =>
+            {
+                gameObject.GetComponent<NetworkObject>().SetOwnershipLock(false);
+                GameManager.Instance.RequestQuitRpc(player.NetworkObjectId);
+            };
 
             StartCoroutine(SubscribeToGameStateWhenReady());
         }

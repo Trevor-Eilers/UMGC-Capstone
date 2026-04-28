@@ -97,16 +97,12 @@ namespace Core
         }
 
 
-        public DistrictState[] GetDistrictStates()
+        public DistrictState[] GetDistrictStates(List<Player> activePlayers)
         {
-            var districtStates = new DistrictState[players.Count];
-            for (int i = 0; i < players.Count; i++)
+            var districtStates = new DistrictState[activePlayers.Count];
+            for (int i = 0; i < activePlayers.Count; i++)
             {
-                if (!players[i].TryGet(out NetworkObject networkObject)) continue;
-                if (networkObject == null) continue;
-                var district = networkObject.GetComponent<District>();
-                if (district == null) continue;
-                districtStates[i] = district.state.Value;
+                districtStates[i] = activePlayers[i].District.state.Value;
             }
             return districtStates;
         }
@@ -126,8 +122,6 @@ namespace Core
 
                 if (localPlayer == null) yield return new WaitForSeconds(0.1f);
             }
-            
-            players.OnListChanged += _ => localPlayer.OnPlayerListChanged();
             
             SignalInitializeRpc();
 
@@ -212,11 +206,7 @@ namespace Core
             if (!HasAuthority) return;
 
             var activePlayers = GetPlayerList();
-            var districtStates = new DistrictState[activePlayers.Count];
-            for (int i = 0; i < activePlayers.Count; i++)
-            {
-                districtStates[i] = activePlayers[i].District.state.Value;
-            }
+            var districtStates = GetDistrictStates(activePlayers);
 
             for (int i = 0; i < activePlayers.Count; i++)
             {
@@ -340,7 +330,7 @@ namespace Core
             FinalScore score = ScoringSystem.ComputeFinalScore(
                 districtState,
                 cityMetrics,
-                GetDistrictStates(),
+                GetDistrictStates(GetPlayerList()),
                 4);
             controller.Show(score);
         }
@@ -406,13 +396,35 @@ namespace Core
         
             for (int i = 0; i < players.Count; i++)
             {
-                if (players[i].TryGet(out NetworkObject netObj) 
+                if (players[i].TryGet(out NetworkObject netObj)
                     && netObj.NetworkObjectId == networkObjectId)
                 {
-                    players.RemoveAt(i);
+                    if (netObj.OwnerClientId != NetworkManager.Singleton.LocalClientId) 
+                        netObj.ChangeOwnership(NetworkManager.Singleton.LocalClientId);
+                    netObj.gameObject.AddComponent<AIController>();
+                    var player = netObj.gameObject.GetComponent<Player>();
+                    player.District.GetComponent<NetworkObject>().ChangeOwnership(NetworkManager.Singleton.LocalClientId);
+                    if (player != null) player.playerName.Value = $"AI {NextAiNumber()}";
                     break;
                 }
             }
+            
+            players[0] = players[0];
+        }
+
+
+        private int NextAiNumber()
+        {
+            int aiNum = 0;
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (!players[i].TryGet(out NetworkObject netObj) || netObj == null) continue;
+                if (netObj.GetComponent<AIController>() == null) continue;
+                var name = netObj.GetComponent<Player>()?.playerName.Value.ToString();
+                if (string.IsNullOrEmpty(name) || !name.StartsWith("AI ")) continue;
+                if (int.TryParse(name[3..], out int n) && n > aiNum) aiNum = n;
+            }
+            return aiNum + 1;
         }
     
     

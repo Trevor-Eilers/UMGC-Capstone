@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Core;
-using Unity.Collections;
-using Unity.Mathematics;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -12,15 +10,15 @@ namespace UI
 {
     public class PlayerLabelController : UIPresenterBase
     {
-        public readonly PlayerLabelViewModel viewModel = new();
+        public PlayerLabelViewModel viewModel;
 
         private Label[] _labels;
         private PlayerCardViewModel[] _cardVms;
         private VisualElement[] _cardWidgets;
 
+
         void Start()
         {
-            viewModel.OnTextChanged += OnTextChanged;
             StartCoroutine(Initialize());
         }
 
@@ -35,11 +33,11 @@ namespace UI
                 root.Q<Label>("P3Label"),
                 root.Q<Label>("P4Label"),
             };
-            
+
             _cardVms     = new PlayerCardViewModel[_labels.Length];
             _cardWidgets = new VisualElement[_labels.Length];
             var template = Resources.Load<VisualTreeAsset>("PlayerCardWidget");
-            
+
             for (int i = 0; i < _labels.Length; i++)
             {
                 int slot = i;
@@ -48,22 +46,25 @@ namespace UI
                 _cardVms[slot] = ScriptableObject.CreateInstance<PlayerCardViewModel>();
                 _cardWidgets[slot].dataSource = _cardVms[slot];
             }
-            
-            while (GameManager.Instance == null 
+
+            while (GameManager.Instance == null
                    || GameManager.Instance.players.Count < 4) yield return null;
-            yield return StartCoroutine(viewModel.Update());
+
+            viewModel = ScriptableObject.CreateInstance<PlayerLabelViewModel>();
+            root.dataSource = viewModel;
+            viewModel.propertyChanged += OnPropertyChanged;
+            viewModel.Bind();
+
             yield return StartCoroutine(BindPlayersToCards());
-            
+
             var panelRoot = root.panel?.visualTree;
 
-            // Per-slot: which corner of the label to anchor to, and which corner of the tooltip sits there.
-            // Slot 0 = P1 top-left, 1 = P2 top-right, 2 = P3 bottom-left, 3 = P4 bottom-right.
             var tooltipConfigs = new (Func<Rect, Vector2> anchor, TooltipCorner corner)[]
             {
-                (r => new Vector2(r.xMax, r.yMax), TooltipCorner.TopLeft),     // top-left label → tooltip bottom-right
-                (r => new Vector2(r.xMin, r.yMax), TooltipCorner.TopRight),    // top-right label → tooltip bottom-left
-                (r => new Vector2(r.xMax, r.yMin), TooltipCorner.BottomLeft),  // bottom-left label → tooltip top-right
-                (r => new Vector2(r.xMin, r.yMin), TooltipCorner.BottomRight), // bottom-right label → tooltip top-left
+                (r => new Vector2(r.xMax, r.yMax), TooltipCorner.TopLeft),
+                (r => new Vector2(r.xMin, r.yMax), TooltipCorner.TopRight),
+                (r => new Vector2(r.xMax, r.yMin), TooltipCorner.BottomLeft),
+                (r => new Vector2(r.xMin, r.yMin), TooltipCorner.BottomRight),
             };
 
             for (int i = 0; i < _labels.Length; i++)
@@ -82,6 +83,7 @@ namespace UI
                 _labels[slot].RegisterCallback<MouseLeaveEvent>(_ => tooltip.Hide());
             }
         }
+
 
         private IEnumerator BindPlayersToCards()
         {
@@ -104,6 +106,7 @@ namespace UI
             }
         }
 
+
         private void BindSlotToPlayer(int slot, Player player)
         {
             _cardVms[slot].PlayerName = player.playerName.Value.ToString();
@@ -115,10 +118,10 @@ namespace UI
                 SubscribeAndPrime(slot, district);
             };
 
-            // districtNetRef may already be set on the client by the time we bind
             if (player.District != null)
                 SubscribeAndPrime(slot, player.District);
         }
+
 
         private void SubscribeAndPrime(int slot, District district)
         {
@@ -127,20 +130,28 @@ namespace UI
             _cardVms[slot].UpdateFromDistrictState(district.state.Value);
         }
 
-        private void OnTextChanged(List<FixedString64Bytes> players)
-        {
-            if (_labels == null) return;
 
-            for (int i = 0; i < players.Count && i < _labels.Length; i++)
+        private void OnPropertyChanged(object sender, BindablePropertyChangedEventArgs bindablePropertyChangedEventArgs)
+        {
+            if (_labels == null || viewModel == null) return;
+
+            var names = new[] { viewModel.P1Name, viewModel.P2Name, viewModel.P3Name, viewModel.P4Name };
+            for (int i = 0; i < _labels.Length; i++)
             {
                 if (_labels[i] == null) continue;
-                _labels[i].text = players[i].ToString();
+                _labels[i].text = names[i] ?? "";
             }
         }
 
+
         private void OnDestroy()
         {
-            viewModel.OnTextChanged -= OnTextChanged;
+            if (viewModel != null)
+            {
+                viewModel.Unbind();
+                viewModel.propertyChanged -= OnPropertyChanged;
+                Destroy(viewModel);
+            }
 
             if (_cardVms == null) return;
             foreach (var vm in _cardVms)

@@ -1,47 +1,71 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Core;
-using Unity.Collections;
 using Unity.Netcode;
+using Unity.Properties;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace UI
 {
-    public class PlayerLabelViewModel
+    public class PlayerLabelViewModel : ScriptableObject, INotifyBindablePropertyChanged
     {
-        public event Action<List<FixedString64Bytes>> OnTextChanged;
-        
-        private readonly List<FixedString64Bytes> _values = new();
+        public event EventHandler<BindablePropertyChangedEventArgs> propertyChanged;
 
+        [SerializeField] private string _p1Name;
+        [SerializeField] private string _p2Name;
+        [SerializeField] private string _p3Name;
+        [SerializeField] private string _p4Name;
 
-        public PlayerLabelViewModel()
+        [CreateProperty] public string P1Name { get => _p1Name; set => SetProperty(ref _p1Name, value); }
+        [CreateProperty] public string P2Name { get => _p2Name; set => SetProperty(ref _p2Name, value); }
+        [CreateProperty] public string P3Name { get => _p3Name; set => SetProperty(ref _p3Name, value); }
+        [CreateProperty] public string P4Name { get => _p4Name; set => SetProperty(ref _p4Name, value); }
+
+        public void Bind()
         {
-            for (int i = 0; i < 4; i++)
-            {
-                 _values.Add(new FixedString64Bytes());
-            }
+            GameManager.Instance.players.OnListChanged += OnPlayersChanged;
+            Refresh();
         }
-        
 
-        public IEnumerator Update()
+        public void Unbind()
         {
-            _values.Clear();
+            GameManager.Instance.players.OnListChanged -= OnPlayersChanged;
+        }
 
-            foreach (var player in GameManager.Instance.players)
+        private void OnPlayersChanged(NetworkListEvent<NetworkObjectReference> _) => Refresh();
+
+        private void Refresh()
+        {
+            var players = GameManager.Instance.players;
+            var names = new[] { "", "", "", "" };
+            int i = 0;
+            foreach (var playerRef in players)
             {
-                NetworkObject networkObject = null;
-                while (!player.TryGet(out networkObject, NetworkManager.Singleton))
-                    yield return null;
-
-                var playerComp = networkObject.GetComponent<Player>();
-                if (playerComp.playerName.Value.IsEmpty)
-                    yield return new WaitUntil(() => !playerComp.playerName.Value.IsEmpty);
-
-                _values.Add(playerComp.playerName.Value);
+                if (i >= names.Length) break;
+                playerRef.TryGet(out NetworkObject networkObject, NetworkManager.Singleton);
+                if (networkObject != null)
+                    names[i] = networkObject.GetComponent<Player>().playerName.Value.ToString();
+                i++;
             }
+            P1Name = names[0];
+            P2Name = names[1];
+            P3Name = names[2];
+            P4Name = names[3];
+        }
 
-            OnTextChanged?.Invoke(_values);
+        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string name = "")
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            Notify(name);
+            return true;
+        }
+
+        private void Notify([CallerMemberName] string property = "")
+        {
+            propertyChanged?.Invoke(this, new BindablePropertyChangedEventArgs(property));
         }
     }
 }
