@@ -5,6 +5,11 @@ namespace UI
 {
     public class FinancePanelController : DistrictBoundPresenter<TopBarViewModel>
     {
+        private Label _green;
+        private Label _transit;
+        private Label _life;
+        private Label _dev;
+
         private static readonly string[] InfoIconNames =
         {
             "RevenueInfo", "SpendingInfo", "CashFlowInfo", "ReserveInfo",
@@ -18,26 +23,14 @@ namespace UI
             AcquireRoot();
             viewModel.BindToPanel(root);
 
-            var green   = root.Q<Label>("GrantGreenBadge");
-            var transit = root.Q<Label>("GrantTransitBadge");
-            var life    = root.Q<Label>("GrantLifeBadge");
-            var dev     = root.Q<Label>("GrantDevBadge");
-
-            void Refresh()
-            {
-                // A streak > 0 alone is not enough — during stabilization (debt >= 70)
-                // grantsEligible is false and no grant pays out even if the threshold
-                // condition is met. Gate on both so the badge reflects actual revenue.
-                bool eligible = viewModel.GrantsEligible;
-                SetBadge(green,   eligible && viewModel.GreenGrantStreak   > 0);
-                SetBadge(transit, eligible && viewModel.TransitGrantStreak > 0);
-                SetBadge(life,    eligible && viewModel.LifeGrantStreak    > 0);
-                SetBadge(dev,     eligible && viewModel.DevGrantStreak     > 0);
-            }
-
+            _green = root.Q<Label>("GrantGreenBadge");
+            _transit = root.Q<Label>("GrantTransitBadge");
+            _life = root.Q<Label>("GrantLifeBadge");
+            _dev = root.Q<Label>("GrantDevBadge");
+            
             Refresh();
             viewModel.propertyChanged += (_, _) => Refresh();
-
+            
             var tooltip = new Tooltip(root);
             foreach (var iconName in InfoIconNames)
             {
@@ -55,6 +48,18 @@ namespace UI
             }
         }
 
+        void Refresh()
+        {
+            // A streak > 0 alone is not enough — during stabilization (debt >= 70)
+            // grantsEligible is false and no grant pays out even if the threshold
+            // condition is met. Gate on both so the badge reflects actual revenue.
+            bool eligible = viewModel.GrantsEligible;
+            SetBadge(_green,   eligible && viewModel.GreenGrantStreak   > 0);
+            SetBadge(_transit, eligible && viewModel.TransitGrantStreak > 0);
+            SetBadge(_life,    eligible && viewModel.LifeGrantStreak    > 0);
+            SetBadge(_dev,     eligible && viewModel.DevGrantStreak     > 0);
+        }
+        
         private static void SetBadge(Label badge, bool active)
         {
             if (badge == null) return;

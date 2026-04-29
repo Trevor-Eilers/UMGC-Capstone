@@ -50,8 +50,10 @@ namespace UI
             while (GameManager.Instance == null
                    || GameManager.Instance.players.Count < 4) yield return null;
 
+            // Don't set root.dataSource here. This UIDocument's root is shared with
+            // TopBarController (and FinancePanelController) which need the dataSource
+            // bound to TopBarViewModel for their tick/budget readouts.
             viewModel = ScriptableObject.CreateInstance<PlayerLabelViewModel>();
-            root.dataSource = viewModel;
             viewModel.propertyChanged += OnPropertyChanged;
             viewModel.Bind();
 
