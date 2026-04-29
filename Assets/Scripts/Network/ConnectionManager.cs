@@ -25,8 +25,18 @@ namespace Network
    
         private readonly int _maxPlayers = 4;
         public int PlayerCount => Session.PlayerCount;
-   
-        public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
+
+        private ConnectionState _state = ConnectionState.Disconnected;
+        public ConnectionState State
+        {
+            get => _state;
+            private set
+            {
+                if (_state == value) return;
+                Debug.Log($"[ConnectionManager] State: {_state} -> {value}");
+                _state = value;
+            }
+        }
    
         public ISession Session { get; private set; }
    
@@ -49,10 +59,12 @@ namespace Network
         {
             if (_instance != null && _instance != this)
             {
+                Debug.LogWarning("[ConnectionManager] Awake: duplicate instance, destroying GameObject");
                 Destroy(gameObject);
                 return;
             }
             _instance = this;
+            Debug.Log("[ConnectionManager] Awake");
 
             _networkManager = GetComponent<NetworkManager>();
             _networkManager.OnClientConnectedCallback += OnClientConnectedCallback;
@@ -66,10 +78,11 @@ namespace Network
             try
             {
                 await UnityServices.InitializeAsync();
+                Debug.Log("[ConnectionManager] Unity Services initialized");
             }
             catch (Exception e)
             {
-                Debug.Log(e.StackTrace);
+                Debug.LogException(e);
             }
         }
 
@@ -77,7 +90,7 @@ namespace Network
         {
             if (_networkManager.LocalClient.IsSessionOwner)
             {
-                Debug.Log($"Client-{_networkManager.LocalClientId} is the session owner!");
+                Debug.Log($"[ConnectionManager] Client-{_networkManager.LocalClientId} is the session owner");
             }
         }
 
@@ -85,35 +98,51 @@ namespace Network
         {
             if (_networkManager.LocalClientId == clientId)
             {
-                Debug.Log($"Client-{clientId} is connected.");
+                Debug.Log($"[ConnectionManager] Client-{clientId} connected");
             }
         }
 
-        private void OnDestroy()
+        private async void OnDestroy()
         {
+            Debug.Log("[ConnectionManager] OnDestroy");
+
             if (_networkManager != null)
             {
                 _networkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
                 _networkManager.OnSessionOwnerPromoted -= OnSessionOwnerPromoted;
             }
-            Session?.LeaveAsync();
+
+            if (Session != null)
+            {
+                Debug.Log($"[ConnectionManager] OnDestroy: leaving session {Session.Id}");
+                try { await Session.LeaveAsync(); }
+                catch (Exception e) { Debug.LogWarning($"[ConnectionManager] Session leave on destroy failed: {e.Message}"); }
+                Session = null;
+            }
 
             if (_instance == this) _instance = null;
         }
 
         public async Task<bool> Authenticate(string profileName)
         {
+            Debug.Log($"[ConnectionManager] Authenticate(profileName='{profileName}')");
             try
             {
+                if (AuthenticationService.Instance.IsSignedIn && ProfileName == profileName)
+                {
+                    Debug.Log($"[ConnectionManager] Authenticate: already signed in as '{profileName}' (PlayerId={AuthenticationService.Instance.PlayerId})");
+                    return true;
+                }
+
                 ProfileName = profileName;
                 AuthenticationService.Instance.SwitchProfile(profileName);
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log("Authentication Succeeded");
+                Debug.Log($"[ConnectionManager] Authentication succeeded (profile='{profileName}', PlayerId={AuthenticationService.Instance.PlayerId})");
                 return true;
             }
             catch (Exception e)
             {
-                Debug.Log("Authentication failed");
+                Debug.LogError($"[ConnectionManager] Authenticate failed (profile='{profileName}')");
                 Debug.LogException(e);
                 return false;
             }
@@ -121,55 +150,71 @@ namespace Network
    
         public async Task CreateOrJoinSessionAsync(string profileName, string sessionName, Lobby lobby)
         {
+            bool isLobbyHost = AuthenticationService.Instance.PlayerId == lobby.HostId;
+            Debug.Log($"[ConnectionManager] CreateOrJoinSessionAsync(profile='{profileName}', sessionName='{sessionName}', isLobbyHost={isLobbyHost})");
+
             State = ConnectionState.Connecting;
-   
+
             try
             {
                 ProfileName = profileName;
                 SessionName = sessionName;
 
                 if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
-   
+
                 var options = new SessionOptions() {
                     Name = sessionName,
                     MaxPlayers = _maxPlayers
                 }.WithDistributedAuthorityNetwork();
 
-                if (AuthenticationService.Instance.PlayerId != lobby.HostId) await Task.Delay(3000);
-                
+                if (!isLobbyHost)
+                {
+                    Debug.Log("[ConnectionManager] Non-host: waiting 3s for host to create session");
+                    await Task.Delay(3000);
+                }
+
                 Session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
-   
+                Debug.Log($"[ConnectionManager] Session ready: id={Session.Id} name={sessionName}");
+
                 State = ConnectionState.Connected;
             }
             catch (Exception e)
             {
                 State = ConnectionState.Disconnected;
+                Debug.LogError($"[ConnectionManager] CreateOrJoinSessionAsync failed (sessionName='{sessionName}')");
                 Debug.LogException(e);
             }
         }
 
         public async Task JoinSessionByIdDirectAsync(string profileName, string sessionId)
         {
+            Debug.Log($"[ConnectionManager] JoinSessionByIdDirectAsync(profile='{profileName}', sessionId='{sessionId}')");
             State = ConnectionState.Connecting;
             const int maxRetries = 3;
             const int retryDelayMs = 3000;
+
+            int jitterMs = UnityEngine.Random.Range(100, 501);
+            Debug.Log($"[ConnectionManager] JoinSessionByIdDirectAsync: jitter delay {jitterMs}ms before subscribing");
+            await Task.Delay(jitterMs);
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
                 try
                 {
+                    Debug.Log($"[ConnectionManager] JoinSessionById attempt {attempt}/{maxRetries} (sessionId='{sessionId}')");
                     ProfileName = profileName;
 
                     if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
 
                     Session = await MultiplayerService.Instance.JoinSessionByIdAsync(sessionId);
+                    Debug.Log($"[ConnectionManager] JoinSessionById succeeded: id={Session.Id}");
 
                     State = ConnectionState.Connected;
                     return;
                 }
                 catch (SessionException e) when (attempt < maxRetries)
                 {
-                    Debug.LogWarning($"Session join attempt {attempt}/{maxRetries} failed: {e.Message}. Retrying in {retryDelayMs}ms...");
+                    Debug.LogWarning($"[ConnectionManager] JoinSessionById attempt {attempt}/{maxRetries} failed: {e.Message}. Retrying in {retryDelayMs}ms...");
                     await CleanupPartialSessionAsync();
                     await Task.Delay(retryDelayMs);
                 }
@@ -177,18 +222,20 @@ namespace Network
                 {
                     // Non-retryable error or final attempt exhausted
                     State = ConnectionState.Disconnected;
+                    Debug.LogError($"[ConnectionManager] JoinSessionById failed on attempt {attempt}/{maxRetries} (sessionId='{sessionId}')");
                     Debug.LogException(e);
                     await CleanupPartialSessionAsync();
                     return;
                 }
             }
-            
+
             State = ConnectionState.Disconnected;
-            Debug.LogError("JoinSessionByIdDirectAsync: all retry attempts exhausted.");
+            Debug.LogError($"[ConnectionManager] JoinSessionByIdDirectAsync: all retry attempts exhausted (sessionId='{sessionId}')");
         }
 
         public async Task DisconnectAsync()
         {
+            Debug.Log("[ConnectionManager] DisconnectAsync");
             State = ConnectionState.Disconnected;
             await CleanupPartialSessionAsync();
         }
@@ -197,12 +244,14 @@ namespace Network
         {
             if (Session != null)
             {
+                Debug.Log($"[ConnectionManager] CleanupPartialSession: leaving session {Session.Id}");
                 try { await Session.LeaveAsync(); }
-                catch (Exception cleanupEx) { Debug.LogWarning($"Session cleanup failed: {cleanupEx.Message}"); }
+                catch (Exception cleanupEx) { Debug.LogWarning($"[ConnectionManager] Session cleanup failed: {cleanupEx.Message}"); }
                 Session = null;
             }
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
+                Debug.Log("[ConnectionManager] CleanupPartialSession: shutting down NetworkManager");
                 NetworkManager.Singleton.Shutdown();
                 await Task.Delay(250);
             }

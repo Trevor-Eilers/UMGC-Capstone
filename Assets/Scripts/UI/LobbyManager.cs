@@ -12,6 +12,7 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Random = UnityEngine.Random;
 
 
 namespace Network
@@ -44,22 +45,27 @@ namespace Network
         private const float HeartbeatInterval = 15f;
         private const float PollInterval = 2.5f;
 
-        private int _synchronizedClients = 1;
-
         private async void Start()
         {
+            Debug.Log("[LobbyManager] Start");
             try
             {
                 lobbyUI = GetComponent<LobbyUI>();
 
                 connectionManager = ConnectionManager.Instance;
 
+                bool waitedForNetworkManager = false;
                 while (NetworkManager.Singleton == null || NetworkManager.Singleton.SceneManager == null)
                 {
+                    if (!waitedForNetworkManager)
+                    {
+                        Debug.Log("[LobbyManager] Start: waiting for NetworkManager.Singleton.SceneManager");
+                        waitedForNetworkManager = true;
+                    }
                     await Task.Delay(500);
                 }
-            
-                NetworkManager.Singleton.SceneManager.OnSynchronizeComplete += OnSynchronizeComplete;
+
+                Debug.Log("[LobbyManager] Start: ready");
             }
             catch (Exception e)
             {
@@ -67,8 +73,6 @@ namespace Network
             }
         }
 
-        private void OnSynchronizeComplete(ulong clientId) => _synchronizedClients++;
-        
         private void Update()
         {
             if (_lobby == null || _gameStarting) return;
@@ -93,6 +97,13 @@ namespace Network
 
         public async Task CreateLobby(string lobbyName, string playerName)
         {
+            Debug.Log($"[LobbyManager] CreateLobby(lobbyName='{lobbyName}', playerName='{playerName}')");
+            if (_lobby != null)
+            {
+                Debug.LogWarning($"[LobbyManager] CreateLobby ignored: already in lobby {_lobby.Id}");
+                return;
+            }
+
             try
             {
                 lobbyUI.SetVisible(true);
@@ -105,11 +116,13 @@ namespace Network
                 };
 
                 _lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, MaxPlayers, options);
-                Debug.Log($"Lobby created: {_lobby.Id} - {_lobby.Name}");
+                Debug.Log($"[LobbyManager] Lobby created: id={_lobby.Id} name={_lobby.Name}");
 
                 lobbyUI.SetStartButtonVisible(true);
                 lobbyUI.SetLeaveButtonVisible(true);
+                lobbyUI.OnStartClicked -= OnStartButtonClicked;
                 lobbyUI.OnStartClicked += OnStartButtonClicked;
+                lobbyUI.OnLeaveClicked -= OnLeaveButtonClicked;
                 lobbyUI.OnLeaveClicked += OnLeaveButtonClicked;
                 lobbyUI.SetConnected(true);
                 RefreshUI();
@@ -120,12 +133,20 @@ namespace Network
                 lobbyUI.SetStartButtonVisible(false);
                 lobbyUI.SetLeaveButtonVisible(false);
                 lobbyUI.SetConnected(false);
+                Debug.LogError($"[LobbyManager] CreateLobby failed (lobbyName='{lobbyName}')");
                 Debug.LogException(e);
             }
         }
 
         public async Task JoinLobby(string lobbyId, string playerName)
         {
+            Debug.Log($"[LobbyManager] JoinLobby(lobbyId='{lobbyId}', playerName='{playerName}')");
+            if (_lobby != null)
+            {
+                Debug.LogWarning($"[LobbyManager] JoinLobby ignored: already in lobby {_lobby.Id}");
+                return;
+            }
+
             try
             {
                 lobbyUI.SetVisible(true);
@@ -137,7 +158,7 @@ namespace Network
                 };
 
                 _lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, options);
-                Debug.Log($"Joined lobby: {_lobby.Id} - {_lobby.Name}");
+                Debug.Log($"[LobbyManager] Joined lobby: id={_lobby.Id} name={_lobby.Name} players={_lobby.Players.Count}");
 
                 lobbyUI.SetStartButtonVisible(false);
                 lobbyUI.SetLeaveButtonVisible(true);
@@ -150,12 +171,14 @@ namespace Network
                 lobbyUI.SetVisible(false);
                 lobbyUI.SetLeaveButtonVisible(false);
                 lobbyUI.SetConnected(false);
+                Debug.LogError($"[LobbyManager] JoinLobby failed (lobbyId='{lobbyId}')");
                 Debug.LogException(e);
             }
         }
 
         public async Task JoinLobbyByName(string lobbyName, string playerName)
         {
+            Debug.Log($"[LobbyManager] JoinLobbyByName(lobbyName='{lobbyName}', playerName='{playerName}')");
             try
             {
                 lobbyUI.SetVisible(true);
@@ -167,18 +190,22 @@ namespace Network
                     }
                 });
 
+                Debug.Log($"[LobbyManager] JoinLobbyByName: query returned {query.Results.Count} result(s)");
+
                 if (query.Results.Count == 0)
                 {
-                    Debug.LogWarning($"No lobby found with name: {lobbyName}");
+                    Debug.LogWarning($"[LobbyManager] No lobby found with name: '{lobbyName}'");
                     lobbyUI.SetVisible(false);
                     return;
                 }
 
+                Debug.Log($"[LobbyManager] JoinLobbyByName: selecting lobby id={query.Results[0].Id}");
                 await JoinLobby(query.Results[0].Id, playerName);
             }
             catch (Exception e)
             {
                 lobbyUI.SetVisible(false);
+                Debug.LogError($"[LobbyManager] JoinLobbyByName failed (lobbyName='{lobbyName}')");
                 Debug.LogException(e);
             }
         }
@@ -205,40 +232,64 @@ namespace Network
             }
             catch (LobbyServiceException e) when (e.Reason == LobbyExceptionReason.LobbyNotFound)
             {
-                Debug.LogWarning("Heartbeat: lobby no longer exists, clearing local state.");
-                _lobby = null;
+                Debug.LogWarning("[LobbyManager] Heartbeat: lobby no longer exists");
+                await LeaveLobby();
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"Heartbeat failed: {e.Message}");
+                Debug.LogWarning($"[LobbyManager] Heartbeat failed: {e.Message}");
             }
         }
 
         private async void PollLobbyAsync()
         {
+            int previousPlayerCount = _lobby?.Players.Count ?? 0;
+            bool previousGameStarted = _lobby?.Data != null
+                && _lobby.Data.TryGetValue("GameStarted", out var prevStarted)
+                && prevStarted.Value == "true";
+
             try
             {
                 _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
                 if (_gameStarting) return;
                 RefreshUI();
-            
+
+                if (_lobby.Players.Count != previousPlayerCount)
+                {
+                    Debug.Log($"[LobbyManager] Lobby roster changed: {previousPlayerCount} -> {_lobby.Players.Count} (lobby={_lobby.Id})");
+                }
+
                 bool wasHost = isHost;
                 isHost = _lobby.HostId == AuthenticationService.Instance.PlayerId;
 
                 if (isHost && !wasHost)
                 {
-                    Debug.Log($"You are now the host.");
+                    Debug.Log($"[LobbyManager] Host promotion: PlayerId={AuthenticationService.Instance.PlayerId} (lobby={_lobby.Id})");
                     lobbyUI.SetStartButtonVisible(true);
                     lobbyUI.OnStartClicked -= OnStartButtonClicked;
                     lobbyUI.OnStartClicked += OnStartButtonClicked;
                 }
 
+                bool gameStarted = _lobby.Data != null
+                    && _lobby.Data.TryGetValue("GameStarted", out var started)
+                    && started.Value == "true";
+                if (gameStarted && !previousGameStarted)
+                {
+                    Debug.Log($"[LobbyManager] Poll detected GameStarted=true (lobby={_lobby.Id})");
+                }
+
                 if (!isHost) CheckForGameStart();
+            }
+            catch (LobbyServiceException e) when (e.Reason == LobbyExceptionReason.LobbyNotFound)
+            {
+                Debug.LogWarning($"[LobbyManager] Poll: lobby no longer exists (id={_lobby?.Id}): {e.Message}");
+                await LeaveLobby();
             }
             catch (LobbyServiceException e)
             {
-                Debug.LogWarning($"Poll failed: {e.Message}");
+                Debug.LogWarning($"[LobbyManager] Poll failed: {e.Message}");
             }
+
         }
 
         private void RefreshUI()
@@ -259,23 +310,25 @@ namespace Network
         {
             if (!isHost || _gameStarting) return;
             _gameStarting = true;
+            Debug.Log($"[LobbyManager] OnStartButtonClicked (lobby={_lobby.Id}, players={_lobby.Players.Count})");
 
             try
             {
-                var sessionName = _lobby.Id + "_session";
-                
+                var sessionName = _lobby.Id + "_session" + Random.Range(0, int.MaxValue);
+                Debug.Log($"[LobbyManager] Start: creating session '{sessionName}'");
+
                 await connectionManager.CreateOrJoinSessionAsync(connectionManager.ProfileName, sessionName, _lobby);
 
                 if (connectionManager.State != ConnectionState.Connected)
                 {
-                    Debug.LogError("Failed to establish Netcode session.");
+                    Debug.LogError("[LobbyManager] Start: failed to establish Netcode session");
                     _gameStarting = false;
                     await connectionManager.DisconnectAsync();
                     return;
                 }
 
                 _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
-                
+
                 var netcodeSessionId = connectionManager.Session.Id;
                 var update = new UpdateLobbyOptions
                 {
@@ -286,17 +339,20 @@ namespace Network
                     }
                 };
                 _lobby = await LobbyService.Instance.UpdateLobbyAsync(_lobby.Id, update);
+                Debug.Log($"[LobbyManager] Start: lobby updated with NetcodeSessionId={netcodeSessionId}");
 
+                Debug.Log("[LobbyManager] Start: entering WaitForPlayersAndLoadScene");
                 StartCoroutine(WaitForPlayersAndLoadScene());
             }
             catch (Exception e)
             {
                 _gameStarting = false;
                 await connectionManager.DisconnectAsync();
+                Debug.LogError("[LobbyManager] OnStartButtonClicked failed");
                 Debug.LogException(e);
             }
         }
-
+        
         private async void OnLeaveButtonClicked()
         {
             await LeaveLobby();
@@ -305,6 +361,9 @@ namespace Network
         public async Task LeaveLobby()
         {
             if (_lobby == null) return;
+            string lobbyId = _lobby.Id;
+            string myPlayerId = AuthenticationService.Instance.PlayerId;
+            Debug.Log($"[LobbyManager] LeaveLobby (lobby={lobbyId}, isHost={isHost})");
 
             try
             {
@@ -313,43 +372,43 @@ namespace Network
                     // Get current player list
                     _lobby = await LobbyService.Instance.GetLobbyAsync(_lobby.Id);
 
-                    if (_lobby.Players.Count > 1)
+                    if (_lobby?.Players.Count > 1)
                     {
                         // Find the first player who isn't us
                         string newHostId = null;
                         foreach (var player in _lobby.Players)
                         {
-                            if (player.Id != AuthenticationService.Instance.PlayerId)
+                            if (player.Id != myPlayerId)
                             {
                                 newHostId = player.Id;
                                 break;
                             }
                         }
 
-                        // Transfer ownership, then remove ourselves
+                        Debug.Log($"[LobbyManager] LeaveLobby: host transfer {myPlayerId} -> {newHostId} (lobby={lobbyId})");
                         await LobbyService.Instance.UpdateLobbyAsync(_lobby.Id, new UpdateLobbyOptions
                         {
                             HostId = newHostId
                         });
 
-                        await LobbyService.Instance.RemovePlayerAsync(
-                            _lobby.Id, AuthenticationService.Instance.PlayerId);
+                        await LobbyService.Instance.RemovePlayerAsync(_lobby.Id, myPlayerId);
+                        Debug.Log($"[LobbyManager] LeaveLobby: removed self after transfer (lobby={lobbyId})");
                     }
                     else
                     {
-                        // If we are the last player, delete the lobby
+                        Debug.Log($"[LobbyManager] LeaveLobby: last player, deleting lobby {lobbyId}");
                         await LobbyService.Instance.DeleteLobbyAsync(_lobby.Id);
                     }
                 }
                 else
                 {
-                    await LobbyService.Instance.RemovePlayerAsync(
-                        _lobby.Id, AuthenticationService.Instance.PlayerId);
+                    Debug.Log($"[LobbyManager] LeaveLobby: removing self (non-host) (lobby={lobbyId})");
+                    await LobbyService.Instance.RemovePlayerAsync(_lobby.Id, myPlayerId);
                 }
             }
             catch (LobbyServiceException e)
             {
-                Debug.LogWarning($"Leave lobby failed: {e.Message}");
+                Debug.LogWarning($"[LobbyManager] LeaveLobby failed (lobby={lobbyId}): {e.Message}");
             }
             finally
             {
@@ -359,13 +418,14 @@ namespace Network
                 _lobby = null;
                 isHost = false;
                 _gameStarting = false;
-                _synchronizedClients = 1;
+               
 
                 lobbyUI.SetVisible(false);
                 lobbyUI.SetConnected(false);
                 lobbyUI.SetStartButtonVisible(false);
                 lobbyUI.SetLeaveButtonVisible(false);
                 lobbyUI.SetPlayerList(new List<string>());
+                Debug.Log($"[LobbyManager] LeaveLobby: cleanup complete (lobby={lobbyId})");
             }
         }
 
@@ -386,61 +446,72 @@ namespace Network
             try
             {
                 var netcodeSessionId = _lobby.Data["NetcodeSessionId"].Value;
+                Debug.Log($"[LobbyManager] StartGame (NetcodeSessionId={netcodeSessionId}, lobby={_lobby.Id})");
                 await connectionManager.JoinSessionByIdDirectAsync(connectionManager.ProfileName, netcodeSessionId);
 
                 if (connectionManager.State != ConnectionState.Connected)
                 {
-                    Debug.LogError("Failed to establish Netcode session.");
+                    Debug.LogError(
+                        $"[LobbyManager] StartGame: failed to establish Netcode session (state='{connectionManager.State}')");
                     _gameStarting = false;
                     await connectionManager.DisconnectAsync();
                     return;
                 }
+                Debug.Log("[LobbyManager] StartGame: session joined, awaiting host scene load");
             }
             catch (Exception e)
             {
                 _gameStarting = false;
                 await connectionManager.DisconnectAsync();
+                Debug.LogError("[LobbyManager] StartGame failed");
                 Debug.LogException(e);
             }
         }
 
         private IEnumerator WaitForPlayersAndLoadScene()
         {
-            var waitOneSecond = new WaitForSeconds(1f);
+            var wait = new WaitForSeconds(1.5f);
             float elapsed = 0f;
+            int total = _lobby.Players.Count;
+            Debug.Log($"[LobbyManager] WaitForPlayers: waiting for {total} clients to connect");
 
             while (connectionManager.Session.PlayerCount != _lobby.Players.Count)
             {
                 if (elapsed >= maxWaitSeconds)
                 {
-                    Debug.LogError($"Timed out waiting for clients to connect ({connectionManager.Session.PlayerCount}/{_lobby.Players.Count}).");
+                    Debug.LogError($"[LobbyManager] Timed out waiting for clients to connect: {connectionManager.Session.PlayerCount}/{_lobby.Players.Count} after {elapsed:0.0}s");
                     _gameStarting = false;
                     _ = connectionManager.DisconnectAsync();
                     yield break;
                 }
-                Debug.Log("Not all clients have connected. Delaying...");
-                yield return waitOneSecond;
-                elapsed += 1f;
+                Debug.Log($"[LobbyManager] Waiting for clients: connected={connectionManager.Session.PlayerCount}/{_lobby.Players.Count} elapsed={elapsed:0.0}s");
+                yield return wait;
+                elapsed += 1.5f;
             }
+            Debug.Log($"[LobbyManager] WaitForPlayers: all {total} clients connected ({elapsed:0.0}s)");
 
             elapsed = 0f;
-            while (_synchronizedClients != _lobby.Players.Count)
+            Debug.Log($"[LobbyManager] WaitForNGOClients: waiting for {total} NGO clients to connect");
+            while (NetworkManager.Singleton.ConnectedClients.Count < _lobby.Players.Count)
             {
                 if (elapsed >= maxWaitSeconds)
                 {
-                    Debug.LogError($"Timed out waiting for clients to synchronize ({_synchronizedClients}/{_lobby.Players.Count}).");
+                    Debug.LogError($"[LobbyManager] Timed out waiting for NGO clients: {NetworkManager.Singleton.ConnectedClients.Count}/{_lobby.Players.Count} after {elapsed:0.0}s");
                     _gameStarting = false;
                     _ = connectionManager.DisconnectAsync();
+                    LobbyService.Instance.DeleteLobbyAsync(_lobby.Id);
+                    _lobby = null;
                     yield break;
                 }
-                Debug.Log("Not all clients have synchronized. Delaying...");
-                yield return waitOneSecond;
-                elapsed += 1f;
+                Debug.Log($"[LobbyManager] Waiting for NGO clients: connected={NetworkManager.Singleton.ConnectedClients.Count}/{_lobby.Players.Count} elapsed={elapsed:0.0}s");
+                yield return wait;
+                elapsed += 1.5f;
             }
+            Debug.Log($"[LobbyManager] All {total} NGO clients connected ({elapsed:0.0}s)");
 
             if (connectionManager.Session.IsHost)
             {
-                Debug.Log("Loading scene");
+                Debug.Log($"[LobbyManager] Loading scene '{gameSceneName}' as session host");
                 NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
             }
         }
@@ -448,13 +519,11 @@ namespace Network
 
         private async void OnDestroy()
         {
+            Debug.Log($"[LobbyManager] OnDestroy (gameStarting={_gameStarting}, hasLobby={_lobby != null})");
             try
             {
                 lobbyUI.OnStartClicked -= OnStartButtonClicked;
                 lobbyUI.OnLeaveClicked -= OnLeaveButtonClicked;
-
-                if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
-                    NetworkManager.Singleton.SceneManager.OnSynchronizeComplete -= OnSynchronizeComplete;
 
                 if (!_gameStarting) await LeaveLobby();
             }
