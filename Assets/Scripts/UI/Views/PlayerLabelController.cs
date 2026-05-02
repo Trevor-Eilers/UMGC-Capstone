@@ -17,12 +17,12 @@ namespace UI
         private VisualElement[] _cardWidgets;
 
 
-        void Start()
+        public void Initialize()
         {
-            StartCoroutine(Initialize());
+            StartCoroutine(InitializeCoroutine());
         }
 
-        private IEnumerator Initialize()
+        private IEnumerator InitializeCoroutine()
         {
             yield return WaitForRoot();
 
@@ -112,6 +112,9 @@ namespace UI
         private void BindSlotToPlayer(int slot, Player player)
         {
             _cardVms[slot].PlayerName = player.playerName.Value.ToString();
+
+            player.playerName.OnValueChanged += (_, newName) =>
+                _cardVms[slot].PlayerName = newName.ToString();
 
             player.districtNetRef.OnValueChanged += (_, _) =>
             {
