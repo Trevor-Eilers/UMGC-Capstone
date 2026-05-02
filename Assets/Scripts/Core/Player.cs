@@ -69,6 +69,12 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
         // GetComponent<DetailsPanelController>().Initialize(this);
     }
 
+    public void InitializePlayerLabels()
+    {
+        if (!IsOwner || GetComponent<AIController>() != null) return;
+        GetComponent<PlayerLabelController>()?.Initialize();
+    }
+
     public void SetPoliciesFromAI(PolicyValues values)
     {
         CurrentPolicies = values;

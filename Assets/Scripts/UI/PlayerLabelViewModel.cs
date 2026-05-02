@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Core;
+using Unity.Collections;
 using Unity.Netcode;
 using Unity.Properties;
 using UnityEngine;
@@ -23,6 +24,8 @@ namespace UI
         [CreateProperty] public string P3Name { get => _p3Name; set => SetProperty(ref _p3Name, value); }
         [CreateProperty] public string P4Name { get => _p4Name; set => SetProperty(ref _p4Name, value); }
 
+        private readonly Dictionary<Player, NetworkVariable<FixedString64Bytes>.OnValueChangedDelegate> _nameHandlers = new();
+
         public void Bind()
         {
             GameManager.Instance.players.OnListChanged += OnPlayersChanged;
@@ -32,12 +35,19 @@ namespace UI
         public void Unbind()
         {
             GameManager.Instance.players.OnListChanged -= OnPlayersChanged;
+            foreach (var (player, handler) in _nameHandlers)
+                player.playerName.OnValueChanged -= handler;
+            _nameHandlers.Clear();
         }
 
         private void OnPlayersChanged(NetworkListEvent<NetworkObjectReference> _) => Refresh();
 
         private void Refresh()
         {
+            foreach (var (player, handler) in _nameHandlers)
+                player.playerName.OnValueChanged -= handler;
+            _nameHandlers.Clear();
+
             var players = GameManager.Instance.players;
             var names = new[] { "", "", "", "" };
             int i = 0;
@@ -46,7 +56,14 @@ namespace UI
                 if (i >= names.Length) break;
                 playerRef.TryGet(out NetworkObject networkObject, NetworkManager.Singleton);
                 if (networkObject != null)
-                    names[i] = networkObject.GetComponent<Player>().playerName.Value.ToString();
+                {
+                    var player = networkObject.GetComponent<Player>();
+                    names[i] = player.playerName.Value.ToString();
+
+                    NetworkVariable<FixedString64Bytes>.OnValueChangedDelegate handler = (_, _) => Refresh();
+                    player.playerName.OnValueChanged += handler;
+                    _nameHandlers[player] = handler;
+                }
                 i++;
             }
             P1Name = names[0];

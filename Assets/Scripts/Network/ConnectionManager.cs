@@ -1,6 +1,7 @@
 // Author: Trevor Eilers
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Authentication;
@@ -231,6 +232,104 @@ namespace Network
 
             State = ConnectionState.Disconnected;
             Debug.LogError($"[ConnectionManager] JoinSessionByIdDirectAsync: all retry attempts exhausted (sessionId='{sessionId}')");
+        }
+
+        public async Task CreateSessionAsync(string profileName, string sessionName)
+        {
+            Debug.Log($"[ConnectionManager] CreateSessionAsync(profile='{profileName}', sessionName='{sessionName}')");
+            State = ConnectionState.Connecting;
+            ProfileName = profileName;
+            SessionName = sessionName;
+
+            try
+            {
+                if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
+
+                var options = new SessionOptions {
+                    Name = sessionName,
+                    MaxPlayers = _maxPlayers
+                }.WithDistributedAuthorityNetwork();
+
+                Session = await MultiplayerService.Instance.CreateSessionAsync(options);
+
+                Session.CurrentPlayer.SetProperties(new Dictionary<string, PlayerProperty> {
+                    { "DisplayName", new PlayerProperty(profileName, VisibilityPropertyOptions.Member) }
+                });
+                await Session.SaveCurrentPlayerDataAsync();
+
+                Debug.Log($"[ConnectionManager] Session created: id={Session.Id} name={sessionName}");
+                State = ConnectionState.Connected;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[ConnectionManager] CreateSessionAsync failed (sessionName='{sessionName}')");
+                Debug.LogException(e);
+                State = ConnectionState.Disconnected;
+                await CleanupPartialSessionAsync();
+            }
+        }
+
+        public async Task JoinSessionByNameAsync(string profileName, string sessionName)
+        {
+            Debug.Log($"[ConnectionManager] JoinSessionByNameAsync(profile='{profileName}', sessionName='{sessionName}')");
+            State = ConnectionState.Connecting;
+            const int maxRetries = 3;
+            const int retryDelayMs = 3000;
+
+            int jitterMs = UnityEngine.Random.Range(100, 501);
+            Debug.Log($"[ConnectionManager] JoinSessionByNameAsync: jitter delay {jitterMs}ms before subscribing");
+            await Task.Delay(jitterMs);
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    Debug.Log($"[ConnectionManager] JoinSessionByName attempt {attempt}/{maxRetries} (sessionName='{sessionName}')");
+                    ProfileName = profileName;
+
+                    if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
+
+                    var query = await MultiplayerService.Instance.QuerySessionsAsync(new QuerySessionsOptions {
+                        FilterOptions = new List<FilterOption> {
+                            new FilterOption(FilterField.Name, sessionName, FilterOperation.Equal)
+                        }
+                    });
+
+                    if (query.Sessions == null || query.Sessions.Count == 0)
+                    {
+                        Debug.LogWarning($"[ConnectionManager] JoinSessionByName attempt {attempt}/{maxRetries}: no session found with name '{sessionName}'");
+                        throw new SessionException("No session found with name " + sessionName, SessionError.None, null);
+                    }
+
+                    Session = await MultiplayerService.Instance.JoinSessionByIdAsync(query.Sessions[0].Id);
+
+                    Session.CurrentPlayer.SetProperties(new Dictionary<string, PlayerProperty> {
+                        { "DisplayName", new PlayerProperty(profileName, VisibilityPropertyOptions.Member) }
+                    });
+                    await Session.SaveCurrentPlayerDataAsync();
+
+                    Debug.Log($"[ConnectionManager] JoinSessionByName succeeded: id={Session.Id} name={sessionName}");
+                    State = ConnectionState.Connected;
+                    return;
+                }
+                catch (SessionException e) when (attempt < maxRetries)
+                {
+                    Debug.LogWarning($"[ConnectionManager] JoinSessionByName attempt {attempt}/{maxRetries} failed: {e.Message}. Retrying in {retryDelayMs}ms...");
+                    await CleanupPartialSessionAsync();
+                    await Task.Delay(retryDelayMs);
+                }
+                catch (Exception e)
+                {
+                    State = ConnectionState.Disconnected;
+                    Debug.LogError($"[ConnectionManager] JoinSessionByName failed on attempt {attempt}/{maxRetries} (sessionName='{sessionName}')");
+                    Debug.LogException(e);
+                    await CleanupPartialSessionAsync();
+                    return;
+                }
+            }
+
+            State = ConnectionState.Disconnected;
+            Debug.LogError($"[ConnectionManager] JoinSessionByNameAsync: all retry attempts exhausted (sessionName='{sessionName}')");
         }
 
         public async Task DisconnectAsync()

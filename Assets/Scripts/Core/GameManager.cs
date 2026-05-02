@@ -165,6 +165,24 @@ namespace Core
 
                 Debug.Log("Initialization complete.");
             }
+
+            // All clients wait until all 4 players are registered with non-empty names
+            // before initializing labels, ensuring districts and names are fully in place.
+            while (players.Count < 4)
+                yield return null;
+
+            yield return new WaitUntil(() =>
+            {
+                for (int i = 0; i < players.Count; i++)
+                {
+                    if (!players[i].TryGet(out NetworkObject netObj) || netObj == null) return false;
+                    var p = netObj.GetComponent<Player>();
+                    if (p == null || string.IsNullOrEmpty(p.playerName.Value.ToString())) return false;
+                }
+                return true;
+            });
+
+            localPlayer.InitializePlayerLabels();
         }
     
     
