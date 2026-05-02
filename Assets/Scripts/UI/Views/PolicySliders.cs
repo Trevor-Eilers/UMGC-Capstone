@@ -53,10 +53,7 @@ namespace UI
             housingSlider.value = housing;
             envSlider.value     = environment;
             citySlider.value    = cityContribution;
-
-            // Tooltip hover — each row has a small "i" icon next to its
-            // label. We hover the icon (not the whole row) so that sliding
-            // the slider doesn't pop a tooltip over the handle.
+            
             var tooltip = new Tooltip(root);
             foreach (var iconName in new[] { "TaxInfo", "EduInfo", "InfraInfo", "HousingInfo", "EnvInfo", "CityInfo" })
             {
@@ -65,8 +62,6 @@ namespace UI
                 var capturedIcon = icon;
                 icon.RegisterCallback<MouseEnterEvent>(_ =>
                 {
-                    // Pop the tooltip to the LEFT of the icon so it floats
-                    // over the map rather than covering the sliders below.
                     var anchor = new Vector2(capturedIcon.worldBound.xMin, capturedIcon.worldBound.y);
                     var pos = root.WorldToLocal(anchor);
                     tooltip.Show(capturedIcon.tooltip, pos, new Vector2(-290, 0));

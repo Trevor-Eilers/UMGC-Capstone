@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -18,18 +19,14 @@ namespace UI
             "GrantLifeBadge", "GrantDevBadge"
         };
 
-        protected override void OnViewModelBound(Player player)
+        private void Start()
         {
             AcquireRoot();
-            viewModel.BindToPanel(root);
-
+            
             _green = root.Q<Label>("GrantGreenBadge");
             _transit = root.Q<Label>("GrantTransitBadge");
             _life = root.Q<Label>("GrantLifeBadge");
             _dev = root.Q<Label>("GrantDevBadge");
-            
-            Refresh();
-            viewModel.propertyChanged += (_, _) => Refresh();
             
             var tooltip = new Tooltip(root);
             foreach (var iconName in InfoIconNames)
@@ -40,12 +37,20 @@ namespace UI
                 icon.RegisterCallback<MouseEnterEvent>(_ =>
                 {
                     var anchor = new Vector2(capturedIcon.worldBound.xMax,
-                                             capturedIcon.worldBound.y);
+                        capturedIcon.worldBound.y);
                     var pos = root.WorldToLocal(anchor);
                     tooltip.Show(capturedIcon.tooltip, pos, new Vector2(20, 0));
                 });
                 icon.RegisterCallback<MouseLeaveEvent>(_ => tooltip.Hide());
             }
+        }
+
+        protected override void OnViewModelBound(Player player)
+        {
+            
+            viewModel.BindToPanel(root);
+            Refresh();
+            viewModel.propertyChanged += (_, _) => Refresh();
         }
 
         void Refresh()

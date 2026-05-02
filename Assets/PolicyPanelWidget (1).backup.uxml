@@ -8,12 +8,7 @@
                 <ui:Label text="Tax Rate" style="font-size: 12px; color: rgba(255, 255, 255, 0.6); -unity-text-align: middle-left; -unity-font-style: normal; margin: 0; padding: 0;"/>
                 <ui:Label text="i" name="TaxInfo" tooltip="How much you tax residents (5-30%). Higher rates bring in more revenue but residents get unhappy and the economy grows slower." style="width: 14px; height: 14px; font-size: 9px; -unity-font-style: bold; -unity-text-align: middle-center; color: rgba(255, 255, 255, 0.75); background-color: rgba(255, 255, 255, 0.08); border-top-left-radius: 7px; border-top-right-radius: 7px; border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; margin: 0; padding: 0;"/>
             </ui:VisualElement>
-            <ui:VisualElement name="ValueBoxSlider" template="ValueBoxSlider">
-                <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-                    <ui:Slider label="" value="15" high-value="30" name="Slider" show-input-field="false" direction="Horizontal" fill="true" low-value="5" inverted="false" style="width: auto; margin-left: 0; margin-right: 0; margin-bottom: 2px; flex-shrink: 0; scale: 1 0.8; flex-direction: row; min-height: auto; align-self: center; align-content: auto; flex-grow: 1;"/>
-                    <ui:IntegerField label="Integer Field" value="42"/>
-                </ui:VisualElement>
-            </ui:VisualElement>
+            <ui:Slider label="" value="15" high-value="30" name="TaxSlider" show-input-field="true" direction="Horizontal" fill="true" low-value="5" inverted="false" style="width: 100%; margin-left: 0; margin-right: 0; margin-bottom: 2px; flex-shrink: 0; scale: 1 0.8; flex-direction: row;"/>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="flex-grow: 0; padding-top: 0; padding-bottom: 0; margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
         <ui:VisualElement name="EduRow">

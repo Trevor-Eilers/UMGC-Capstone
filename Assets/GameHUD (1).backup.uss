@@ -472,7 +472,6 @@
     color: rgb(140, 115, 230);
 }
 
-#unity-text-input {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.6);
+#unity-text-field {
+    background-color: rgb(48, 120, 48);
 }
