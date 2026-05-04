@@ -21,7 +21,8 @@ public class Player : NetworkBehaviour, InputSystem_Actions.IKeyboardActions
     
     public NetworkVariable<NetworkBehaviourReference> districtNetRef = new(writePerm: NetworkVariableWritePermission.Owner);
     public NetworkVariable<FixedString64Bytes> playerName = new(writePerm: NetworkVariableWritePermission.Owner);
-
+    public NetworkVariable<FixedString64Bytes> id = new(writePerm: NetworkVariableWritePermission.Owner);
+    
     public District District
     {
         get

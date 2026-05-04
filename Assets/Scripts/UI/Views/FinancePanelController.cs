@@ -19,15 +19,13 @@ namespace UI
             "GrantLifeBadge", "GrantDevBadge"
         };
 
-        private void Start()
+        protected override void OnViewModelBound(Player player)
         {
-            AcquireRoot();
-            
-            _green = root.Q<Label>("GrantGreenBadge");
+            _green   = root.Q<Label>("GrantGreenBadge");
             _transit = root.Q<Label>("GrantTransitBadge");
-            _life = root.Q<Label>("GrantLifeBadge");
-            _dev = root.Q<Label>("GrantDevBadge");
-            
+            _life    = root.Q<Label>("GrantLifeBadge");
+            _dev     = root.Q<Label>("GrantDevBadge");
+
             var tooltip = new Tooltip(root);
             foreach (var iconName in InfoIconNames)
             {
@@ -43,11 +41,7 @@ namespace UI
                 });
                 icon.RegisterCallback<MouseLeaveEvent>(_ => tooltip.Hide());
             }
-        }
 
-        protected override void OnViewModelBound(Player player)
-        {
-            
             viewModel.BindToPanel(root);
             Refresh();
             viewModel.propertyChanged += (_, _) => Refresh();

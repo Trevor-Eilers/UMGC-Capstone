@@ -1,6 +1,7 @@
 // Author: Tyson
 
 using System;
+using Random = UnityEngine.Random;
 
 namespace Simulation
 {
@@ -126,6 +127,13 @@ namespace Simulation
                 environment = env,
                 cityContribution = city
             };
+        }
+
+        public static Profile GetRandomProfile()
+        {
+            int max = Enum.GetValues(typeof(Profile)).Length;
+            int rand = Random.Range(0, max - 1); 
+            return (Profile)rand;
         }
     }
 }

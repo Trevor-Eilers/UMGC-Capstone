@@ -1,5 +1,5 @@
 .panel-bg {
-    background-color: rgba(18, 18, 25, 0.85);
+    background-color: rgba(18, 18, 25, 0.90);
     border-radius: 8px;
 }
 

@@ -3,14 +3,22 @@
 using System.Collections.Generic;
 using Core;
 using Simulation;
+using Unity.Mathematics;
 using Unity.Netcode;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Building
 {
     public class BuildingSystem : MonoBehaviour
     {
         public BuildingSpawner spawner;
+
+        [SerializeField] private ParticleSystem pollutionParticles;
+        [SerializeField] private float pollutionBaseScale = 150f;
+        [SerializeField] private float pollutionMaxScale = 200f;
+        [SerializeField] private float pollutionBoundsThreshold = 0.3f;
+        [SerializeField] private float pollutionEmitterY = 10f;
 
         private const float PopPerPlot = 12f;
         private const int MaxBuildingsPerTick = 3;
@@ -53,6 +61,7 @@ namespace Building
             }
 
             ApplyTinting(_district.state.Value);
+            ApplyPollution(_district.state.Value);
         }
 
         private void Unsubscribe()
@@ -62,7 +71,11 @@ namespace Building
             _district.state.OnValueChanged -= OnStateChanged;
         }
 
-        private void OnStateChanged(DistrictState prev, DistrictState next) => ApplyTinting(next);
+        private void OnStateChanged(DistrictState prev, DistrictState next)
+        {
+            ApplyTinting(next);
+            ApplyPollution(next);
+        }
 
         private void OnDestroy() => Unsubscribe();
 
@@ -141,6 +154,22 @@ namespace Building
                 if (_renderers[i] == null) _renderers.RemoveAt(i);
                 else _renderers[i].SetPropertyBlock(_propBlock);
             }
+        }
+
+        private void ApplyPollution(DistrictState state)
+        {
+            if (pollutionParticles == null) return;
+            
+            float clampedRate = Mathf.Clamp01(state.pollution / 100f);
+            float rate = math.pow(clampedRate, 2);
+
+            var main = pollutionParticles.main;
+            main.startColor = new Color(1f, 1f, 1f, rate);
+
+            float t = Mathf.InverseLerp(pollutionBoundsThreshold, 1f, rate);
+            float scale = Mathf.Lerp(pollutionBaseScale, pollutionMaxScale, t);
+            var shape = pollutionParticles.shape;
+            shape.scale = new Vector3(scale, pollutionEmitterY, scale);
         }
 
         private static Color ComputeTintColor(float health)

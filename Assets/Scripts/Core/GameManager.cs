@@ -39,6 +39,7 @@ namespace Core
         public static GameManager Instance { get; private set; }
 
         [SerializeField] private BuildingSystem[] quadrantBuildingSystems = new BuildingSystem[4];
+        [SerializeField] private DistrictCivilianSpawner[] quadrantCivilianSpawners = new DistrictCivilianSpawner[4];
 
         [SerializeField] private CivicBuildingSystem centerBuildingSystem;
 
@@ -134,6 +135,9 @@ namespace Core
                 }
 
                 var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+
+                yield return new WaitUntil(() => players.All(p => p.NetworkObject.IsSpawned));
+
                 for (int i = 0; i < players.Length; i++)
                 {
                     this.players.Add(players[i].NetworkObject);
@@ -147,13 +151,15 @@ namespace Core
                 for (int i = players.Length; i < 4; i++)
                 {
                     var aiPlayerObject = Instantiate(Resources.Load<GameObject>("Player"));
-                    aiPlayerObject.AddComponent<AIController>();
+                    var aiController = aiPlayerObject.AddComponent<AIController>();
+                    aiController.strategy = AIStrategy.GetRandomProfile();
                     var aiPlayerNetObj = aiPlayerObject.GetComponent<NetworkObject>();
                     aiPlayerNetObj.SpawnWithOwnership(hostId, true);
                     aiPlayerObject.GetComponent<Player>().playerName.Value =
                         new FixedString64Bytes($"AI {i - players.Length + 1}");
+                    Debug.Log($"AI {i - players.Length + 1} Strategy: {aiController.strategy}");
                     this.players.Add(aiPlayerNetObj);
-                
+
                     var districtObject = Instantiate(Resources.Load<GameObject>("District"));
                     var districtNetObj = districtObject.GetComponent<NetworkObject>();
                     districtNetObj.SpawnWithOwnership(hostId, true);
@@ -165,9 +171,7 @@ namespace Core
 
                 Debug.Log("Initialization complete.");
             }
-
-            // All clients wait until all 4 players are registered with non-empty names
-            // before initializing labels, ensuring districts and names are fully in place.
+            
             while (players.Count < 4)
                 yield return null;
 
@@ -296,6 +300,12 @@ namespace Core
                 {
                     d.BuildingSystem = quadrantBuildingSystems[i];
                     d.BuildingSystem.District = d;
+                }
+
+                if (d != null && i < quadrantCivilianSpawners.Length && d.CivilianSpawner == null)
+                {
+                    d.CivilianSpawner = quadrantCivilianSpawners[i];
+                    if (d.CivilianSpawner != null) d.CivilianSpawner.District = d;
                 }
             }
 

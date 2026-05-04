@@ -99,6 +99,8 @@ public static class SpilloverResolver
             float pollutionOutput = Math.Max(lowEnvOutput, highGdpOutput);
             if (pollutionOutput <= 0f) continue;
 
+            d.pollution += pollutionOutput;
+
             if (src == districtIndex)
             {
                 // Self-pollution (lower than neighbor damage)

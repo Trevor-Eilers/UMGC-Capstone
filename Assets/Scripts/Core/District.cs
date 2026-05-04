@@ -12,6 +12,7 @@ namespace Core
         public NetworkList<BuildingPlacement> placements;
 
         public BuildingSystem BuildingSystem { get; set; }
+        public DistrictCivilianSpawner CivilianSpawner { get; set; }
 
         private void Awake()
         {

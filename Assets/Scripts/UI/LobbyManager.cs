@@ -2,11 +2,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UI;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Multiplayer;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -82,6 +84,12 @@ namespace Network
                 }
 
                 _session = connectionManager.Session;
+                if (_session == null) throw new NullReferenceException("Session cannot be null");
+
+                var myPlayer = FindObjectsByType<Player>(FindObjectsSortMode.None)
+                    .FirstOrDefault(p => p.IsOwner);
+                if (myPlayer != null)
+                    myPlayer.id.Value = new FixedString64Bytes(_session.CurrentPlayer.Id);
 
                 _session.PlayerJoined += OnPlayerJoined;
                 _session.PlayerHasLeft += OnPlayerHasLeft;
@@ -105,6 +113,8 @@ namespace Network
                 lobbyUI.SetLeaveButtonVisible(false);
                 lobbyUI.SetConnected(false);
                 isHost = false;
+                var player = FindFirstObjectByType<Player>();
+                player?.NetworkObject.Despawn();
                 Debug.LogError($"[LobbyManager] CreateLobby failed (lobbyName='{lobbyName}')");
                 Debug.LogException(e);
             }
@@ -112,41 +122,63 @@ namespace Network
 
         public async Task JoinLobbyByName(string lobbyName, string playerName)
         {
-            Debug.Log($"[LobbyManager] JoinLobbyByName(lobbyName='{lobbyName}', playerName='{playerName}')");
-            if (_session != null)
+            try
             {
-                Debug.LogWarning($"[LobbyManager] JoinLobbyByName ignored: already in session {_session.Id}");
-                return;
+                Debug.Log($"[LobbyManager] JoinLobbyByName(lobbyName='{lobbyName}', playerName='{playerName}')");
+                if (_session != null)
+                {
+                    Debug.LogWarning($"[LobbyManager] JoinLobbyByName ignored: already in session {_session.Id}");
+                    return;
+                }
+
+                lobbyUI.SetVisible(true);
+                isHost = false;
+
+                await connectionManager.JoinSessionByNameAsync(playerName, lobbyName);
+
+                if (connectionManager.State != ConnectionState.Connected)
+                {
+                    Debug.LogWarning($"[LobbyManager] JoinLobbyByName: failed to connect (lobbyName='{lobbyName}')");
+                    lobbyUI.SetConnected(false);
+                    lobbyUI.SetVisible(false);
+                    return;
+                }
+
+                _session = connectionManager.Session;
+                if (_session == null) throw new NullReferenceException("Session cannot be null");
+
+                var myPlayer = FindObjectsByType<Player>(FindObjectsSortMode.None)
+                    .FirstOrDefault(p => p.IsOwner);
+                if (myPlayer != null)
+                    myPlayer.id.Value = new FixedString64Bytes(_session.CurrentPlayer.Id);
+
+                _session.PlayerJoined += OnPlayerJoined;
+                _session.PlayerHasLeft += OnPlayerHasLeft;
+                _session.RemovedFromSession += OnRemovedFromSession;
+                _session.SessionHostChanged += OnSessionHostChanged;
+                _session.Changed += OnSessionChanged;
+
+                lobbyUI.SetStartButtonVisible(false);
+                lobbyUI.SetLeaveButtonVisible(true);
+                lobbyUI.OnLeaveClicked -= OnLeaveButtonClicked;
+                lobbyUI.OnLeaveClicked += OnLeaveButtonClicked;
+                lobbyUI.SetConnected(true);
+                RefreshUI();
             }
-
-            lobbyUI.SetVisible(true);
-            isHost = false;
-
-            await connectionManager.JoinSessionByNameAsync(playerName, lobbyName);
-
-            if (connectionManager.State != ConnectionState.Connected)
+            catch (Exception e)
             {
-                Debug.LogWarning($"[LobbyManager] JoinLobbyByName: failed to connect (lobbyName='{lobbyName}')");
-                lobbyUI.SetConnected(false);
                 lobbyUI.SetVisible(false);
-                return;
+                lobbyUI.SetStartButtonVisible(false);
+                lobbyUI.SetLeaveButtonVisible(false);
+                lobbyUI.SetConnected(false);
+                isHost = false;
+                var player = FindFirstObjectByType<Player>();
+                player?.NetworkObject.Despawn();
+                Debug.LogError($"[LobbyManager] CreateLobby failed (lobbyName='{lobbyName}')");
+                Debug.LogException(e);
             }
-
-            _session = connectionManager.Session;
-
-            _session.PlayerJoined += OnPlayerJoined;
-            _session.PlayerHasLeft += OnPlayerHasLeft;
-            _session.RemovedFromSession += OnRemovedFromSession;
-            _session.SessionHostChanged += OnSessionHostChanged;
-            _session.Changed += OnSessionChanged;
-
-            lobbyUI.SetStartButtonVisible(false);
-            lobbyUI.SetLeaveButtonVisible(true);
-            lobbyUI.OnLeaveClicked -= OnLeaveButtonClicked;
-            lobbyUI.OnLeaveClicked += OnLeaveButtonClicked;
-            lobbyUI.SetConnected(true);
-            RefreshUI();
         }
+
 
         private void RefreshUI()
         {
@@ -180,7 +212,18 @@ namespace Network
         private void OnPlayerHasLeft(string playerId)
         {
             Debug.Log($"[LobbyManager] OnPlayerHasLeft: playerId={playerId}");
+            if (isHost)
+            {
+                var player = GetPlayer(playerId);
+                player?.NetworkObject.Despawn();
+            }
             RefreshUI();
+        }
+
+        private Player GetPlayer(string playerId)
+        {
+            return FindObjectsByType<Player>(FindObjectsSortMode.None)
+                .FirstOrDefault(p => p.id.Value.ToString() == playerId);
         }
 
         private void OnRemovedFromSession()
@@ -225,7 +268,10 @@ namespace Network
             _session.SessionHostChanged -= OnSessionHostChanged;
             _session.Changed -= OnSessionChanged;
 
-            try { await _session.LeaveAsync(); }
+            try
+            {
+                await _session.LeaveAsync();
+            }
             catch (Exception e) { Debug.LogWarning($"[LobbyManager] LeaveAsync failed: {e.Message}"); }
 
             if (connectionManager != null && connectionManager.State != ConnectionState.Disconnected)

@@ -202,7 +202,8 @@ namespace Network
             {
                 try
                 {
-                    Debug.Log($"[ConnectionManager] JoinSessionById attempt {attempt}/{maxRetries} (sessionId='{sessionId}')");
+                    Debug.Log(
+                        $"[ConnectionManager] JoinSessionById attempt {attempt}/{maxRetries} (sessionId='{sessionId}')");
                     ProfileName = profileName;
 
                     if (!AuthenticationService.Instance.IsSignedIn) await Authenticate(profileName);
@@ -215,7 +216,8 @@ namespace Network
                 }
                 catch (SessionException e) when (attempt < maxRetries)
                 {
-                    Debug.LogWarning($"[ConnectionManager] JoinSessionById attempt {attempt}/{maxRetries} failed: {e.Message}. Retrying in {retryDelayMs}ms...");
+                    Debug.LogWarning(
+                        $"[ConnectionManager] JoinSessionById attempt {attempt}/{maxRetries} failed: {e.Message}. Retrying in {retryDelayMs}ms...");
                     await CleanupPartialSessionAsync();
                     await Task.Delay(retryDelayMs);
                 }
@@ -223,7 +225,8 @@ namespace Network
                 {
                     // Non-retryable error or final attempt exhausted
                     State = ConnectionState.Disconnected;
-                    Debug.LogError($"[ConnectionManager] JoinSessionById failed on attempt {attempt}/{maxRetries} (sessionId='{sessionId}')");
+                    Debug.LogError(
+                        $"[ConnectionManager] JoinSessionById failed on attempt {attempt}/{maxRetries} (sessionId='{sessionId}')");
                     Debug.LogException(e);
                     await CleanupPartialSessionAsync();
                     return;
@@ -344,7 +347,12 @@ namespace Network
             if (Session != null)
             {
                 Debug.Log($"[ConnectionManager] CleanupPartialSession: leaving session {Session.Id}");
-                try { await Session.LeaveAsync(); }
+                try
+                {
+                    var player = FindFirstObjectByType<Player>();
+                    player?.NetworkObject.Despawn();
+                    await Session.LeaveAsync(); 
+                }
                 catch (Exception cleanupEx) { Debug.LogWarning($"[ConnectionManager] Session cleanup failed: {cleanupEx.Message}"); }
                 Session = null;
             }

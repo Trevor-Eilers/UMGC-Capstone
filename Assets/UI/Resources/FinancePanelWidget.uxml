@@ -1,10 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/Resources/GameHUD.uss?fileID=7433441132597879392&amp;guid=7bc2dafd71b614848a143c8754ca89c1&amp;type=3#GameHUD"/>
-    <ui:VisualElement name="FinancePanel" data-source-type="TopBarViewModel, Assembly-CSharp" style="width: 250px; flex-shrink: 0; flex-direction: column; align-items: stretch; background-color: rgba(17, 17, 24, 0.98); border-right-width: 1px; border-right-color: rgba(255, 255, 255, 0.08); padding-left: 24px; padding-right: 24px; padding-top: 24px; padding-bottom: 24px; border-top-left-radius: 0; border-top-right-radius: 32px; border-bottom-right-radius: 32px; border-bottom-left-radius: 0;">
-
+    <ui:VisualElement name="FinancePanel" data-source-type="TopBarViewModel, Assembly-CSharp" style="width: 250px; flex-shrink: 0; flex-direction: column; align-items: stretch; background-color: rgba(17, 17, 24, 0.99); border-right-width: 1px; border-right-color: rgba(255, 255, 255, 0.08); padding-left: 24px; padding-right: 24px; padding-top: 24px; padding-bottom: 24px; border-top-left-radius: 0; border-top-right-radius: 32px; border-bottom-right-radius: 32px; border-bottom-left-radius: 0;">
         <ui:Label text="Finance" style="color: rgb(255, 255, 255); font-size: 14px; -unity-font-style: bold; -unity-text-align: middle-center; margin-bottom: 4px; padding-bottom: 8px;"/>
         <ui:VisualElement name="Divider" style="margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
-
         <ui:VisualElement name="RevenueRow" class="finance-row">
             <ui:VisualElement style="flex-direction: row; align-items: center; justify-content: space-between;">
                 <ui:Label text="Revenue" class="finance-row-label"/>
@@ -24,11 +22,10 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
-
         <ui:VisualElement name="SpendingRow" class="finance-row">
             <ui:VisualElement style="flex-direction: row; align-items: center; justify-content: space-between;">
                 <ui:Label text="Spending" class="finance-row-label"/>
-                <ui:Label text="i" name="SpendingInfo" tooltip="What you actually paid out this tick. When debt hits the cap (60), spending is throttled down to match revenue automatically — your slider RATIOS are preserved, but every slider operates at the throttle percentage. The 'committed' line below shows what your sliders demanded before throttling." class="finance-info-icon"/>
+                <ui:Label text="i" name="SpendingInfo" tooltip="What you actually paid out this tick. When debt hits the cap (60), spending is throttled down to match revenue automatically — your slider RATIOS are preserved, but every slider operates at the throttle percentage. The &apos;committed&apos; line below shows what your sliders demanded before throttling." class="finance-info-icon"/>
             </ui:VisualElement>
             <ui:Label text="--" name="SpendingValue" class="finance-row-value">
                 <Bindings>
@@ -53,7 +50,6 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
-
         <ui:VisualElement name="CashFlowRow" class="finance-row">
             <ui:VisualElement style="flex-direction: row; align-items: center; justify-content: space-between;">
                 <ui:Label text="Cash flow / tick" class="finance-row-label"/>
@@ -68,11 +64,10 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
-
         <ui:VisualElement name="ReserveRow" class="finance-row">
             <ui:VisualElement style="flex-direction: row; align-items: center; justify-content: space-between;">
                 <ui:Label text="Reserve" class="finance-row-label"/>
-                <ui:Label text="i" name="ReserveInfo" tooltip="Your savings buffer. Surpluses split: K_DEBT_RECOVERY (33%) pays debt first, the remaining 67% fills reserve. Capped at 22,500. Decays 0.5% per tick (K_RESERVE_DECAY) so you can't hoard it forever — see the 'decay/tick' line below for what's bleeding off." class="finance-info-icon"/>
+                <ui:Label text="i" name="ReserveInfo" tooltip="Your savings buffer. Surpluses split: K_DEBT_RECOVERY (33%) pays debt first, the remaining 67% fills reserve. Capped at 22,500. Decays 0.5% per tick (K_RESERVE_DECAY) so you can&apos;t hoard it forever — see the &apos;decay/tick&apos; line below for what&apos;s bleeding off." class="finance-info-icon"/>
             </ui:VisualElement>
             <ui:VisualElement style="flex-direction: row; align-items: baseline; justify-content: space-between;">
                 <ui:Label text="--" name="ReserveValue" class="finance-row-value">
@@ -96,7 +91,6 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
-
         <ui:VisualElement name="DebtRow" class="finance-row">
             <ui:VisualElement style="flex-direction: row; align-items: center; justify-content: space-between;">
                 <ui:Label text="Debt" class="finance-row-label"/>
@@ -117,7 +111,6 @@
             <ui:Label text="cap 60 · stress 40 · stabilization 70" class="finance-row-sublabel"/>
         </ui:VisualElement>
         <ui:VisualElement name="Divider" style="margin-top: 4px; margin-bottom: 4px; background-color: rgba(255, 255, 255, 0.04); height: 1px;"/>
-
         <ui:VisualElement name="GrantsRow" class="finance-row">
             <ui:VisualElement style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 4px; margin-bottom: 6px;">
                 <ui:Label text="Grants" class="finance-row-label"/>
@@ -130,6 +123,5 @@
                 <ui:Label text="DEV" name="GrantDevBadge" tooltip="Development Grant — fires while infrastructure &gt; 80 AND debt &lt; 60. Starts at +$20/tick, fades 15%/tick on streak (floor +$6/tick)." class="grant-badge grant-badge-off"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
     </ui:VisualElement>
 </ui:UXML>

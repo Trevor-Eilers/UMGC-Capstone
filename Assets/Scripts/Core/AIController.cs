@@ -12,7 +12,7 @@ using Simulation;
 public class AIController : MonoBehaviour
 {
     [SerializeField]
-    private AIStrategy.Profile strategy = AIStrategy.Profile.Balanced;
+    public AIStrategy.Profile strategy = AIStrategy.Profile.Balanced;
 
     [SerializeField]
     private bool reactiveEnabled = true;
