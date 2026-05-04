@@ -1,0 +1,145 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Resources/GameHUD.uss?fileID=7433441132597879392&amp;guid=7bc2dafd71b614848a143c8754ca89c1&amp;type=3#GameHUD"/>
+    <ui:VisualElement name="DetailsOverlay" data-source-type="UI.DetailsPanelViewModel, Assembly-CSharp" class="details-overlay" style="display: flex;">
+        <ui:VisualElement class="details-panel">
+            <ui:Label text="Detailed Statistics" style="color: rgb(230, 230, 230); font-size: 18px; -unity-font-style: bold;"/>
+            <ui:Button text="✕" name="CloseDetailsBtn" class="close-button"/>
+            <ui:VisualElement style="margin-top: 16px;">
+                <ui:Label text="Score Preview" style="color: rgb(102, 217, 102); font-size: 14px; -unity-font-style: bold; margin-bottom: 8px;"/>
+                <ui:VisualElement class="details-row">
+                    <ui:VisualElement>
+                        <ui:Label text="Neighborhood Score" class="text-label"/>
+                        <ui:Label text="GDP, Happiness, Pop, Infra, Sust, Debt" class="text-dim"/>
+                    </ui:VisualElement>
+                    <ui:Label text="--" name="NeighborhoodScore" class="text-value">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="NeighborhoodScoreDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:VisualElement>
+                        <ui:Label text="City Contribution Score" class="text-label"/>
+                        <ui:Label text="Reputation, Shared Infra, Crisis Avoidance" class="text-dim"/>
+                    </ui:VisualElement>
+                    <ui:Label text="--" name="CityContribScore" class="text-value">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="CityContribScoreDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:VisualElement>
+                        <ui:Label text="Projected Final Score" class="text-label"/>
+                        <ui:Label text="60% Neighborhood + 40% City" class="text-dim"/>
+                    </ui:VisualElement>
+                    <ui:Label text="--" name="FinalScore" class="text-value">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="FinalScoreDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="divider"/>
+            <ui:VisualElement>
+                <ui:Label text="Crisis Tracking" style="color: rgb(224, 80, 80); font-size: 14px; -unity-font-style: bold; margin-bottom: 8px;"/>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="Ticks at Debt Cap (≥60)" class="text-dim"/>
+                    <ui:Label text="0" name="DebtCapTicks" style="color: rgb(224, 80, 80); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="TicksAtDebtCap" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="Ticks Below Happiness 20" class="text-dim"/>
+                    <ui:Label text="0" name="LowHappyTicks" style="color: rgb(232, 192, 48); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="TicksBelowHappiness20" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="Total Crisis Ticks" class="text-dim"/>
+                    <ui:Label text="0" name="CrisisTotal" class="text-secondary" style="-unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="CrisisTotal" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="Crisis Avoidance Score" class="text-dim"/>
+                    <ui:Label text="100.0" name="CrisisAvoidance" style="color: rgb(96, 200, 96); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="CrisisAvoidanceDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="divider"/>
+            <ui:VisualElement>
+                <ui:Label text="Grant Streaks" style="color: rgb(232, 192, 48); font-size: 14px; -unity-font-style: bold; margin-bottom: 8px;"/>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="🌱 Green Infra Streak" class="text-dim"/>
+                    <ui:Label text="0 ticks" name="GreenStreak" style="color: rgb(64, 204, 152); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="GreenStreakDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="🚌 Transit Streak" class="text-dim"/>
+                    <ui:Label text="0 ticks" name="TransitStreak" style="color: rgb(96, 200, 96); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="TransitStreakDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="😊 Quality of Life Streak" class="text-dim"/>
+                    <ui:Label text="0 ticks" name="LifeStreak" style="color: rgb(232, 192, 48); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="LifeStreakDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="🏗 Development Streak" class="text-dim"/>
+                    <ui:Label text="0 ticks" name="DevStreak" style="color: rgb(160, 112, 208); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="DevStreakDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row" style="margin-top: 4px;">
+                    <ui:Label text="Grants Eligible" class="text-dim"/>
+                    <ui:Label text="Yes" name="GrantsEligible" style="color: rgb(96, 200, 96); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="GrantsEligibleDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="divider"/>
+            <ui:VisualElement>
+                <ui:Label text="City Contributions" style="color: rgb(97, 128, 224); font-size: 14px; -unity-font-style: bold; margin-bottom: 8px;"/>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="Your Total City Spending" class="text-dim"/>
+                    <ui:Label text="$0" name="TotalCitySpend" style="color: rgb(97, 128, 224); font-size: 12px; -unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="TotalCitySpending" binding-mode="ToTarget" source-to-ui-converters="CurrencyFormat"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement class="details-row">
+                    <ui:Label text="Your Share of Total" class="text-dim"/>
+                    <ui:Label text="25.0%" name="CitySpendShare" class="text-secondary" style="-unity-font-style: bold;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="CitySpendShareDisplay" binding-mode="ToTarget"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,64 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="Root"
+        style="flex-grow: 1; align-items: center; justify-content: center;
+               background-color: rgb(15, 20, 40); display: flex;">
+
+        <ui:Label text="Lobby"
+            style="font-size: 36px; -unity-font-style: bold;
+                   color: rgb(255,255,255); margin-bottom: 6px;
+                   letter-spacing: 2px;"/>
+
+        <ui:Label text="Connected Players"
+            style="font-size: 13px; color: rgba(255,255,255,0.45);
+                   margin-bottom: 16px; letter-spacing: 1px;"/>
+
+        <ui:ListView name="PlayerList"
+            style="width: 340px; min-height: 160px; margin-bottom: 24px;
+                   background-color: rgba(255,255,255,0.05);
+                   border-top-left-radius: 10px; border-top-right-radius: 10px;
+                   border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;
+                   border-left-width: 1px; border-right-width: 1px;
+                   border-top-width: 1px; border-bottom-width: 1px;
+                   border-left-color: rgba(255,255,255,0.1);
+                   border-right-color: rgba(255,255,255,0.1);
+                   border-top-color: rgba(255,255,255,0.1);
+                   border-bottom-color: rgba(255,255,255,0.1);
+                   padding-top: 8px; padding-bottom: 8px;"/>
+
+        <ui:VisualElement style="flex-grow: 0; flex-direction: row;
+                                 justify-content: center; gap: 12px;
+                                 margin-bottom: 16px;">
+            <ui:Button name="LeaveButton" text="Leave Lobby"
+                style="width: 160px; height: 44px; font-size: 14px;
+                       -unity-font-style: bold; display: none;
+                       background-color: rgba(248,113,113,0.1);
+                       border-top-left-radius: 8px; border-top-right-radius: 8px;
+                       border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+                       border-left-width: 1px; border-right-width: 1px;
+                       border-top-width: 1px; border-bottom-width: 1px;
+                       border-left-color: rgba(248,113,113,0.4);
+                       border-right-color: rgba(248,113,113,0.4);
+                       border-top-color: rgba(248,113,113,0.4);
+                       border-bottom-color: rgba(248,113,113,0.4);
+                       color: rgb(248,113,113);"/>
+            <ui:Button name="StartButton" text="Start Game"
+                style="width: 160px; height: 44px; font-size: 14px;
+                       -unity-font-style: bold; display: none;
+                       background-color: rgba(74,222,128,0.12);
+                       border-top-left-radius: 8px; border-top-right-radius: 8px;
+                       border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+                       border-left-width: 1px; border-right-width: 1px;
+                       border-top-width: 1px; border-bottom-width: 1px;
+                       border-left-color: rgba(74,222,128,0.4);
+                       border-right-color: rgba(74,222,128,0.4);
+                       border-top-color: rgba(74,222,128,0.4);
+                       border-bottom-color: rgba(74,222,128,0.4);
+                       color: rgb(74,222,128);"/>
+        </ui:VisualElement>
+
+        <ui:Label name="WaitingLabel" text="Waiting for host to start..."
+            style="font-size: 13px; color: rgba(255,255,255,0.35);
+                   letter-spacing: 1px;"/>
+
+    </ui:VisualElement>
+</ui:UXML>
